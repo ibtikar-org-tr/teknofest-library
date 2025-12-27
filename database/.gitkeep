@@ -1,0 +1,1 @@
+wrangler d1 execute teknofest-library --file d1_schema.sql --remote
