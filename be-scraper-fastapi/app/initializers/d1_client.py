@@ -22,72 +22,48 @@ class D1Client:
             "Content-Type": "application/json"
         }
     
-    async def execute(self, sql: str, params: Optional[List[Any]] = None) -> Dict[str, Any]:
+    def execute(self, sql: str, params: Optional[List[Any]] = None) -> Dict[str, Any]:
         """
-        Execute a SQL query against D1 database
-        
-        Args:
-            sql: SQL query string
-            params: Optional list of parameters for prepared statements
-            
-        Returns:
-            Dict containing query results
+        Execute a SQL query against D1 database synchronously
         """
         url = f"{self.base_url}/query"
-        
-        payload = {
-            "sql": sql
-        }
-        
+
+        payload = {"sql": sql}
         if params:
             payload["params"] = params
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                url,
-                headers=self._get_headers(),
-                json=payload
-            )
-            
+
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(url, headers=self._get_headers(), json=payload)
+
             if response.status_code != 200:
                 raise Exception(f"D1 API Error: {response.status_code} - {response.text}")
-            
+
             result = response.json()
-            
+
             if not result.get("success", False):
                 errors = result.get("errors", [])
                 raise Exception(f"D1 Query Failed: {errors}")
-            
+
             return result.get("result", [{}])[0] if result.get("result") else {}
-    
-    async def execute_batch(self, queries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+    def execute_batch(self, queries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Execute multiple SQL queries in a batch
-        
-        Args:
-            queries: List of query dicts with 'sql' and optional 'params' keys
-            
-        Returns:
-            List of query results
+        Execute multiple SQL queries in a batch synchronously
         """
         url = f"{self.base_url}/query"
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                url,
-                headers=self._get_headers(),
-                json=queries
-            )
-            
+
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(url, headers=self._get_headers(), json=queries)
+
             if response.status_code != 200:
                 raise Exception(f"D1 API Error: {response.status_code} - {response.text}")
-            
+
             result = response.json()
-            
+
             if not result.get("success", False):
                 errors = result.get("errors", [])
                 raise Exception(f"D1 Batch Query Failed: {errors}")
-            
+
             return result.get("result", [])
 
 # Global D1 client instance

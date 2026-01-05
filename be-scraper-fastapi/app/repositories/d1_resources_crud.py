@@ -11,19 +11,19 @@ class ResourceCRUD:
     def __init__(self):
         self.client = d1_client
     
-    async def get_resource(self, resource_id: int) -> Optional[Resource]:
+    def get_resource(self, resource_id: int) -> Optional[Resource]:
         """Get a resource by ID"""
         sql = "SELECT * FROM resources WHERE id = ?"
-        result = await self.client.execute(sql, [str(resource_id)])
+        result = self.client.execute(sql, [str(resource_id)])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_resource(result["results"][0])
         return None
     
-    async def get_resources(self, skip: int = 0, limit: int = 10) -> List[Resource]:
+    def get_resources(self, skip: int = 0, limit: int = 10) -> List[Resource]:
         """Get paginated list of resources"""
         sql = "SELECT * FROM resources LIMIT ? OFFSET ?"
-        result = await self.client.execute(sql, [limit, skip])
+        result = self.client.execute(sql, [limit, skip])
         
         resources = []
         if result.get("results"):
@@ -31,7 +31,7 @@ class ResourceCRUD:
                 resources.append(self._row_to_resource(row))
         return resources
     
-    async def create_resource(self, resource: Resource) -> Resource:
+    def create_resource(self, resource: Resource) -> Resource:
         """Create a new resource"""
         resource_id = str(resource.id or uuid.uuid4())
         now = datetime.utcnow().isoformat()
@@ -50,13 +50,13 @@ class ResourceCRUD:
             json.dumps([str(cid) for cid in resource.comments]) if resource.comments else None
         ]
         
-        await self.client.execute(sql, params)
+        self.client.execute(sql, params)
         resource.id = uuid.UUID(resource_id)
         return resource
     
-    async def update_resource(self, resource_id: int, resource: Resource) -> Optional[Resource]:
+    def update_resource(self, resource_id: int, resource: Resource) -> Optional[Resource]:
         """Update an existing resource"""
-        db_resource = await self.get_resource(resource_id)
+        db_resource = self.get_resource(resource_id)
         if db_resource is None:
             return None
         
@@ -77,23 +77,23 @@ class ResourceCRUD:
             str(resource_id)
         ]
         
-        await self.client.execute(sql, params)
-        return await self.get_resource(resource_id)
+        self.client.execute(sql, params)
+        return self.get_resource(resource_id)
     
-    async def delete_resource(self, resource_id: int) -> Optional[Resource]:
+    def delete_resource(self, resource_id: int) -> Optional[Resource]:
         """Delete a resource"""
-        db_resource = await self.get_resource(resource_id)
+        db_resource = self.get_resource(resource_id)
         if db_resource is None:
             return None
         
         sql = "DELETE FROM resources WHERE id = ?"
-        await self.client.execute(sql, [str(resource_id)])
+        self.client.execute(sql, [str(resource_id)])
         return db_resource
     
-    async def get_resources_by_competition_id(self, competition_id: int) -> List[Resource]:
+    def get_resources_by_competition_id(self, competition_id: int) -> List[Resource]:
         """Get resources by competition ID"""
         sql = "SELECT * FROM resources WHERE competition_id = ?"
-        result = await self.client.execute(sql, [str(competition_id)])
+        result = self.client.execute(sql, [str(competition_id)])
         
         resources = []
         if result.get("results"):
@@ -101,10 +101,10 @@ class ResourceCRUD:
                 resources.append(self._row_to_resource(row))
         return resources
     
-    async def get_resources_by_team_id(self, team_id: int) -> List[Resource]:
+    def get_resources_by_team_id(self, team_id: int) -> List[Resource]:
         """Get resources by team ID"""
         sql = "SELECT * FROM resources WHERE team_id = ?"
-        result = await self.client.execute(sql, [str(team_id)])
+        result = self.client.execute(sql, [str(team_id)])
         
         resources = []
         if result.get("results"):
@@ -112,10 +112,10 @@ class ResourceCRUD:
                 resources.append(self._row_to_resource(row))
         return resources
     
-    async def get_resources_by_resource_type(self, resource_type: str) -> List[Resource]:
+    def get_resources_by_resource_type(self, resource_type: str) -> List[Resource]:
         """Get resources by resource type"""
         sql = "SELECT * FROM resources WHERE resource_type = ?"
-        result = await self.client.execute(sql, [resource_type])
+        result = self.client.execute(sql, [resource_type])
         
         resources = []
         if result.get("results"):
@@ -123,10 +123,10 @@ class ResourceCRUD:
                 resources.append(self._row_to_resource(row))
         return resources
     
-    async def get_resources_by_year(self, year: int) -> List[Resource]:
+    def get_resources_by_year(self, year: int) -> List[Resource]:
         """Get resources by year"""
         sql = "SELECT * FROM resources WHERE year = ?"
-        result = await self.client.execute(sql, [year])
+        result = self.client.execute(sql, [year])
         
         resources = []
         if result.get("results"):

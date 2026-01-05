@@ -11,19 +11,19 @@ class TeamCRUD:
     def __init__(self):
         self.client = d1_client
     
-    async def get_team(self, team_id: int) -> Optional[Team]:
+    def get_team(self, team_id: int) -> Optional[Team]:
         """Get a team by ID"""
         sql = "SELECT * FROM teams WHERE id = ?"
-        result = await self.client.execute(sql, [str(team_id)])
+        result = self.client.execute(sql, [str(team_id)])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_team(result["results"][0])
         return None
     
-    async def get_teams(self, skip: int = 0, limit: int = 10) -> List[Team]:
+    def get_teams(self, skip: int = 0, limit: int = 10) -> List[Team]:
         """Get paginated list of teams"""
         sql = "SELECT * FROM teams LIMIT ? OFFSET ?"
-        result = await self.client.execute(sql, [limit, skip])
+        result = self.client.execute(sql, [limit, skip])
         
         teams = []
         if result.get("results"):
@@ -31,7 +31,7 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def create_team(self, team: Team) -> Team:
+    def create_team(self, team: Team) -> Team:
         """Create a new team"""
         team_id = str(team.id or uuid.uuid4())
         now = datetime.utcnow().isoformat()
@@ -56,13 +56,13 @@ class TeamCRUD:
             team.intro_file_path, team.team_link
         ]
         
-        await self.client.execute(sql, params)
+        self.client.execute(sql, params)
         team.id = uuid.UUID(team_id)
         return team
     
-    async def update_team(self, team_id: int, team: Team) -> Optional[Team]:
+    def update_team(self, team_id: int, team: Team) -> Optional[Team]:
         """Update an existing team"""
-        db_team = await self.get_team(team_id)
+        db_team = self.get_team(team_id)
         if db_team is None:
             return None
         
@@ -90,32 +90,32 @@ class TeamCRUD:
             str(team_id)
         ]
         
-        await self.client.execute(sql, params)
-        return await self.get_team(team_id)
+        self.client.execute(sql, params)
+        return self.get_team(team_id)
     
-    async def delete_team(self, team_id: int) -> Optional[Team]:
+    def delete_team(self, team_id: int) -> Optional[Team]:
         """Delete a team"""
-        db_team = await self.get_team(team_id)
+        db_team = self.get_team(team_id)
         if db_team is None:
             return None
         
         sql = "DELETE FROM teams WHERE id = ?"
-        await self.client.execute(sql, [str(team_id)])
+        self.client.execute(sql, [str(team_id)])
         return db_team
     
-    async def get_team_by_name(self, name: str) -> Optional[Team]:
+    def get_team_by_name(self, name: str) -> Optional[Team]:
         """Get team by name"""
         sql = "SELECT * FROM teams WHERE name = ? LIMIT 1"
-        result = await self.client.execute(sql, [name])
+        result = self.client.execute(sql, [name])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_team(result["results"][0])
         return None
     
-    async def get_teams_by_stage(self, stage: str) -> List[Team]:
+    def get_teams_by_stage(self, stage: str) -> List[Team]:
         """Get teams by stage"""
         sql = "SELECT * FROM teams WHERE stage = ?"
-        result = await self.client.execute(sql, [stage])
+        result = self.client.execute(sql, [stage])
         
         teams = []
         if result.get("results"):
@@ -123,10 +123,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_member_count(self, member_count: int) -> List[Team]:
+    def get_teams_by_member_count(self, member_count: int) -> List[Team]:
         """Get teams by member count"""
         sql = "SELECT * FROM teams WHERE member_count = ?"
-        result = await self.client.execute(sql, [member_count])
+        result = self.client.execute(sql, [member_count])
         
         teams = []
         if result.get("results"):
@@ -134,10 +134,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_leader(self, leader: int) -> List[Team]:
+    def get_teams_by_leader(self, leader: int) -> List[Team]:
         """Get teams by leader"""
         sql = "SELECT * FROM teams WHERE leader = ?"
-        result = await self.client.execute(sql, [str(leader)])
+        result = self.client.execute(sql, [str(leader)])
         
         teams = []
         if result.get("results"):
@@ -145,10 +145,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_competition_id(self, competition_id: int) -> List[Team]:
+    def get_teams_by_competition_id(self, competition_id: int) -> List[Team]:
         """Get teams by competition ID"""
         sql = "SELECT * FROM teams WHERE competition_id = ?"
-        result = await self.client.execute(sql, [str(competition_id)])
+        result = self.client.execute(sql, [str(competition_id)])
         
         teams = []
         if result.get("results"):
@@ -156,10 +156,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_year(self, year: str) -> List[Team]:
+    def get_teams_by_year(self, year: str) -> List[Team]:
         """Get teams by year"""
         sql = "SELECT * FROM teams WHERE years LIKE ?"
-        result = await self.client.execute(sql, [f'%{year}%'])
+        result = self.client.execute(sql, [f'%{year}%'])
         
         teams = []
         if result.get("results"):
@@ -169,10 +169,10 @@ class TeamCRUD:
                     teams.append(team)
         return teams
     
-    async def get_teams_by_status(self, status: str) -> List[Team]:
+    def get_teams_by_status(self, status: str) -> List[Team]:
         """Get teams by status"""
         sql = "SELECT * FROM teams WHERE status = ?"
-        result = await self.client.execute(sql, [status])
+        result = self.client.execute(sql, [status])
         
         teams = []
         if result.get("results"):
@@ -180,10 +180,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_rank(self, rank: int) -> List[Team]:
+    def get_teams_by_rank(self, rank: int) -> List[Team]:
         """Get teams by rank"""
         sql = "SELECT * FROM teams WHERE rank = ?"
-        result = await self.client.execute(sql, [rank])
+        result = self.client.execute(sql, [rank])
         
         teams = []
         if result.get("results"):
@@ -191,10 +191,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_relation(self, relation: str) -> List[Team]:
+    def get_teams_by_relation(self, relation: str) -> List[Team]:
         """Get teams by relation"""
         sql = "SELECT * FROM teams WHERE relation = ?"
-        result = await self.client.execute(sql, [relation])
+        result = self.client.execute(sql, [relation])
         
         teams = []
         if result.get("results"):
@@ -202,19 +202,19 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_team_by_competition_id_and_name(self, competition_id: int, name: str) -> Optional[Team]:
+    def get_team_by_competition_id_and_name(self, competition_id: int, name: str) -> Optional[Team]:
         """Get team by competition ID and name"""
         sql = "SELECT * FROM teams WHERE competition_id = ? AND name = ? LIMIT 1"
-        result = await self.client.execute(sql, [str(competition_id), name])
+        result = self.client.execute(sql, [str(competition_id), name])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_team(result["results"][0])
         return None
     
-    async def get_teams_by_competition_id_and_year(self, competition_id: int, year: str) -> List[Team]:
+    def get_teams_by_competition_id_and_year(self, competition_id: int, year: str) -> List[Team]:
         """Get teams by competition ID and year"""
         sql = "SELECT * FROM teams WHERE competition_id = ? AND years LIKE ?"
-        result = await self.client.execute(sql, [str(competition_id), f'%{year}%'])
+        result = self.client.execute(sql, [str(competition_id), f'%{year}%'])
         
         teams = []
         if result.get("results"):
@@ -224,10 +224,10 @@ class TeamCRUD:
                     teams.append(team)
         return teams
     
-    async def get_teams_by_competition_id_and_status(self, competition_id: int, status: str) -> List[Team]:
+    def get_teams_by_competition_id_and_status(self, competition_id: int, status: str) -> List[Team]:
         """Get teams by competition ID and status"""
         sql = "SELECT * FROM teams WHERE competition_id = ? AND status = ?"
-        result = await self.client.execute(sql, [str(competition_id), status])
+        result = self.client.execute(sql, [str(competition_id), status])
         
         teams = []
         if result.get("results"):
@@ -235,10 +235,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_competition_id_and_rank(self, competition_id: int, rank: int) -> List[Team]:
+    def get_teams_by_competition_id_and_rank(self, competition_id: int, rank: int) -> List[Team]:
         """Get teams by competition ID and rank"""
         sql = "SELECT * FROM teams WHERE competition_id = ? AND rank = ?"
-        result = await self.client.execute(sql, [str(competition_id), rank])
+        result = self.client.execute(sql, [str(competition_id), rank])
         
         teams = []
         if result.get("results"):
@@ -246,10 +246,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_teams_by_competition_id_and_relation(self, competition_id: int, relation: str) -> List[Team]:
+    def get_teams_by_competition_id_and_relation(self, competition_id: int, relation: str) -> List[Team]:
         """Get teams by competition ID and relation"""
         sql = "SELECT * FROM teams WHERE competition_id = ? AND relation = ?"
-        result = await self.client.execute(sql, [str(competition_id), relation])
+        result = self.client.execute(sql, [str(competition_id), relation])
         
         teams = []
         if result.get("results"):
@@ -257,10 +257,10 @@ class TeamCRUD:
                 teams.append(self._row_to_team(row))
         return teams
     
-    async def get_team_by_name_and_year(self, name: str, year: str) -> Optional[Team]:
+    def get_team_by_name_and_year(self, name: str, year: str) -> Optional[Team]:
         """Get team by name and year"""
         sql = "SELECT * FROM teams WHERE name = ? AND years LIKE ? LIMIT 1"
-        result = await self.client.execute(sql, [name, f'%{year}%'])
+        result = self.client.execute(sql, [name, f'%{year}%'])
         
         if result.get("results") and len(result["results"]) > 0:
             team = self._row_to_team(result["results"][0])

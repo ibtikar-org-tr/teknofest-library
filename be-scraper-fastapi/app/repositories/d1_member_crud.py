@@ -11,19 +11,19 @@ class MemberCRUD:
     def __init__(self):
         self.client = d1_client
     
-    async def get_member(self, member_id: int) -> Optional[Member]:
+    def get_member(self, member_id: int) -> Optional[Member]:
         """Get a member by ID"""
         sql = "SELECT * FROM members WHERE id = ?"
-        result = await self.client.execute(sql, [str(member_id)])
+        result = self.client.execute(sql, [str(member_id)])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_member(result["results"][0])
         return None
     
-    async def get_members(self, skip: int = 0, limit: int = 10) -> List[Member]:
+    def get_members(self, skip: int = 0, limit: int = 10) -> List[Member]:
         """Get paginated list of members"""
         sql = "SELECT * FROM members LIMIT ? OFFSET ?"
-        result = await self.client.execute(sql, [limit, skip])
+        result = self.client.execute(sql, [limit, skip])
         
         members = []
         if result.get("results"):
@@ -31,7 +31,7 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def create_member(self, member: Member) -> Member:
+    def create_member(self, member: Member) -> Member:
         """Create a new member"""
         member_id = str(member.id or uuid.uuid4())
         now = datetime.utcnow().isoformat()
@@ -58,13 +58,13 @@ class MemberCRUD:
             json.dumps([str(cid) for cid in member.comments]) if member.comments else None
         ]
         
-        await self.client.execute(sql, params)
+        self.client.execute(sql, params)
         member.id = uuid.UUID(member_id)
         return member
     
-    async def update_member(self, member_id: int, member: Member) -> Optional[Member]:
+    def update_member(self, member_id: int, member: Member) -> Optional[Member]:
         """Update an existing member"""
-        db_member = await self.get_member(member_id)
+        db_member = self.get_member(member_id)
         if db_member is None:
             return None
         
@@ -92,59 +92,59 @@ class MemberCRUD:
             str(member_id)
         ]
         
-        await self.client.execute(sql, params)
-        return await self.get_member(member_id)
+        self.client.execute(sql, params)
+        return self.get_member(member_id)
     
-    async def delete_member(self, member_id: int) -> Optional[Member]:
+    def delete_member(self, member_id: int) -> Optional[Member]:
         """Delete a member"""
-        db_member = await self.get_member(member_id)
+        db_member = self.get_member(member_id)
         if db_member is None:
             return None
         
         sql = "DELETE FROM members WHERE id = ?"
-        await self.client.execute(sql, [str(member_id)])
+        self.client.execute(sql, [str(member_id)])
         return db_member
     
-    async def get_member_by_email(self, email: str) -> Optional[Member]:
+    def get_member_by_email(self, email: str) -> Optional[Member]:
         """Get member by email"""
         sql = "SELECT * FROM members WHERE email = ? LIMIT 1"
-        result = await self.client.execute(sql, [email])
+        result = self.client.execute(sql, [email])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_member(result["results"][0])
         return None
     
-    async def get_member_by_membership_number(self, membership_number: str) -> Optional[Member]:
+    def get_member_by_membership_number(self, membership_number: str) -> Optional[Member]:
         """Get member by membership number"""
         sql = "SELECT * FROM members WHERE membership_number = ? LIMIT 1"
-        result = await self.client.execute(sql, [membership_number])
+        result = self.client.execute(sql, [membership_number])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_member(result["results"][0])
         return None
     
-    async def get_member_by_phone(self, phone: str) -> Optional[Member]:
+    def get_member_by_phone(self, phone: str) -> Optional[Member]:
         """Get member by phone"""
         sql = "SELECT * FROM members WHERE phone = ? LIMIT 1"
-        result = await self.client.execute(sql, [phone])
+        result = self.client.execute(sql, [phone])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_member(result["results"][0])
         return None
     
-    async def get_member_by_name(self, name: str) -> Optional[Member]:
+    def get_member_by_name(self, name: str) -> Optional[Member]:
         """Get member by English name"""
         sql = "SELECT * FROM members WHERE en_name = ? LIMIT 1"
-        result = await self.client.execute(sql, [name])
+        result = self.client.execute(sql, [name])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_member(result["results"][0])
         return None
     
-    async def get_all_members_by_university(self, university: str) -> List[Member]:
+    def get_all_members_by_university(self, university: str) -> List[Member]:
         """Get all members by university"""
         sql = "SELECT * FROM members WHERE university = ?"
-        result = await self.client.execute(sql, [university])
+        result = self.client.execute(sql, [university])
         
         members = []
         if result.get("results"):
@@ -152,10 +152,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_major(self, major: str) -> List[Member]:
+    def get_all_members_by_major(self, major: str) -> List[Member]:
         """Get all members by major"""
         sql = "SELECT * FROM members WHERE major = ?"
-        result = await self.client.execute(sql, [major])
+        result = self.client.execute(sql, [major])
         
         members = []
         if result.get("results"):
@@ -163,10 +163,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_member_by_year(self, year: int) -> List[Member]:
+    def get_all_member_by_year(self, year: int) -> List[Member]:
         """Get all members by year"""
         sql = "SELECT * FROM members WHERE year = ?"
-        result = await self.client.execute(sql, [year])
+        result = self.client.execute(sql, [year])
         
         members = []
         if result.get("results"):
@@ -174,10 +174,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_country(self, country: str) -> List[Member]:
+    def get_all_members_by_country(self, country: str) -> List[Member]:
         """Get all members by country"""
         sql = "SELECT * FROM members WHERE country = ?"
-        result = await self.client.execute(sql, [country])
+        result = self.client.execute(sql, [country])
         
         members = []
         if result.get("results"):
@@ -185,10 +185,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_city(self, city: str) -> List[Member]:
+    def get_all_members_by_city(self, city: str) -> List[Member]:
         """Get all members by city"""
         sql = "SELECT * FROM members WHERE city = ?"
-        result = await self.client.execute(sql, [city])
+        result = self.client.execute(sql, [city])
         
         members = []
         if result.get("results"):
@@ -196,10 +196,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_district(self, district: str) -> List[Member]:
+    def get_all_members_by_district(self, district: str) -> List[Member]:
         """Get all members by district"""
         sql = "SELECT * FROM members WHERE district = ?"
-        result = await self.client.execute(sql, [district])
+        result = self.client.execute(sql, [district])
         
         members = []
         if result.get("results"):
@@ -207,10 +207,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_status(self, status: str) -> List[Member]:
+    def get_all_members_by_status(self, status: str) -> List[Member]:
         """Get all members by status"""
         sql = "SELECT * FROM members WHERE status = ?"
-        result = await self.client.execute(sql, [status])
+        result = self.client.execute(sql, [status])
         
         members = []
         if result.get("results"):
@@ -218,10 +218,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_is_advisor(self, is_advisor: bool) -> List[Member]:
+    def get_all_members_by_is_advisor(self, is_advisor: bool) -> List[Member]:
         """Get all members by advisor status"""
         sql = "SELECT * FROM members WHERE is_advisor = ?"
-        result = await self.client.execute(sql, [1 if is_advisor else 0])
+        result = self.client.execute(sql, [1 if is_advisor else 0])
         
         members = []
         if result.get("results"):
@@ -229,10 +229,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_is_leader(self, is_leader: bool) -> List[Member]:
+    def get_all_members_by_is_leader(self, is_leader: bool) -> List[Member]:
         """Get all members by leader status"""
         sql = "SELECT * FROM members WHERE is_leader = ?"
-        result = await self.client.execute(sql, [1 if is_leader else 0])
+        result = self.client.execute(sql, [1 if is_leader else 0])
         
         members = []
         if result.get("results"):
@@ -240,10 +240,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_skill(self, skill: str) -> List[Member]:
+    def get_all_members_by_skill(self, skill: str) -> List[Member]:
         """Get all members by skill"""
         sql = "SELECT * FROM members WHERE skills LIKE ?"
-        result = await self.client.execute(sql, [f'%{skill}%'])
+        result = self.client.execute(sql, [f'%{skill}%'])
         
         members = []
         if result.get("results"):
@@ -253,10 +253,10 @@ class MemberCRUD:
                     members.append(member)
         return members
     
-    async def get_all_members_by_rating(self, rating: int) -> List[Member]:
+    def get_all_members_by_rating(self, rating: int) -> List[Member]:
         """Get all members by rating"""
         sql = "SELECT * FROM members WHERE rating = ?"
-        result = await self.client.execute(sql, [rating])
+        result = self.client.execute(sql, [rating])
         
         members = []
         if result.get("results"):
@@ -264,10 +264,10 @@ class MemberCRUD:
                 members.append(self._row_to_member(row))
         return members
     
-    async def get_all_members_by_team_id(self, team_id: int) -> List[Member]:
+    def get_all_members_by_team_id(self, team_id: int) -> List[Member]:
         """Get all members by team ID"""
         sql = "SELECT * FROM members WHERE team_ids LIKE ?"
-        result = await self.client.execute(sql, [f'%{str(team_id)}%'])
+        result = self.client.execute(sql, [f'%{str(team_id)}%'])
         
         members = []
         if result.get("results"):

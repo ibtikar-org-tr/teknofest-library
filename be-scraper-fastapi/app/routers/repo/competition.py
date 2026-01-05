@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from app.repositories import competition_crud
+from app.repositories import d1_competition_crud as competition_crud
 
 router = APIRouter()
 

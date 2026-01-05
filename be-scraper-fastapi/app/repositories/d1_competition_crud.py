@@ -11,19 +11,19 @@ class CompetitionCRUD:
     def __init__(self):
         self.client = d1_client
     
-    async def get_competition(self, competition_id: int) -> Optional[Competition]:
+    def get_competition(self, competition_id: int) -> Optional[Competition]:
         """Get a competition by ID"""
         sql = "SELECT * FROM competitions WHERE id = ?"
-        result = await self.client.execute(sql, [str(competition_id)])
+        result = self.client.execute(sql, [str(competition_id)])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competitions(self, skip: int = 0, limit: int = 10) -> List[Competition]:
+    def get_competitions(self, skip: int = 0, limit: int = 10) -> List[Competition]:
         """Get paginated list of competitions"""
         sql = "SELECT * FROM competitions LIMIT ? OFFSET ?"
-        result = await self.client.execute(sql, [limit, skip])
+        result = self.client.execute(sql, [limit, skip])
         
         competitions = []
         if result.get("results"):
@@ -31,10 +31,10 @@ class CompetitionCRUD:
                 competitions.append(self._row_to_competition(row))
         return competitions
     
-    async def get_all_competitions(self, year: str) -> List[Competition]:
+    def get_all_competitions(self, year: str) -> List[Competition]:
         """Get all competitions for a specific year"""
         sql = "SELECT * FROM competitions WHERE years LIKE ?"
-        result = await self.client.execute(sql, [f'%{year}%'])
+        result = self.client.execute(sql, [f'%{year}%'])
         
         competitions = []
         if result.get("results"):
@@ -44,7 +44,7 @@ class CompetitionCRUD:
                     competitions.append(comp)
         return competitions
     
-    async def create_competition(self, competition: Competition) -> Competition:
+    def create_competition(self, competition: Competition) -> Competition:
         """Create a new competition"""
         comp_id = str(competition.id or uuid.uuid4())
         now = datetime.utcnow().isoformat()
@@ -70,13 +70,13 @@ class CompetitionCRUD:
             json.dumps(competition.years), competition.min_member, competition.max_member
         ]
         
-        await self.client.execute(sql, params)
+        self.client.execute(sql, params)
         competition.id = uuid.UUID(comp_id)
         return competition
     
-    async def update_competition(self, competition_id: int, competition: Competition) -> Optional[Competition]:
+    def update_competition(self, competition_id: int, competition: Competition) -> Optional[Competition]:
         """Update an existing competition"""
-        db_competition = await self.get_competition(competition_id)
+        db_competition = self.get_competition(competition_id)
         if db_competition is None:
             return None
         
@@ -104,90 +104,90 @@ class CompetitionCRUD:
             str(competition_id)
         ]
         
-        await self.client.execute(sql, params)
-        return await self.get_competition(competition_id)
+        self.client.execute(sql, params)
+        return self.get_competition(competition_id)
     
-    async def delete_competition(self, competition_id: int) -> Optional[Competition]:
+    def delete_competition(self, competition_id: int) -> Optional[Competition]:
         """Delete a competition"""
-        db_competition = await self.get_competition(competition_id)
+        db_competition = self.get_competition(competition_id)
         if db_competition is None:
             return None
         
         sql = "DELETE FROM competitions WHERE id = ?"
-        await self.client.execute(sql, [str(competition_id)])
+        self.client.execute(sql, [str(competition_id)])
         return db_competition
     
-    async def get_competition_by_tr_name(self, name: str) -> Optional[Competition]:
+    def get_competition_by_tr_name(self, name: str) -> Optional[Competition]:
         """Get competition by Turkish name"""
         sql = "SELECT * FROM competitions WHERE tr_name LIKE ? LIMIT 1"
-        result = await self.client.execute(sql, [f'%{name}%'])
+        result = self.client.execute(sql, [f'%{name}%'])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competition_by_en_name(self, name: str) -> Optional[Competition]:
+    def get_competition_by_en_name(self, name: str) -> Optional[Competition]:
         """Get competition by English name"""
         sql = "SELECT * FROM competitions WHERE en_name LIKE ? LIMIT 1"
-        result = await self.client.execute(sql, [f'%{name}%'])
+        result = self.client.execute(sql, [f'%{name}%'])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competition_by_ar_name(self, name: str) -> Optional[Competition]:
+    def get_competition_by_ar_name(self, name: str) -> Optional[Competition]:
         """Get competition by Arabic name"""
         sql = "SELECT * FROM competitions WHERE ar_name LIKE ? LIMIT 1"
-        result = await self.client.execute(sql, [f'%{name}%'])
+        result = self.client.execute(sql, [f'%{name}%'])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competitions_by_year(self, year: str) -> List[Competition]:
+    def get_competitions_by_year(self, year: str) -> List[Competition]:
         """Get competitions by year"""
-        return await self.get_all_competitions(year)
+        return self.get_all_competitions(year)
     
-    async def get_competition_by_tk_number(self, tk_number: str) -> Optional[Competition]:
+    def get_competition_by_tk_number(self, tk_number: str) -> Optional[Competition]:
         """Get competition by TK number"""
         sql = "SELECT * FROM competitions WHERE tk_number = ? LIMIT 1"
-        result = await self.client.execute(sql, [tk_number])
+        result = self.client.execute(sql, [tk_number])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competition_by_t3kys_number(self, t3kys_number: str) -> Optional[Competition]:
+    def get_competition_by_t3kys_number(self, t3kys_number: str) -> Optional[Competition]:
         """Get competition by T3KYS number"""
         sql = "SELECT * FROM competitions WHERE t3kys_number = ? LIMIT 1"
-        result = await self.client.execute(sql, [t3kys_number])
+        result = self.client.execute(sql, [t3kys_number])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competition_by_tr_link(self, tr_link: str) -> Optional[Competition]:
+    def get_competition_by_tr_link(self, tr_link: str) -> Optional[Competition]:
         """Get competition by Turkish link"""
         sql = "SELECT * FROM competitions WHERE tr_link LIKE ? LIMIT 1"
-        result = await self.client.execute(sql, [f'%{tr_link}%'])
+        result = self.client.execute(sql, [f'%{tr_link}%'])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competition_by_en_link(self, en_link: str) -> Optional[Competition]:
+    def get_competition_by_en_link(self, en_link: str) -> Optional[Competition]:
         """Get competition by English link"""
         sql = "SELECT * FROM competitions WHERE en_link LIKE ? LIMIT 1"
-        result = await self.client.execute(sql, [f'%{en_link}%'])
+        result = self.client.execute(sql, [f'%{en_link}%'])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
         return None
     
-    async def get_competition_by_ar_link(self, ar_link: str) -> Optional[Competition]:
+    def get_competition_by_ar_link(self, ar_link: str) -> Optional[Competition]:
         """Get competition by Arabic link"""
         sql = "SELECT * FROM competitions WHERE ar_link LIKE ? LIMIT 1"
-        result = await self.client.execute(sql, [f'%{ar_link}%'])
+        result = self.client.execute(sql, [f'%{ar_link}%'])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
@@ -227,19 +227,19 @@ class D1ReportFileCRUD:
     def __init__(self):
         self.client = d1_client
     
-    async def get_report_file(self, report_file_id: int) -> Optional[Report_File]:
+    def get_report_file(self, report_file_id: int) -> Optional[Report_File]:
         """Get a report file by ID"""
         sql = "SELECT * FROM report_files WHERE id = ?"
-        result = await self.client.execute(sql, [str(report_file_id)])
+        result = self.client.execute(sql, [str(report_file_id)])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_report_file(result["results"][0])
         return None
     
-    async def get_report_files(self, skip: int = 0, limit: int = 10) -> List[Report_File]:
+    def get_report_files(self, skip: int = 0, limit: int = 10) -> List[Report_File]:
         """Get paginated list of report files"""
         sql = "SELECT * FROM report_files LIMIT ? OFFSET ?"
-        result = await self.client.execute(sql, [limit, skip])
+        result = self.client.execute(sql, [limit, skip])
         
         report_files = []
         if result.get("results"):
@@ -247,7 +247,7 @@ class D1ReportFileCRUD:
                 report_files.append(self._row_to_report_file(row))
         return report_files
     
-    async def create_report_file(self, report_file: Report_File) -> Report_File:
+    def create_report_file(self, report_file: Report_File) -> Report_File:
         """Create a new report file"""
         file_id = str(report_file.id or uuid.uuid4())
         now = datetime.utcnow().isoformat()
@@ -266,13 +266,13 @@ class D1ReportFileCRUD:
             report_file.rank, report_file.stage, report_file.language
         ]
         
-        await self.client.execute(sql, params)
+        self.client.execute(sql, params)
         report_file.id = uuid.UUID(file_id)
         return report_file
     
-    async def update_report_file(self, report_file_id: int, report_file: Report_File) -> Optional[Report_File]:
+    def update_report_file(self, report_file_id: int, report_file: Report_File) -> Optional[Report_File]:
         """Update an existing report file"""
-        db_report_file = await self.get_report_file(report_file_id)
+        db_report_file = self.get_report_file(report_file_id)
         if db_report_file is None:
             return None
         
@@ -293,23 +293,23 @@ class D1ReportFileCRUD:
             str(report_file_id)
         ]
         
-        await self.client.execute(sql, params)
-        return await self.get_report_file(report_file_id)
+        self.client.execute(sql, params)
+        return self.get_report_file(report_file_id)
     
-    async def delete_report_file(self, report_file_id: int) -> Optional[Report_File]:
+    def delete_report_file(self, report_file_id: int) -> Optional[Report_File]:
         """Delete a report file"""
-        db_report_file = await self.get_report_file(report_file_id)
+        db_report_file = self.get_report_file(report_file_id)
         if db_report_file is None:
             return None
         
         sql = "DELETE FROM report_files WHERE id = ?"
-        await self.client.execute(sql, [str(report_file_id)])
+        self.client.execute(sql, [str(report_file_id)])
         return db_report_file
     
-    async def get_report_files_by_competition_id_and_team_id(self, competition_id: int, team_id: int) -> List[Report_File]:
+    def get_report_files_by_competition_id_and_team_id(self, competition_id: int, team_id: int) -> List[Report_File]:
         """Get report files by competition ID and team ID"""
         sql = "SELECT * FROM report_files WHERE competition_id = ? AND team_id = ?"
-        result = await self.client.execute(sql, [str(competition_id), str(team_id)])
+        result = self.client.execute(sql, [str(competition_id), str(team_id)])
         
         report_files = []
         if result.get("results"):
@@ -340,19 +340,19 @@ class D1ResultFileCRUD:
     def __init__(self):
         self.client = d1_client
     
-    async def get_result_file(self, result_file_id: int) -> Optional[Result_File]:
+    def get_result_file(self, result_file_id: int) -> Optional[Result_File]:
         """Get a result file by ID"""
         sql = "SELECT * FROM result_files WHERE id = ?"
-        result = await self.client.execute(sql, [str(result_file_id)])
+        result = self.client.execute(sql, [str(result_file_id)])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_result_file(result["results"][0])
         return None
     
-    async def get_result_files(self, skip: int = 0, limit: int = 10) -> List[Result_File]:
+    def get_result_files(self, skip: int = 0, limit: int = 10) -> List[Result_File]:
         """Get paginated list of result files"""
         sql = "SELECT * FROM result_files LIMIT ? OFFSET ?"
-        result = await self.client.execute(sql, [limit, skip])
+        result = self.client.execute(sql, [limit, skip])
         
         result_files = []
         if result.get("results"):
@@ -360,7 +360,7 @@ class D1ResultFileCRUD:
                 result_files.append(self._row_to_result_file(row))
         return result_files
     
-    async def create_result_file(self, result_file: Result_File) -> Result_File:
+    def create_result_file(self, result_file: Result_File) -> Result_File:
         """Create a new result file"""
         file_id = str(result_file.id or uuid.uuid4())
         now = datetime.utcnow().isoformat()
@@ -378,13 +378,13 @@ class D1ResultFileCRUD:
             result_file.year, result_file.stage, result_file.file_path
         ]
         
-        await self.client.execute(sql, params)
+        self.client.execute(sql, params)
         result_file.id = uuid.UUID(file_id)
         return result_file
     
-    async def update_result_file(self, result_file_id: int, result_file: Result_File) -> Optional[Result_File]:
+    def update_result_file(self, result_file_id: int, result_file: Result_File) -> Optional[Result_File]:
         """Update an existing result file"""
-        db_result_file = await self.get_result_file(result_file_id)
+        db_result_file = self.get_result_file(result_file_id)
         if db_result_file is None:
             return None
         
@@ -404,17 +404,17 @@ class D1ResultFileCRUD:
             str(result_file_id)
         ]
         
-        await self.client.execute(sql, params)
-        return await self.get_result_file(result_file_id)
+        self.client.execute(sql, params)
+        return self.get_result_file(result_file_id)
     
-    async def delete_result_file(self, result_file_id: int) -> Optional[Result_File]:
+    def delete_result_file(self, result_file_id: int) -> Optional[Result_File]:
         """Delete a result file"""
-        db_result_file = await self.get_result_file(result_file_id)
+        db_result_file = self.get_result_file(result_file_id)
         if db_result_file is None:
             return None
         
         sql = "DELETE FROM result_files WHERE id = ?"
-        await self.client.execute(sql, [str(result_file_id)])
+        self.client.execute(sql, [str(result_file_id)])
         return db_result_file
     
     def _row_to_result_file(self, row: dict) -> Result_File:
