@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from app.services.scrape.dates.convert_dates import convert_full_date
 from app.services.unify.function import find_original_sentence
+from app.services.scrape.competitions import links_service
 
 def extract_dates_to_list(url):
     print(f"Processing: {url}")
@@ -16,7 +17,11 @@ def extract_dates_to_list(url):
         competition_name = h1_element.text.strip()
     else:
         competition_name = "Competition Name Not Found"
-    competition_name = find_original_sentence(competition_name)
+    competition_name = find_original_sentence(competition_name, threshold=0.8)
+
+    # Fallback to URL slug if the name is unknown (prevents every entry becoming the same)
+    if not competition_name:
+        competition_name = links_service.get_name_from_link(url)
     list0 = []
 
     target_content = None
