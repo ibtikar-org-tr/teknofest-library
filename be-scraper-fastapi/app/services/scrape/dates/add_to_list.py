@@ -6,12 +6,16 @@ from app.services.unify.function import find_original_sentence
 def extract_dates_to_list(url):
     print(f"Processing: {url}")
     url_response = requests.get(url)
-    url_content = url_response.content
+    url_content = url_response.text
 
     soup = BeautifulSoup(url_content, 'html.parser')
     target_contents = soup.select('div.tab-pane.tab-pane-navigation')
 
-    competition_name = soup.find('h1', class_='text-white').text.strip()
+    h1_element = soup.find('h1', class_='text-white')
+    if h1_element:
+        competition_name = h1_element.text.strip()
+    else:
+        competition_name = "Competition Name Not Found"
     competition_name = find_original_sentence(competition_name)
     list0 = []
 
