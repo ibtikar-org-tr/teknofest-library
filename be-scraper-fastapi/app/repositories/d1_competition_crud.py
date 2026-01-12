@@ -46,7 +46,6 @@ class CompetitionCRUD:
     
     def create_competition(self, competition: Competition) -> Competition:
         """Create a new competition"""
-        comp_id = str(competition.id or uuid.uuid4())
         now = datetime.utcnow().isoformat()
         
         sql = """
@@ -61,7 +60,7 @@ class CompetitionCRUD:
         """
         
         params = [
-            comp_id, now, now, None, competition.image_path,
+            competition.id, now, now, None, competition.image_path,
             competition.tk_number, competition.t3kys_number,
             competition.application_link_tr, competition.application_link_en, competition.application_link_ar,
             competition.tr_name, competition.tr_description, competition.tr_link,
@@ -71,7 +70,6 @@ class CompetitionCRUD:
         ]
         
         self.client.execute(sql, params)
-        competition.id = uuid.UUID(comp_id)
         return competition
     
     def update_competition(self, competition_id: int, competition: Competition) -> Optional[Competition]:
@@ -196,7 +194,7 @@ class CompetitionCRUD:
     def _row_to_competition(self, row: dict) -> Competition:
         """Convert database row to Competition model"""
         return Competition(
-            id=uuid.UUID(row["id"]) if row.get("id") else None,
+            id=int(row["id"]) if row.get("id") else None,
             created_at=datetime.fromisoformat(row["created_at"]) if row.get("created_at") else datetime.utcnow(),
             updated_at=datetime.fromisoformat(row["updated_at"]) if row.get("updated_at") else datetime.utcnow(),
             deleted_at=datetime.fromisoformat(row["deleted_at"]) if row.get("deleted_at") else None,
@@ -221,7 +219,7 @@ class CompetitionCRUD:
         )
 
 
-class D1ReportFileCRUD:
+class ReportFileCRUD:
     """Cloudflare D1 implementation of ReportFileCRUD"""
     
     def __init__(self):
@@ -324,7 +322,7 @@ class D1ReportFileCRUD:
             created_at=datetime.fromisoformat(row["created_at"]) if row.get("created_at") else datetime.utcnow(),
             updated_at=datetime.fromisoformat(row["updated_at"]) if row.get("updated_at") else datetime.utcnow(),
             deleted_at=datetime.fromisoformat(row["deleted_at"]) if row.get("deleted_at") else None,
-            competition_id=uuid.UUID(row["competition_id"]),
+            competition_id=int(row["competition_id"]),
             team_id=uuid.UUID(row["team_id"]) if row.get("team_id") else None,
             year=row["year"],
             file_path=row["file_path"],
@@ -334,7 +332,7 @@ class D1ReportFileCRUD:
         )
 
 
-class D1ResultFileCRUD:
+class ResultFileCRUD:
     """Cloudflare D1 implementation of ResultFileCRUD"""
     
     def __init__(self):
@@ -424,7 +422,7 @@ class D1ResultFileCRUD:
             created_at=datetime.fromisoformat(row["created_at"]) if row.get("created_at") else datetime.utcnow(),
             updated_at=datetime.fromisoformat(row["updated_at"]) if row.get("updated_at") else datetime.utcnow(),
             deleted_at=datetime.fromisoformat(row["deleted_at"]) if row.get("deleted_at") else None,
-            competition_id=uuid.UUID(row["competition_id"]),
+            competition_id=int(row["competition_id"]),
             year=row["year"],
             stage=row["stage"],
             file_path=row["file_path"]

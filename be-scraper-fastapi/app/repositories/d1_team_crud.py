@@ -11,7 +11,7 @@ class TeamCRUD:
     def __init__(self):
         self.client = d1_client
     
-    def get_team(self, team_id: int) -> Optional[Team]:
+    def get_team(self, team_id: uuid.UUID) -> Optional[Team]:
         """Get a team by ID"""
         sql = "SELECT * FROM teams WHERE id = ?"
         result = self.client.execute(sql, [str(team_id)])
@@ -60,7 +60,7 @@ class TeamCRUD:
         team.id = uuid.UUID(team_id)
         return team
     
-    def update_team(self, team_id: int, team: Team) -> Optional[Team]:
+    def update_team(self, team_id: uuid.UUID, team: Team) -> Optional[Team]:
         """Update an existing team"""
         db_team = self.get_team(team_id)
         if db_team is None:
@@ -93,7 +93,7 @@ class TeamCRUD:
         self.client.execute(sql, params)
         return self.get_team(team_id)
     
-    def delete_team(self, team_id: int) -> Optional[Team]:
+    def delete_team(self, team_id: uuid.UUID) -> Optional[Team]:
         """Delete a team"""
         db_team = self.get_team(team_id)
         if db_team is None:
@@ -310,7 +310,7 @@ class TeamCRUD:
             tap_members=tap_members,
             members_list=members_list,
             leader=uuid.UUID(row["leader"]) if row.get("leader") else None,
-            competition_id=uuid.UUID(row["competition_id"]),
+            competition_id=int(row["competition_id"]),
             years=years,
             status=row.get("status"),
             rank=row.get("rank"),

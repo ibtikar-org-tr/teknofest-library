@@ -7,10 +7,10 @@ from app.models.competition import Report_File
 def get_teams_by_competition_en_name(name: str):
     competition_crud_class = competition_crud.CompetitionCRUD()
     competition_obj = competition_crud_class.get_competition_by_en_name(name)
-    if competition_obj is None:
+    if competition_obj is None or competition_obj.id is None:
         return None
     team_crud_class = team_crud.TeamCRUD()
-    return team_crud_class.get_teams_by_competition_id(competition_obj.id)
+    return team_crud_class.get_teams_by_competition_id(int(competition_obj.id))
 
 def update_or_create_team(
     name,
@@ -38,20 +38,20 @@ def update_or_create_team(
             status: {status}
         """)
     try:
-        team_obj_new: Team = Team()
         team_crud_class = team_crud.TeamCRUD()
         team_obj_from_db = None
 
         competition_obj = competition_crud_services.get_competition_obj_via_any_name(comp_name)
-        if competition_obj:
-            competition_id = competition_obj.id
+        if competition_obj and competition_obj.id is not None:
+            competition_id = int(competition_obj.id)
             # team_obj_from_db = team_crud_class.get_team_by_name_and_year(name=name, year=int(year))
             team_obj_from_db = team_crud_class.get_team_by_competition_id_and_name(competition_id=competition_id, name=name)
         else:
             print(f"ERROR0: Competition not found: {comp_name}")
             return None
 
-        if team_obj_from_db: # update existing team
+        if team_obj_from_db and team_obj_from_db.id is not None: # update existing team
+            team_obj_new: Team = Team(name=name, description=description, competition_id=int(competition_id))
             if members_list:
                 team_obj_new.members_list = members_list
             if description:
@@ -94,7 +94,7 @@ def update_or_create_team(
                 file_path=report_file_path,
                 rank=status
             )
-            report_file_crud_class = team_crud.ReportFileCRUD()
+            report_file_crud_class = competition_crud.ReportFileCRUD()
             report_file_crud_class.create_report_file(report_file)
 
         return team_obj_new

@@ -6,11 +6,11 @@ from datetime import datetime, timezone
 import uuid
 
 class Competition(SQLModel, table=True):
-    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     deleted_at: Optional[datetime] = None
-    image_path: str
+    image_path: Optional[str] = None
     # is_open: bool
     tk_number: Optional[str] = None # used in the Teams page
     t3kys_number: Optional[str] = None # used in the t3kys platform
@@ -36,7 +36,7 @@ class Report_File(SQLModel, table=True):
     created_at: datetime = Field(default=datetime.utcnow)
     updated_at: datetime = Field(default=datetime.utcnow)
     deleted_at: Optional[datetime] = None
-    competition_id: uuid.UUID
+    competition_id: int
     team_id: Optional[uuid.UUID] = None
     year: str
     file_path: str
@@ -49,7 +49,7 @@ class Result_File(SQLModel, table=True):
     created_at: datetime = Field(default=datetime.utcnow)
     updated_at: datetime = Field(default=datetime.utcnow)
     deleted_at: Optional[datetime] = None
-    competition_id: uuid.UUID
+    competition_id: int
     year: str
     stage: str # "final", "pre-assessment"
     file_path: str

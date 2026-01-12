@@ -19,7 +19,7 @@ class Team(SQLModel, table=True):
     tap_members: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column(JSON))
     members_list: Optional[list[str]] = Field(default=None, sa_column=Column(JSON))
     leader: Optional[uuid.UUID] = None
-    competition_id: uuid.UUID
+    competition_id: int
     years: list[str] = Field(default_factory=list, sa_column=Column(ARRAY(JSON)))
     status: Optional[str] = None # "finalist", "derece", "etc"
     rank: Optional[int] = None
