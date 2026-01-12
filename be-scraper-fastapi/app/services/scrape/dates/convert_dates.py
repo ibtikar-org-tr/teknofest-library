@@ -32,11 +32,18 @@ def convert_full_date(text):
     year_1, year_2, month_1, month_2, day_1, day_2, time_1, time_2 = None, None, None, None, None, None, None, None
     start_date, end_date = None, None
 
-    # if all consist of digits and .
-    if (text.replace('.', '')).isdigit():
-        return convert_date(text)
+    # if all consist of digits and . (single date format like 20.02.2026)
+    if (text.replace('.', '').replace(' ', '')).isdigit():
+        single_date = convert_date(text)
+        # Return as both start and end date with default times
+        return single_date, '00:00', single_date, '23:59', None, None
 
+    # Pre-process: Convert time format HH.MM to HH:MM before splitting
+    text = re.sub(r'\b(\d{2})\.(\d{2})\b(?!\.\d{4})', r'\1:\2', text)
+    
     parts = re.split(r'[ -/\.]', text)
+    # Clean empty strings from parts
+    parts = [p.strip() for p in parts if p.strip()]
 
     # loop to look for letters
     for part in parts:
@@ -61,11 +68,19 @@ def convert_full_date(text):
 
     # loop again for times and years
     for part in parts:
-        # times
+        # times (both HH:MM and HH.MM formats)
         if re.match(r'^\d{2}:\d{2}$', part):
             time_2 = part
             if not time_1:
                 time_1 = part
+            print('time_1: ', time_1)
+            print('time_2: ', time_2)
+        elif re.match(r'^\d{2}\.\d{2}$', part):
+            # Convert HH.MM to HH:MM format
+            time_formatted = part.replace('.', ':')
+            time_2 = time_formatted
+            if not time_1:
+                time_1 = time_formatted
             print('time_1: ', time_1)
             print('time_2: ', time_2)
         # years
@@ -82,7 +97,7 @@ def convert_full_date(text):
         # days if month is turkish
         if month_1:
             try:
-                if 0 < int(part) < 32:
+                if 0 < int(part) < 32 and not re.match(r'^\d{2}:\d{2}$', part):
                     day_2 = part
                     if not day_1:
                         day_1 = part
@@ -97,29 +112,68 @@ def convert_full_date(text):
         a_list = []
         for part in parts:
             try:
-                if 0 < int(part) < 32:
+                # Only add small numbers (day/month), not years or times
+                num = int(part)
+                if 0 < num < 32 and ':' not in part:
                     a_list.append(part)
             except:
                 pass
-        variables = [day_1, month_1, day_2, month_2]
-        for i in range(len(variables)):
-            if not variables[i] and i < len(a_list):
-                variables[i] = a_list[i]
-                print(variables[i])
-        day_1, month_1, day_2, month_2 = variables
+        
+        # For formats like "20.02.2026" we have day, month
+        # For formats like "20-21.04.2026" we have day1, day2, month
+        if len(a_list) >= 2:
+            # Check if last number is likely a month (<=12)
+            if len(a_list) >= 2 and int(a_list[-1]) <= 12:
+                # Last one is the month
+                month_1 = month_2 = a_list[-1]
+                
+                if len(a_list) == 2:
+                    # Format: day.month
+                    day_1 = day_2 = a_list[0]
+                elif len(a_list) == 3:
+                    # Format: day1-day2.month
+                    day_1 = a_list[0]
+                    day_2 = a_list[1]
+                elif len(a_list) >= 4:
+                    # Format: day1.month1.day2.month2 or similar
+                    day_1 = a_list[0]
+                    month_1 = a_list[1]
+                    day_2 = a_list[2]
+                    month_2 = a_list[3] if len(a_list) > 3 and int(a_list[3]) <= 12 else month_1
+            else:
+                # No clear month indicator, assume first two are day and month
+                day_1 = a_list[0] if len(a_list) > 0 else None
+                month_1 = a_list[1] if len(a_list) > 1 else None
+                day_2 = day_1
+                month_2 = month_1
 
 
     if not year_1:
         year_1 = year_2 = '2024'
     if not day_1:
         day_1 = day_2 = '01'
+    if not month_1:
+        month_1 = month_2 = '01'
+    if not day_2:
+        day_2 = day_1
+    if not month_2:
+        month_2 = month_1
     if not time_1:
         time_1 = '00:00'
         time_2 = '23:59'
+    
     print(f'{year_1}.{month_1}.{day_1} {time_1} - {year_2}.{month_2}.{day_2} {time_2}')
 
-    start_date = f'{year_1}.{'{:02}'.format(int(month_1))}.{'{:02}'.format(int(day_1))}'
-    end_date = f'{year_2}.{'{:02}'.format(int(month_2))}.{'{:02}'.format(int(day_2))}'
+    # Safely format with leading zeros
+    try:
+        start_date = f'{year_1}.{int(month_1):02d}.{int(day_1):02d}'
+    except (ValueError, TypeError):
+        start_date = f'{year_1}.01.01'
+    
+    try:
+        end_date = f'{year_2}.{int(month_2):02d}.{int(day_2):02d}'
+    except (ValueError, TypeError):
+        end_date = f'{year_2}.01.01'
 
     return start_date, time_1, end_date, time_2, city_str, location_str
 
@@ -164,13 +218,32 @@ def convert_date(date_str):
 
 
 if __name__ == '__main__':
-    text0 = '2-6 Ekim 2024 - Adana - Şakirpaşa Havalimanı'
-    text1 = '2024.05.20'
-    text2 = '30 Haziran- 1 Temmuz 2024'
-    text3 = '08.06.2024 -17:00 / 22.06.2024-18:00'
-    text4 = 'Haziran-Ağustos 2024'
-    text5 = 'Haziran-2023-Ağustos 2024'
-    text6 = '11-15 Eylül 2024 / Tübitak SAGE Yerleşkesi, Ankara'
-    text7 = '8 Haziran - 4 temmuz'
-    convert_full_date(text3)
+    test_cases = [
+        # Original test cases
+        '2-6 Ekim 2024 - Adana - Şakirpaşa Havalimanı',
+        '2024.05.20',
+        '30 Haziran- 1 Temmuz 2024',
+        '08.06.2024 -17:00 / 22.06.2024-18:00',
+        'Haziran-Ağustos 2024',
+        # Problem cases from error log
+        '20.02.2026',  # Single date
+        '25.03.2026 -17:00',  # Single date with time
+        '29.06.2026-17:00',  # Single date with time no space
+        '20-21.04.2026',  # Day range with month
+        '01-04.04.2026',  # Day range with month
+        '30 Eylül-4 Ekim 2026',  # Turkish month range
+        '06.03.2026 – 17.00',  # With dash and decimal time
+        '01.06.2026 – 17.00',  # Another similar case
+    ]
+    
+    print("Testing date conversion:\n")
+    for i, test in enumerate(test_cases, 1):
+        print(f"\n{i}. Input: '{test}'")
+        try:
+            result = convert_full_date(test)
+            print(f"   ✓ Output: start={result[0]} {result[1]}, end={result[2]} {result[3]}, city={result[4]}, location={result[5]}")
+        except Exception as e:
+            print(f"   ✗ ERROR: {e}")
+            import traceback
+            traceback.print_exc()
 
