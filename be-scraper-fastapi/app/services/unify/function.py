@@ -11,9 +11,14 @@ def normalize_text(text):
     except:
         return None
 
-def find_original_sentence(sentence, groups=full_groups, threshold=0.5):
+def find_original_sentence(sentence, groups=full_groups, threshold=None):
     lookup = {}
     all_phrases = []
+    try_any_threshold = False
+    if threshold is None:
+        threshold = 0.5
+        try_any_threshold = True
+
     
     for group in groups:
         original = group[0]  # First element is the original
@@ -24,6 +29,9 @@ def find_original_sentence(sentence, groups=full_groups, threshold=0.5):
 
     normalized_input = normalize_text(sentence)
     
+    if normalized_input is None:
+        return None
+    
     # Try exact match first
     if normalized_input in lookup:
         return lookup[normalized_input]
@@ -33,5 +41,11 @@ def find_original_sentence(sentence, groups=full_groups, threshold=0.5):
     
     if close_matches:
         return lookup[close_matches[0]]  # Return original key
+    elif try_any_threshold:
+        # Try with lower thresholds if no match found
+        for t in [0.4, 0.3, 0.2, 0.1]:
+            close_matches = get_close_matches(normalized_input, all_phrases, n=1, cutoff=t)
+            if close_matches:
+                return lookup[close_matches[0]]
     
     return None  # No match found
