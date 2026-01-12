@@ -11,8 +11,8 @@ async def scrape_competition(
     update_database: bool = Query(False, description="update database"),
     year: str = Query(None, description="year")
 ):
-    scrape.scrape_link(link=link, check_prev_year_reports=check_prev_year_reports, update_downloads=update_downloads, update_database=update_database, year=year)
-    return
+    status_code, result = scrape.scrape_link(link=link, check_prev_year_reports=check_prev_year_reports, update_downloads=update_downloads, update_database=update_database, year=year)
+    return {"status_code": status_code, "result": result}
 
 @router.get("/competition-scrape-all")
 async def scrape_all_competitions(

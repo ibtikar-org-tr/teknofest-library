@@ -3,4 +3,4 @@ from app.routers.repo import competition
 
 router = APIRouter()
 
-router.include_router(competition.router, tags=["competitions"])
+router.include_router(competition.router, tags=["repo/competition"])

@@ -9,17 +9,26 @@ from datetime import datetime
 from app.services.repo_additional import competition_crud_services
 
 def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: bool = False, update_database: bool = False, year=None, session_id=None):
+    # Initialize counters
+    files_downloaded = 0
+    fields_updated = 0
+    status_message = ""
+    updated_comptetition_data = False
+    
     # set session_id if year is specified and session_id is not provided
     if session_id:
         response = requests.get(link, cookies={'sessionid': session_id})
     elif year:
         session_id = get_session_id_for_specific_year(year)
-        response = requests.get(link, cookies={'sessionid': session_id})
+        if session_id:
+            response = requests.get(link, cookies={'sessionid': session_id})
+        else:
+            return 500, {"status": "ERROR", "files_downloaded": 0, "fields_updated": 0, "message": "Failed to get session ID"}
     else:
         response = requests.get(link)
         year = str(datetime.now().year)
     
-    content = response.content
+    content = response.content.decode('utf-8')
     soup = BeautifulSoup(content, 'html.parser')
     tabs_in_the_page = soup.find_all('div', class_="tab-pane tab-pane-navigation")
 
@@ -38,12 +47,15 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                         
                         comp_name_in_link = links_service.get_name_from_link(link)
                         unified_comp_name = find_original_sentence(comp_name_in_link)
+                        if unified_comp_name is None or folder_name is None:
+                            continue
                         folder_path = os.path.join(os.getcwd(), unified_comp_name, "reports", folder_name)
                         os.makedirs(folder_path, exist_ok=True)
                         report_file_path = os.path.join(folder_path, file_name)
                         
                         if update_downloads:
                             download.download_file(report_file_url, report_file_path)
+                            files_downloaded += 1
 
                         if update_database:
                             competition_crud_services.update_or_create_report_file(
@@ -53,6 +65,7 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                                 rank="finalist",
                                 stage="final-report",
                             )
+                            fields_updated += 1
                 else:
                     print("No x-subElement")
         else:
@@ -74,6 +87,15 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
             comp_link=link,
             year=year,
         )
+        updated_comptetition_data = True
+    
+    status_message = "Success" if response.ok else "Failed"
+    return response.status_code, {
+        "status": status_message,
+        "files_downloaded": files_downloaded,
+        "fields_updated": fields_updated,
+        "message": f"{status_message}: Downloaded {files_downloaded} file(s), Updated {fields_updated} field(s){', and updated competition data.' if updated_comptetition_data else '.'}"
+    }
 
 
 def scrape_all_links(lang="tr", check_prev_year_reports: bool = False, update_downloads: bool = False, update_database: bool = False, year=None):
@@ -131,7 +153,6 @@ def get_competition_name(soup):
 def get_session_id_for_specific_year(year):
     try:
         response = requests.get(f"https://teknofest.org/tr/season/{year}")
-        print(response.cookies)
         session_id = response.cookies.get('sessionid')
         return session_id
     except:
