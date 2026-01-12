@@ -40,6 +40,7 @@ def extract_dates_to_list(url):
                 # print(tr)
                 event = tr.find('td', class_='col-5').text.strip()
                 full_date = tr.find('td', class_='col-7').text.strip()
+                print(f"Found event: {event} with date: {full_date}; at {competition_name}")
                 start_date, time_1, end_date, time_2, city_str, location_str = convert_full_date(full_date)
                 if location_str == '-':
                     location_str = None
