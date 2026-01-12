@@ -32,7 +32,7 @@ async def get_competition_links(
     return links_service.get_all_links(lang)
 
 @router.get("/competition-link-names")
-async def get_competition_names(
+async def get_competition_link_names(
     lang: str = Query("tr", description="language")
 ):
     return links_service.get_all_link_names(lang)
