@@ -45,6 +45,7 @@ async def get_competition_names(
 
 @router.get("/find-competition-name")
 async def find_comp_name(
-    name: str = Query(..., description="competition name")
+    name: str = Query(..., description="competition name"),
+    threshold: float = Query(0.5, description="similarity threshold")
 ):
-    return find_original_sentence(sentence=name)
+    return find_original_sentence(sentence=name, threshold=threshold)
