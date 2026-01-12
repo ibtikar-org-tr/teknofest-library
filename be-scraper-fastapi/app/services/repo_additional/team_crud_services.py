@@ -1,5 +1,5 @@
 from app.repositories import d1_team_crud as team_crud
-from app.repositories import competition_crud
+from app.repositories import d1_competition_crud as competition_crud
 from app.services.repo_additional import competition_crud_services
 from app.models.team import Team
 from app.models.competition import Report_File

@@ -1,4 +1,4 @@
-from app.repositories import competition_crud
+from app.repositories import d1_competition_crud as competition_crud
 from app.services.unify.function import find_original_sentence
 from app.models.competition import Competition, Report_File
 
