@@ -21,7 +21,12 @@ def extract_dates_to_list(url):
 
     # Fallback to URL slug if the name is unknown (prevents every entry becoming the same)
     if not competition_name:
-        competition_name = links_service.get_name_from_link(url)
+        turkish_slug = links_service.get_name_from_link(url)
+        # Try to convert Turkish slug to English
+        competition_name = find_original_sentence(turkish_slug, threshold=0.8)
+        # If still no match, use the Turkish slug as last resort
+        if not competition_name:
+            competition_name = turkish_slug
     list0 = []
 
     target_content = None
