@@ -1,0 +1,46 @@
+name: (main) [be-scraper-fastapi] Deploy Scraper Backend Microservice via SSH
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'be-scraper-fastapi/**'
+      - .github/workflows/be-scraper.yml
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Scraper Backend Microservice
+    runs-on: ubuntu-latest
+    environment: main
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            cd teknofest-library
+            git checkout main
+            git pull
+            git pull origin main
+            cd be-scraper-fastapi
+
+            # insert all environment variables into .env file
+            cat > .env << 'ENVEOF'
+          CLOUDFLARE_ACCOUNT_ID=${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_D1_DATABASE_ID=${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ENVEOF
+
+            docker stop teknofest-scraper || true
+            docker rm teknofest-scraper || true
+            docker build -t teknofest-scraper . && docker run -d --name teknofest-scraper --env-file .env -p 9666:9666 -v $(pwd)/downloads:/app/downloads teknofest-scraper
+          EOF
