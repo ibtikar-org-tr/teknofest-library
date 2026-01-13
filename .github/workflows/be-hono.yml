@@ -1,0 +1,46 @@
+name: (main) [be-main-hono] Deploy Main Backend Microservice via SSH
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'be-main-hono/**'
+      - .github/workflows/be-hono.yml
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Main Backend Microservice
+    runs-on: ubuntu-latest
+    environment: main
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: install project dependencies
+        run: |
+          cd be-main-hono
+          npm install
+          npm run cf-typegen
+
+      - name: Update wrangler config with environment variables
+        run: |
+          cd be-main-hono
+          # Update wrangler.jsonc with environment variables using sed
+          sed -i "s|\"database_id\":[[:space:]]*\"[^\"]*\"|\"database_id\": \"${{ vars.CLOUDFLARE_D1_DATABASE_ID }}\"|g" wrangler.jsonc
+
+      - name: Deploy with wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          cd be-main-hono
+          wrangler deploy
