@@ -2,31 +2,25 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "be-main-hono",
   "main": "src/index.ts",
-  "compatibility_date": "2025-12-26"
+  "compatibility_date": "2025-12-26",
+  "vars": {
+    "MY_VAR": "my-variable"
+  },
+  "d1_databases": [
+    {
+      "binding": "D1_DB",
+      "database_name": "teknofest-library",
+      "database_id": ""
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      "bucket_name": "files-main"
+    }
+  ]
   // "compatibility_flags": [
   //   "nodejs_compat"
-  // ],
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
   // ],
   // "ai": {
   //   "binding": "AI"
