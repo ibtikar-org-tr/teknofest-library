@@ -22,21 +22,21 @@ def update_or_create_team(
     report_file_path,
     intro_file_path,
     team_link,
-    status
+    stage
 ):
-    print(f"""
-          received team info:
-            name: {name}
-            members_list: {members_list}
-            description: {description}
-            institution_name: {institution_name}
-            comp_name: {comp_name}
-            year: {year}
-            report_file_path: {report_file_path}
-            intro_file_path: {intro_file_path}
-            team_link: {team_link}
-            status: {status}
-        """)
+    # print(f"""
+    #       received team info:
+    #         name: {name}
+    #         members_list: {members_list}
+    #         description: ~ {len(description)} ...
+    #         institution_name: {institution_name}
+    #         comp_name: {comp_name}
+    #         year: {year}
+    #         report_file_path: {report_file_path}
+    #         intro_file_path: {intro_file_path}
+    #         team_link: {team_link}
+    #         stage: {stage}
+    #     """)
     try:
         team_crud_class = team_crud.TeamCRUD()
         team_obj_from_db = None
@@ -58,7 +58,7 @@ def update_or_create_team(
                 team_obj_new.description = description
             if institution_name:
                 team_obj_new.institution_name = institution_name
-            if status:
+            if competition_id:
                 team_obj_new.competition_id = competition_id
             if year:
                 team_obj_new.years.append(year)
@@ -66,8 +66,8 @@ def update_or_create_team(
                 team_obj_new.intro_file_path = intro_file_path
             if team_link:
                 team_obj_new.team_link = team_link
-            if status:
-                team_obj_new.status = status
+            if stage:
+                team_obj_new.stage = stage
 
             team_crud_class.update_team(team_obj_from_db.id, team_obj_new)
             team_obj_new.id = team_obj_from_db.id # to use in report_file creation
@@ -82,7 +82,7 @@ def update_or_create_team(
                 years=[year],
                 intro_file_path=intro_file_path,
                 team_link=team_link,
-                status=status
+                stage=stage
             )
             team_crud_class.create_team(team_obj_new)
 
@@ -92,7 +92,7 @@ def update_or_create_team(
                 team_id=team_obj_new.id,
                 year=year,
                 file_path=report_file_path,
-                rank=status
+                rank=stage
             )
             report_file_crud_class = competition_crud.ReportFileCRUD()
             report_file_crud_class.create_report_file(report_file)

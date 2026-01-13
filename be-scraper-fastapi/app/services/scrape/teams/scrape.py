@@ -120,7 +120,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                             report_file_path=report_storage_path,
                             intro_file_path=intro_storage_path,
                             team_link=team_link,
-                            status="finalist"
+                            stage="finalist"
                             )
                         stats["database_updates"] += 1
                     
