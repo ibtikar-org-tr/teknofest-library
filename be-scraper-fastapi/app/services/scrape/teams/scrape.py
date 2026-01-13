@@ -58,27 +58,24 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     full_report_file_path = None
                     full_intro_file_path = None
 
-                    # download report file if exists
-                    try:
-                        report_link_raw = tr.find_all('td')[2].find('a')['href']
-                        report_link = urljoin("https://teknofest.org", report_link_raw)
-                        base_file_name = unquote(os.path.basename(urlparse(report_link).path))
-                        prefixed_file_name = f"{team_name}_{base_file_name}"
-                        # Ensure file has an extension, add .html if missing
-                        if not os.path.splitext(prefixed_file_name)[1]:
-                            prefixed_file_name += ".html"
-                        full_report_file_path = os.path.join(folder_path, prefixed_file_name)
-                        if update_downloads:
-                            download.download_file(report_link, full_report_file_path)
-                            stats["reports_downloaded"] += 1
-                    except:
-                        print(f"report failed for {team_name}")
-                        stats["errors"] += 1
+                    # # download report file if exists
+                    # try:
+                    #     report_link_raw = tr.find_all('td')[2].find('a')['href']
+                    #     report_link = urljoin("https://teknofest.org", report_link_raw)
+                    #     base_file_name = unquote(os.path.basename(urlparse(report_link).path))
+                    #     prefixed_file_name = f"{team_name}_{base_file_name}"
+                    #     full_report_file_path = os.path.join(folder_path, prefixed_file_name)
+                    #     if update_downloads:
+                    #         download.download_file(report_link, full_report_file_path)
+                    #         stats["reports_downloaded"] += 1
+                    # except:
+                    #     print(f"report failed for {team_name}")
+                    #     stats["errors"] += 1
 
-                    # download team intro pahe as html file
+                    # download team intro page as html file
                     team_link = None
                     try:
-                        team_link_relative = tr.find_all('td')[3].find('a')['href']
+                        team_link_relative = tr.find_all('td')[2].find('a')['href']
                         team_link = urljoin("https://teknofest.org", team_link_relative)
                         full_intro_file_path = os.path.join(folder_path, f"{team_name}_intro.html")
                         if update_downloads:
