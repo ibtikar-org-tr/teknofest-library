@@ -20,17 +20,16 @@ A small watcher that uploads new/modified files from a local folder to Cloudflar
 ## Docker
 Build:
 ```
-docker build -t filesync ./filesync
+docker build -t teknofest-filesync .
 ```
-Run (example):
+
+Run (with volume mount to scraper downloads):
 ```
-docker run --rm \
-  -e FILESYNC_LOCAL_PATH=/host/downloads \
-  -e FILESYNC_R2_BUCKET=your-bucket \
-  -e CLOUDFLARE_ACCOUNT_ID=... \
-  -e FILESYNC_R2_ACCESS_KEY_ID=... \
-  -e FILESYNC_R2_SECRET_ACCESS_KEY=... \
-  -v /absolute/path/to/be-scraper-fastapi/downloads:/host/downloads \
-  filesync
+docker run -d --name teknofest-filesync --env-file .env -v $(pwd)/../be-scraper-fastapi/downloads:/be-scraper-fastapi/downloads teknofest-filesync python sync_r2.py
 ```
 Add `--skip-initial` or `--initial-only` to the container command if desired.
+
+Run with initial upload skipped:
+```
+docker run -d --name teknofest-filesync --env-file .env -v $(pwd)/../be-scraper-fastapi/downloads:/be-scraper-fastapi/downloads teknofest-filesync python sync_r2.py --skip-initial
+```
