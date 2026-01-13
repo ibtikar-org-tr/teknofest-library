@@ -258,21 +258,216 @@ def merge_competition_data(idx: int, tr_data: dict, en_data: dict):
     return competition
 
 
-def bulk_create_update_competitions_multilingual():
+def get_session_id_for_specific_year(year):
+    """Get session cookie for specific year from teknofest.org"""
+    try:
+        response = requests.get(f"https://teknofest.org/tr/season/{year}")
+        session_id = response.cookies.get('sessionid')
+        return session_id
+    except:
+        return None
+
+
+def bulk_create_update_competitions_from_remote(year: str = None):
     """
-    Create or update all competitions in the database with multilingual data.
+    Create or update competitions by scraping links from remote website.
+    Only processes TR and EN versions (AR not available on remote).
     
-    Uses predefined competition lists (from lists.py) which contain properly matched
-    Turkish, English, and Arabic competition names and links.
-    
-    For each competition:
-    - Gets TR/EN/AR names and links from predefined lists
-    - Scrapes description and image data from the actual competition pages
-    - Merges all data into unified Competition records
-    - Updates existing competitions (by link or fuzzy name match) or creates new ones
+    Args:
+        year: Competition year to scrape. If None, uses current year.
     
     Returns a summary of the operation.
     """
+    from datetime import datetime
+    
+    competition_crud_class = competition_crud.CompetitionCRUD()
+    
+    # Set up year and session
+    if year is None:
+        year = str(datetime.now().year)
+    
+    # Get session cookie for specific year
+    session_id = get_session_id_for_specific_year(year)
+    session_cookies = {'sessionid': session_id} if session_id else None
+    
+    print(f"\n{'='*60}")
+    print(f"Scraping competitions from remote website for year {year}")
+    print(f"Session ID: {session_id or 'None (using default)'}")
+    print(f"{'='*60}\n")
+    
+    try:
+        # Get links for TR and EN languages from remote website
+        print("Fetching Turkish competition links from remote...")
+        tr_links = links_service.get_all_links(lang="tr")
+        print(f"Found {len(tr_links)} Turkish competition links")
+        
+        print("Fetching English competition links from remote...")
+        en_links = links_service.get_all_links(lang="en")
+        print(f"Found {len(en_links)} English competition links")
+        
+    except Exception as e:
+        print(f"Error fetching competition data: {str(e)}")
+        return {
+            'created': 0,
+            'updated': 0,
+            'failed': 1,
+            'details': [{'error': f'Failed to fetch competition data: {str(e)}'}]
+        }
+    
+    # Match TR and EN competitions by position
+    max_competitions = max(len(tr_links), len(en_links))
+    
+    results = {
+        'created': 0,
+        'updated': 0,
+        'failed': 0,
+        'details': []
+    }
+    
+    for idx in range(max_competitions):
+        try:
+            # Get links for this position
+            tr_link = tr_links[idx] if idx < len(tr_links) else None
+            en_link = en_links[idx] if idx < len(en_links) else None
+            
+            # Generate identifier from links
+            identifier = en_link or tr_link or f"competition_{idx}"
+            
+            print(f"\n({idx+1}/{max_competitions}): {identifier}")
+            
+            # Scrape data from each language version (with session cookie if available)
+            if tr_link:
+                response = requests.get(tr_link, cookies=session_cookies, timeout=10) if session_cookies else requests.get(tr_link, timeout=10)
+                tr_soup = BeautifulSoup(response.content, 'html.parser')
+                tr_data = {
+                    'name': get_competition_name(tr_soup),
+                    'description': get_competition_description(tr_soup),
+                    'image_link': get_competition_image_link(tr_soup),
+                    'application_link': get_competition_application_link(tr_soup),
+                    'link': tr_link
+                }
+            else:
+                tr_data = {}
+            
+            if en_link:
+                response = requests.get(en_link, cookies=session_cookies, timeout=10) if session_cookies else requests.get(en_link, timeout=10)
+                en_soup = BeautifulSoup(response.content, 'html.parser')
+                en_data = {
+                    'name': get_competition_name(en_soup),
+                    'description': get_competition_description(en_soup),
+                    'image_link': get_competition_image_link(en_soup),
+                    'application_link': get_competition_application_link(en_soup),
+                    'link': en_link
+                }
+            else:
+                en_data = {}
+            
+            # Create competition object
+            competition = Competition()
+            
+            # Set names from scraped data
+            if tr_data.get('name'):
+                competition.tr_name = tr_data['name']
+            if en_data.get('name'):
+                competition.en_name = en_data['name']
+            
+            # Set links
+            if tr_link:
+                competition.tr_link = tr_link
+            if en_link:
+                competition.en_link = en_link
+            
+            # Set descriptions
+            if tr_data.get('description'):
+                competition.tr_description = tr_data['description']
+            if en_data.get('description'):
+                competition.en_description = en_data['description']
+            
+            # Set application links
+            if tr_data.get('application_link'):
+                competition.application_link_tr = tr_data['application_link']
+            if en_data.get('application_link'):
+                competition.application_link_en = en_data['application_link']
+            
+            # Set image
+            if en_data.get('image_link'):
+                competition.image_path = en_data['image_link']
+            elif tr_data.get('image_link'):
+                competition.image_path = tr_data['image_link']
+            
+            # Check if competition already exists
+            existing_competition = find_competition_in_db(
+                tr_name=competition.tr_name,
+                en_name=competition.en_name,
+                tr_link=tr_link,
+                en_link=en_link
+            )
+            
+            # Create or update
+            if existing_competition:
+                print(f"  Found existing competition (ID: {existing_competition.id})")
+                # Merge with existing data
+                for field in ['tr_name', 'tr_description', 'tr_link', 'en_name', 'en_description', 'en_link',
+                              'image_path', 'application_link_tr', 'application_link_en']:
+                    new_value = getattr(competition, field)
+                    if new_value:
+                        setattr(existing_competition, field, new_value)
+                
+                competition_crud_class.update_competition(existing_competition.id, existing_competition)
+                results['updated'] += 1
+                results['details'].append({
+                    'index': idx,
+                    'identifier': identifier,
+                    'action': 'updated',
+                    'competition_id': existing_competition.id,
+                    'en_name': existing_competition.en_name,
+                    'tr_name': existing_competition.tr_name
+                })
+                print(f"  ✓ Updated")
+            else:
+                print(f"  Creating new competition")
+                competition_crud_class.create_competition(competition)
+                results['created'] += 1
+                results['details'].append({
+                    'index': idx,
+                    'identifier': identifier,
+                    'action': 'created',
+                    'en_name': competition.en_name,
+                    'tr_name': competition.tr_name
+                })
+                print(f"  ✓ Created")
+                
+        except Exception as e:
+            results['failed'] += 1
+            results['details'].append({
+                'index': idx,
+                'identifier': f"competition_{idx}",
+                'action': 'failed',
+                'error': str(e)
+            })
+            print(f"  ✗ Error: {str(e)}")
+    
+    print(f"\n{'='*60}")
+    print(f"Completed! Created: {results['created']}, Updated: {results['updated']}, Failed: {results['failed']}")
+    print(f"{'='*60}\n")
+    
+    return results
+
+
+def bulk_create_update_competitions_multilingual(source: str = "lists", year: str = None):
+    """
+    Create or update all competitions in the database with multilingual data.
+    
+    Args:
+        source: 'lists' for local CSV or 'remote' for website scraping
+        year: Competition year (only used for 'remote' source)
+    
+    Returns a summary of the operation.
+    """
+    if source == "remote":
+        return bulk_create_update_competitions_from_remote(year=year)
+    
+    # Default: use local lists
     competition_crud_class = competition_crud.CompetitionCRUD()
     
     # Use predefined lists which are already matched by index

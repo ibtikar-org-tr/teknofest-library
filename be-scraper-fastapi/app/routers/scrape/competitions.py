@@ -53,22 +53,33 @@ async def find_comp_name(
 
 @router.post("/bulk-create-update-competitions")
 async def bulk_create_update_competitions(
+    source: str = Query("lists", description="Data source: 'lists' for local CSV file or 'remote' for website scraping"),
+    year: str = Query(None, description="Year to scrape data from (only for remote source)")
 ):
     """
     Create or update all competitions in the database with multilingual data.
     
-    This endpoint uses predefined competition lists (Turkish, English, Arabic names and links)
-    which are already properly matched by position, combined with scraped descriptions and images.
+    Two modes available:
+    1. 'lists' (default): Uses predefined competition lists from CSV file
+       - Gets TR/EN/AR names and links from lists.csv
+       - Scrapes descriptions, images, and application links from pages
+       - All 54 competitions with complete multilingual data
     
-    For each competition (54 total):
-    1. Gets TR/EN/AR names and links from predefined lists
-    2. Scrapes descriptions and images from actual competition pages
-    3. Merges all multilingual data into unified Competition records
-    4. Creates new or updates existing competitions in database
+    2. 'remote': Dynamically fetches from website
+       - Scrapes competition links from teknofest.org
+       - Only processes TR and EN versions (AR not available on remote)
+       - Optionally specify year for historical data
+    
+    Parameters:
+    - source: 'lists' or 'remote' (default: 'lists')
+    - year: Competition year for remote scraping (optional, defaults to current year)
     
     Returns a summary including number of competitions created, updated, and failed.
     """
-    results = bulk_competition_service.bulk_create_update_competitions_multilingual()
+    results = bulk_competition_service.bulk_create_update_competitions_multilingual(
+        source=source,
+        year=year
+    )
     return {
         "status": "success",
         "summary": {
