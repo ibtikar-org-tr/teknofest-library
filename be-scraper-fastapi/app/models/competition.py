@@ -32,9 +32,9 @@ class Competition(SQLModel, table=True):
     # comments: list[uuid.UUID]
 
 class Report_File(SQLModel, table=True):
-    id: Optional[uuid.UUID] = Field(default=uuid.uuid4, primary_key=True)
-    created_at: datetime = Field(default=datetime.utcnow)
-    updated_at: datetime = Field(default=datetime.utcnow)
+    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = None
     competition_id: int
     team_id: Optional[uuid.UUID] = None
@@ -45,9 +45,9 @@ class Report_File(SQLModel, table=True):
     language: Optional[str] = None  # "tr", "en", "ar"
 
 class Result_File(SQLModel, table=True):
-    id: Optional[uuid.UUID] = Field(default=uuid.uuid4, primary_key=True)
-    created_at: datetime = Field(default=datetime.utcnow)
-    updated_at: datetime = Field(default=datetime.utcnow)
+    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = None
     competition_id: int
     year: str
