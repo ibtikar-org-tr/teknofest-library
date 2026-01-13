@@ -158,8 +158,9 @@ class TeamCRUD:
     
     def get_teams_by_year(self, year: str) -> List[Team]:
         """Get teams by year"""
-        sql = "SELECT * FROM teams WHERE years LIKE ?"
-        result = self.client.execute(sql, [f'%{year}%'])
+        # Use INSTR to avoid GLOB pattern issues with JSON array searching
+        sql = "SELECT * FROM teams WHERE INSTR(years, ?) > 0"
+        result = self.client.execute(sql, [year])
         
         teams = []
         if result.get("results"):
@@ -213,8 +214,9 @@ class TeamCRUD:
     
     def get_teams_by_competition_id_and_year(self, competition_id: int, year: str) -> List[Team]:
         """Get teams by competition ID and year"""
-        sql = "SELECT * FROM teams WHERE competition_id = ? AND years LIKE ?"
-        result = self.client.execute(sql, [str(competition_id), f'%{year}%'])
+        # Use INSTR to avoid GLOB pattern issues with JSON array searching
+        sql = "SELECT * FROM teams WHERE competition_id = ? AND INSTR(years, ?) > 0"
+        result = self.client.execute(sql, [str(competition_id), year])
         
         teams = []
         if result.get("results"):
@@ -259,8 +261,9 @@ class TeamCRUD:
     
     def get_team_by_name_and_year(self, name: str, year: str) -> Optional[Team]:
         """Get team by name and year"""
-        sql = "SELECT * FROM teams WHERE name = ? AND years LIKE ? LIMIT 1"
-        result = self.client.execute(sql, [name, f'%{year}%'])
+        # Use INSTR to avoid GLOB pattern issues with JSON array searching
+        sql = "SELECT * FROM teams WHERE name = ? AND INSTR(years, ?) > 0 LIMIT 1"
+        result = self.client.execute(sql, [name, year])
         
         if result.get("results") and len(result["results"]) > 0:
             team = self._row_to_team(result["results"][0])

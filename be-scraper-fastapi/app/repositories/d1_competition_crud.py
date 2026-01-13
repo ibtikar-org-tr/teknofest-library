@@ -33,8 +33,9 @@ class CompetitionCRUD:
     
     def get_all_competitions(self, year: str) -> List[Competition]:
         """Get all competitions for a specific year"""
-        sql = "SELECT * FROM competitions WHERE years LIKE ?"
-        result = self.client.execute(sql, [f'%{year}%'])
+        # Use INSTR to avoid GLOB pattern issues with JSON array searching
+        sql = "SELECT * FROM competitions WHERE INSTR(years, ?) > 0"
+        result = self.client.execute(sql, [year])
         
         competitions = []
         if result.get("results"):
@@ -117,8 +118,16 @@ class CompetitionCRUD:
     
     def get_competition_by_tr_name(self, name: str) -> Optional[Competition]:
         """Get competition by Turkish name"""
-        sql = "SELECT * FROM competitions WHERE tr_name LIKE ? LIMIT 1"
-        result = self.client.execute(sql, [f'%{name}%'])
+        # Try exact match first
+        sql = "SELECT * FROM competitions WHERE tr_name = ? LIMIT 1"
+        result = self.client.execute(sql, [name])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_competition(result["results"][0])
+        
+        # If exact match fails, try with INSTR for partial matching (avoids GLOB issues)
+        sql = "SELECT * FROM competitions WHERE INSTR(LOWER(tr_name), LOWER(?)) > 0 LIMIT 1"
+        result = self.client.execute(sql, [name])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
@@ -126,8 +135,16 @@ class CompetitionCRUD:
     
     def get_competition_by_en_name(self, name: str) -> Optional[Competition]:
         """Get competition by English name"""
-        sql = "SELECT * FROM competitions WHERE en_name LIKE ? LIMIT 1"
-        result = self.client.execute(sql, [f'%{name}%'])
+        # Try exact match first
+        sql = "SELECT * FROM competitions WHERE en_name = ? LIMIT 1"
+        result = self.client.execute(sql, [name])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_competition(result["results"][0])
+        
+        # If exact match fails, try with INSTR for partial matching (avoids GLOB issues)
+        sql = "SELECT * FROM competitions WHERE INSTR(LOWER(en_name), LOWER(?)) > 0 LIMIT 1"
+        result = self.client.execute(sql, [name])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
@@ -135,8 +152,16 @@ class CompetitionCRUD:
     
     def get_competition_by_ar_name(self, name: str) -> Optional[Competition]:
         """Get competition by Arabic name"""
-        sql = "SELECT * FROM competitions WHERE ar_name LIKE ? LIMIT 1"
-        result = self.client.execute(sql, [f'%{name}%'])
+        # Try exact match first
+        sql = "SELECT * FROM competitions WHERE ar_name = ? LIMIT 1"
+        result = self.client.execute(sql, [name])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_competition(result["results"][0])
+        
+        # If exact match fails, try with INSTR for partial matching (avoids GLOB issues)
+        sql = "SELECT * FROM competitions WHERE INSTR(LOWER(ar_name), LOWER(?)) > 0 LIMIT 1"
+        result = self.client.execute(sql, [name])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
@@ -166,8 +191,16 @@ class CompetitionCRUD:
     
     def get_competition_by_tr_link(self, tr_link: str) -> Optional[Competition]:
         """Get competition by Turkish link"""
-        sql = "SELECT * FROM competitions WHERE tr_link LIKE ? LIMIT 1"
-        result = self.client.execute(sql, [f'%{tr_link}%'])
+        # Try exact match first
+        sql = "SELECT * FROM competitions WHERE tr_link = ? LIMIT 1"
+        result = self.client.execute(sql, [tr_link])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_competition(result["results"][0])
+        
+        # If exact match fails, try with INSTR for partial matching (avoids GLOB issues)
+        sql = "SELECT * FROM competitions WHERE INSTR(tr_link, ?) > 0 LIMIT 1"
+        result = self.client.execute(sql, [tr_link])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
@@ -175,8 +208,16 @@ class CompetitionCRUD:
     
     def get_competition_by_en_link(self, en_link: str) -> Optional[Competition]:
         """Get competition by English link"""
-        sql = "SELECT * FROM competitions WHERE en_link LIKE ? LIMIT 1"
-        result = self.client.execute(sql, [f'%{en_link}%'])
+        # Try exact match first
+        sql = "SELECT * FROM competitions WHERE en_link = ? LIMIT 1"
+        result = self.client.execute(sql, [en_link])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_competition(result["results"][0])
+        
+        # If exact match fails, try with INSTR for partial matching (avoids GLOB issues)
+        sql = "SELECT * FROM competitions WHERE INSTR(en_link, ?) > 0 LIMIT 1"
+        result = self.client.execute(sql, [en_link])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
@@ -184,8 +225,16 @@ class CompetitionCRUD:
     
     def get_competition_by_ar_link(self, ar_link: str) -> Optional[Competition]:
         """Get competition by Arabic link"""
-        sql = "SELECT * FROM competitions WHERE ar_link LIKE ? LIMIT 1"
-        result = self.client.execute(sql, [f'%{ar_link}%'])
+        # Try exact match first
+        sql = "SELECT * FROM competitions WHERE ar_link = ? LIMIT 1"
+        result = self.client.execute(sql, [ar_link])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_competition(result["results"][0])
+        
+        # If exact match fails, try with INSTR for partial matching (avoids GLOB issues)
+        sql = "SELECT * FROM competitions WHERE INSTR(ar_link, ?) > 0 LIMIT 1"
+        result = self.client.execute(sql, [ar_link])
         
         if result.get("results") and len(result["results"]) > 0:
             return self._row_to_competition(result["results"][0])
