@@ -108,8 +108,8 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
 
                     if update_database and team_link:
                         team_name, team_members_list, team_info, institution_name = scrape_team_page(team_link)
-                        report_storage_path = build_bucket_link(full_report_file_path)
-                        intro_storage_path = build_bucket_link(full_intro_file_path)
+                        report_storage_path = build_bucket_link(full_report_file_path) if full_report_file_path else None
+                        intro_storage_path = build_bucket_link(full_intro_file_path) if full_intro_file_path else None
                         team_crud_services.update_or_create_team(
                             name=team_name,
                             members_list=team_members_list,
