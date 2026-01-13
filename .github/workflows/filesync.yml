@@ -1,0 +1,49 @@
+name: (main) [filesync] Deploy File Sync Microservice via SSH
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'filesync/**'
+      - .github/workflows/filesync.yml
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy File Sync Microservice
+    runs-on: ubuntu-latest
+    environment: main
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            cd teknofest-library
+            git checkout main
+            git pull
+            git pull origin main
+            cd filesync
+
+            # insert all environment variables into .env file
+            cat > .env << 'ENVEOF'
+          FILESYNC_LOCAL_PATH=../be-scraper-fastapi/downloads
+          FILESYNC_R2_BUCKET=${{ vars.FILESYNC_R2_BUCKET }}
+          FILESYNC_R2_PREFIX=teknofest-library
+          CLOUDFLARE_ACCOUNT_ID=${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          FILESYNC_R2_ACCESS_KEY_ID=${{ vars.FILESYNC_R2_ACCESS_KEY_ID }}
+          FILESYNC_R2_SECRET_ACCESS_KEY=${{ secrets.FILESYNC_R2_SECRET_ACCESS_KEY }}
+          ENVEOF
+
+            docker stop teknofest-filesync || true
+            docker rm teknofest-filesync || true
+            docker build -t teknofest-filesync . && docker run -d --name teknofest-filesync --env-file .env -v $(pwd)/../be-scraper-fastapi/downloads:/be-scraper-fastapi/downloads teknofest-filesync
+          EOF
