@@ -21,7 +21,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
         else:
             year = str(datetime.now().year)
         
-        link = f"https://teknofest.org/tr/competitions/competition_report/?search=&page={page}"
+        link = f"https://teknofest.org/tr/yarismalar/competition_report/?page={page}"
         
         # Make request with session_id if available
         if session_id:
