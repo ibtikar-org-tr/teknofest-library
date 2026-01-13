@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import logging
 import os
 import sys
@@ -7,6 +8,7 @@ from pathlib import Path
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -61,8 +63,40 @@ def object_key(settings: Settings, path: Path) -> str:
     return f"{settings.prefix}/{relative}" if settings.prefix else relative
 
 
+def local_md5(path: Path) -> str:
+    digest = hashlib.md5()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def object_needs_upload(client, settings: Settings, path: Path) -> bool:
+    key = object_key(settings, path)
+    try:
+        head = client.head_object(Bucket=settings.bucket, Key=key)
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code", "")
+        if code in {"404", "NoSuchKey", "NotFound"}:
+            return True
+        logging.error("Head request failed for %s: %s", key, exc)
+        return True  # upload on uncertainty
+
+    remote_size = head.get("ContentLength")
+    local_size = path.stat().st_size
+    if remote_size != local_size:
+        return True
+
+    remote_etag = str(head.get("ETag", "")).strip('"')
+    local_etag = local_md5(path)
+    return remote_etag != local_etag
+
+
 def upload_file(client, settings: Settings, path: Path) -> None:
     key = object_key(settings, path)
+    if not object_needs_upload(client, settings, path):
+        logging.info("No change, skip %s", key)
+        return
     try:
         client.upload_file(str(path), settings.bucket, key)
         logging.info("Uploaded %s -> r2://%s/%s", path, settings.bucket, key)
