@@ -9,6 +9,14 @@ from app.services.scrape.competitions.scrape import get_session_id_for_specific_
 from datetime import datetime
 
 def scrape_page(page, update_downloads: bool = False, update_database: bool = False, year=None, session_id=None):
+    stats = {
+        "teams_retrieved": 0,
+        "reports_downloaded": 0,
+        "intros_downloaded": 0,
+        "database_updates": 0,
+        "errors": 0
+    }
+    
     try:
         # set session_id if year is specified and session_id is not provided
         if session_id:
@@ -17,7 +25,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
             session_id = get_session_id_for_specific_year(year)
             if not session_id:
                 print(f"Failed to get session ID for year {year}")
-                return
+                return stats
         else:
             year = str(datetime.now().year)
         
@@ -41,6 +49,8 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     comp_name = find_original_sentence(comp_name)
                     team_name = tr.find_all('td')[0].find('a').text.strip()
                     year = tr.find_all('td')[1].text.strip()
+                    
+                    stats["teams_retrieved"] += 1
 
                     folder_path = os.path.join(os.getcwd(), "competitions", str(comp_name), "teams", str(year))
                     os.makedirs(folder_path, exist_ok=True)
@@ -60,8 +70,10 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                         full_report_file_path = os.path.join(folder_path, prefixed_file_name)
                         if update_downloads:
                             download.download_file(report_link, full_report_file_path)
+                            stats["reports_downloaded"] += 1
                     except:
                         print(f"report failed for {team_name}")
+                        stats["errors"] += 1
 
                     # download team intro pahe as html file
                     team_link = None
@@ -71,8 +83,10 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                         full_intro_file_path = os.path.join(folder_path, f"{team_name}_intro.html")
                         if update_downloads:
                             download.download_file(team_link, full_intro_file_path)
+                            stats["intros_downloaded"] += 1
                     except:
                         print(f"team file failed for {team_name}")
+                        stats["errors"] += 1
 
                     if update_database and team_link:
                         team_name, team_members_list, team_info, institution_name = scrape_team_page(team_link)
@@ -88,15 +102,19 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                             team_link=team_link,
                             status="finalist"
                             )
-                        pass
+                        stats["database_updates"] += 1
                     
                 except (AttributeError, IndexError, KeyError) as e:
                     print(f"Skipping a row due to missing data: {e}")
+                    stats["errors"] += 1
                     continue
         else:
             print("The specified element was not found.")
     except requests.exceptions.RequestException as e:
         print(f"Error while fetching the page: {e}")
+        stats["errors"] += 1
+    
+    return stats
 
 def scrape_team_page(team_link):
     try:
