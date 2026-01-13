@@ -1,6 +1,7 @@
 from app.services.scrape.announcements.links_service import api_parse_page
 from app.services.scrape.announcements.page_service import parsing_announcement_page
-from app.services.scrape.announcements.file_service import download_the_files, sanitize_filename
+from app.services.scrape.announcements.file_service import download_the_files
+from app.services.filename_utils import sanitize_filename
 import os 
 
 # list all links
@@ -23,7 +24,6 @@ def main(year=2025, firstpage: int = 1, lastpage: int = 3, lang="tr"):
             # DOWNLOAD_FOLDER = str(str(year) + '/' + date + "_" + sanitize_filename(title))
 
             safe_folder_name = sanitize_filename(date + "_" + title)
-            safe_folder_name = safe_folder_name.replace(" ", "_")
             safe_folder_name = safe_folder_name.replace(".", "")
             # (also limit length to avoid overshoot for the path)
             safe_folder_name = safe_folder_name[:80]  # arbitrary cut

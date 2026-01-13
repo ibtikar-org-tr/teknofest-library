@@ -3,11 +3,13 @@ import requests # type: ignore
 import urllib.parse
 from PyPDF2 import PdfReader # type: ignore
 import re
+from app.services.filename_utils import sanitize_filename as sanitize_filename_util
 
 FILE_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.zip', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.ppt', '.pptx']
 
 def sanitize_filename(filename):
-    return re.sub(r'[<>:"/\\|?*]', '', filename)
+    """Legacy wrapper - use sanitize_filename_util for new code."""
+    return sanitize_filename_util(filename)
 
 def download_file(url, DOWNLOAD_FOLDER):
     if any(url.endswith(ext) for ext in FILE_EXTENSIONS):

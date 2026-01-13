@@ -6,6 +6,7 @@ from app.services import download
 from app.services.unify.function import find_original_sentence
 from app.services.repo_additional import team_crud_services
 from app.services.scrape.competitions.scrape import get_session_id_for_specific_year
+from app.services.filename_utils import sanitize_filename
 from datetime import datetime
 
 def scrape_page(page, update_downloads: bool = False, update_database: bool = False, year=None, session_id=None):
@@ -50,9 +51,13 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     team_name = tr.find_all('td')[0].find('a').text.strip()
                     year = tr.find_all('td')[1].text.strip()
                     
+                    # Sanitize names for file paths
+                    safe_comp_name = sanitize_filename(str(comp_name))
+                    safe_team_name = sanitize_filename(team_name)
+                    
                     stats["teams_retrieved"] += 1
 
-                    folder_path = os.path.join(os.getcwd(), "competitions", str(comp_name), "teams", str(year))
+                    folder_path = os.path.join(os.getcwd(), "competitions", safe_comp_name, "teams", str(year))
                     os.makedirs(folder_path, exist_ok=True)
 
                     full_report_file_path = None
@@ -77,7 +82,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     try:
                         team_link_relative = tr.find_all('td')[2].find('a')['href']
                         team_link = urljoin("https://teknofest.org", team_link_relative)
-                        full_intro_file_path = os.path.join(folder_path, f"{team_name}_intro.html")
+                        full_intro_file_path = os.path.join(folder_path, f"{safe_team_name}_intro.html")
                         if update_downloads:
                             download.download_file(team_link, full_intro_file_path)
                             stats["intros_downloaded"] += 1

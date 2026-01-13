@@ -5,6 +5,7 @@ import os
 from app.services import download
 from app.services.scrape.competitions import links_service
 from app.services.unify.function import find_original_sentence
+from app.services.filename_utils import sanitize_filename
 from datetime import datetime
 from app.services.repo_additional import competition_crud_services
 
@@ -49,9 +50,15 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                         unified_comp_name = find_original_sentence(comp_name_in_link)
                         if unified_comp_name is None or folder_name is None:
                             continue
-                        folder_path = os.path.join(os.getcwd(), "competitions", unified_comp_name, "reports", folder_name)
+                        
+                        # Sanitize folder and file names
+                        safe_comp_name = sanitize_filename(unified_comp_name)
+                        safe_folder_name = sanitize_filename(folder_name)
+                        safe_file_name = sanitize_filename(file_name)
+                        
+                        folder_path = os.path.join(os.getcwd(), "competitions", safe_comp_name, "reports", safe_folder_name)
                         os.makedirs(folder_path, exist_ok=True)
-                        report_file_path = os.path.join(folder_path, file_name)
+                        report_file_path = os.path.join(folder_path, safe_file_name)
                         
                         if update_downloads:
                             download.download_file(report_file_url, report_file_path)
