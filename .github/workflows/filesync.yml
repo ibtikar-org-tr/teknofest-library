@@ -45,5 +45,5 @@ jobs:
 
             docker stop teknofest-filesync || true
             docker rm teknofest-filesync || true
-            docker build -t teknofest-filesync . && docker run -d --name teknofest-filesync --env-file .env -v $(pwd)/../be-scraper-fastapi/downloads:/be-scraper-fastapi/downloads teknofest-filesync
+            docker build -t teknofest-filesync . && docker run -d --name teknofest-filesync --env-file .env -v \$(pwd)/../be-scraper-fastapi/downloads:/be-scraper-fastapi/downloads teknofest-filesync
           EOF

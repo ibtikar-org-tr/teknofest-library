@@ -42,5 +42,5 @@ jobs:
 
             docker stop teknofest-scraper || true
             docker rm teknofest-scraper || true
-            docker build -t teknofest-scraper . && docker run -d --name teknofest-scraper --env-file .env -p 9666:9666 -v $(pwd)/downloads:/app/downloads teknofest-scraper
+            docker build -t teknofest-scraper . && docker run -d --name teknofest-scraper --env-file .env -p 9666:9666 -v \$(pwd)/downloads:/app/downloads teknofest-scraper
           EOF
