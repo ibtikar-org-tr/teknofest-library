@@ -38,6 +38,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID=${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_D1_DATABASE_ID=${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
           CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          BUCKET_LINK=${{ vars.BUCKET_LINK }}
           ENVEOF
 
             docker stop teknofest-scraper || true
