@@ -54,6 +54,9 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                         report_link = urljoin("https://teknofest.org", report_link_raw)
                         base_file_name = unquote(os.path.basename(urlparse(report_link).path))
                         prefixed_file_name = f"{team_name}_{base_file_name}"
+                        # Ensure file has an extension, add .html if missing
+                        if not os.path.splitext(prefixed_file_name)[1]:
+                            prefixed_file_name += ".html"
                         full_report_file_path = os.path.join(folder_path, prefixed_file_name)
                         if update_downloads:
                             download.download_file(report_link, full_report_file_path)
