@@ -12,6 +12,7 @@ from app.services.unify.lists import (
 from app.models.competition import Competition
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 
 def get_competition_name(soup):
@@ -278,8 +279,6 @@ def bulk_create_update_competitions_from_remote(year: str = None):
     
     Returns a summary of the operation.
     """
-    from datetime import datetime
-    
     competition_crud_class = competition_crud.CompetitionCRUD()
     
     # Set up year and session
@@ -395,6 +394,9 @@ def bulk_create_update_competitions_from_remote(year: str = None):
             elif tr_data.get('image_link'):
                 competition.image_path = tr_data['image_link']
             
+            # Add year to years list
+            competition.years = [year]
+            
             # Check if competition already exists
             existing_competition = find_competition_in_db(
                 tr_name=competition.tr_name,
@@ -412,6 +414,12 @@ def bulk_create_update_competitions_from_remote(year: str = None):
                     new_value = getattr(competition, field)
                     if new_value:
                         setattr(existing_competition, field, new_value)
+                
+                # Add year to years list if not already present
+                if existing_competition.years is None:
+                    existing_competition.years = []
+                if year not in existing_competition.years:
+                    existing_competition.years.append(year)
                 
                 competition_crud_class.update_competition(existing_competition.id, existing_competition)
                 results['updated'] += 1
@@ -460,7 +468,7 @@ def bulk_create_update_competitions_multilingual(source: str = "lists", year: st
     
     Args:
         source: 'lists' for local CSV or 'remote' for website scraping
-        year: Competition year (only used for 'remote' source)
+        year: Competition year (used for tracking which years competitions are held)
     
     Returns a summary of the operation.
     """
@@ -468,6 +476,10 @@ def bulk_create_update_competitions_multilingual(source: str = "lists", year: st
         return bulk_create_update_competitions_from_remote(year=year)
     
     # Default: use local lists
+    # Set up year
+    if year is None:
+        year = str(datetime.now().year)
+    
     competition_crud_class = competition_crud.CompetitionCRUD()
     
     # Use predefined lists which are already matched by index
@@ -513,6 +525,9 @@ def bulk_create_update_competitions_multilingual(source: str = "lists", year: st
             # Merge the data (passing index to use list data)
             competition = merge_competition_data(idx, tr_data, en_data)
             
+            # Add year to years list
+            competition.years = [year]
+            
             # Check if competition already exists using intelligent matching
             # Try links first (most reliable), then fuzzy name matching
             existing_competition = find_competition_in_db(
@@ -533,6 +548,10 @@ def bulk_create_update_competitions_multilingual(source: str = "lists", year: st
                     new_value = getattr(competition, field)
                     if new_value:
                         setattr(existing_competition, field, new_value)
+                
+                # Add year to years list if not already present
+                if year not in existing_competition.years:
+                    existing_competition.years.append(year)
                 
                 if existing_competition.id is not None:
                     competition_crud_class.update_competition(existing_competition.id, existing_competition)
