@@ -51,6 +51,15 @@ def get_competition_image_link(soup):
     return None
 
 
+def get_competition_application_link(soup):
+    """Extract competition application link from BeautifulSoup object"""
+    try:
+        application_link = soup.find('div', id='tabsNavigation1').find('a')['href']
+        return application_link
+    except:
+        return None
+
+
 def scrape_competition_data(link: str):
     """Scrape competition data from a single link"""
     try:
@@ -61,6 +70,7 @@ def scrape_competition_data(link: str):
         name = get_competition_name(soup)
         description = get_competition_description(soup)
         image_link = get_competition_image_link(soup)
+        application_link = get_competition_application_link(soup)
         
         print(f"    Scraped: {name or 'N/A'}")
         
@@ -68,6 +78,7 @@ def scrape_competition_data(link: str):
             'name': name,
             'description': description,
             'image_link': image_link,
+            'application_link': application_link,
             'link': link
         }
     except requests.exceptions.Timeout:
@@ -76,6 +87,7 @@ def scrape_competition_data(link: str):
             'name': None,
             'description': None,
             'image_link': None,
+            'application_link': None,
             'link': link
         }
     except requests.exceptions.RequestException as e:
@@ -84,6 +96,7 @@ def scrape_competition_data(link: str):
             'name': None,
             'description': None,
             'image_link': None,
+            'application_link': None,
             'link': link
         }
     except Exception as e:
@@ -92,6 +105,7 @@ def scrape_competition_data(link: str):
             'name': None,
             'description': None,
             'image_link': None,
+            'application_link': None,
             'link': link
         }
 
@@ -228,6 +242,12 @@ def merge_competition_data(idx: int, tr_data: dict, en_data: dict):
     if tr_data.get('description'):
         competition.tr_description = tr_data['description']
     
+    # Add scraped application links if available
+    if en_data.get('application_link'):
+        competition.application_link_en = en_data['application_link']
+    if tr_data.get('application_link'):
+        competition.application_link_tr = tr_data['application_link']
+    
     # Use image from whichever source has it
     if en_data.get('image_link'):
         competition.image_path = en_data['image_link']
@@ -312,7 +332,8 @@ def bulk_create_update_competitions_multilingual():
                 print(f"  Found existing competition (ID: {existing_competition.id})")
                 # Merge with existing data, preserving fields not set in new data
                 for field in ['tr_name', 'tr_description', 'tr_link', 'en_name', 'en_description', 'en_link', 
-                              'ar_name', 'ar_description', 'ar_link', 'image_path', 'min_member', 'max_member']:
+                              'ar_name', 'ar_description', 'ar_link', 'image_path', 'min_member', 'max_member',
+                              'application_link_tr', 'application_link_en']:
                     new_value = getattr(competition, field)
                     if new_value:
                         setattr(existing_competition, field, new_value)
