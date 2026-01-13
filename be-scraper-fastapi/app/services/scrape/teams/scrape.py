@@ -8,6 +8,22 @@ from app.services.repo_additional import team_crud_services
 from app.services.scrape.competitions.scrape import get_session_id_for_specific_year
 from app.services.filename_utils import sanitize_filename
 from datetime import datetime
+from app.initializers import env
+
+def build_bucket_link(local_path: str):
+    """Return public bucket URL for a local download path when BUCKET_LINK is set."""
+    bucket_link = env.BUCKET_LINK
+    if not bucket_link or not local_path:
+        return local_path
+
+    bucket_link = bucket_link.rstrip("/")
+    try:
+        rel_path = os.path.relpath(local_path, start=os.getcwd())
+    except ValueError:
+        return local_path
+
+    rel_path = rel_path.replace(os.sep, "/")
+    return f"{bucket_link}/{rel_path}"
 
 def scrape_page(page, update_downloads: bool = False, update_database: bool = False, year=None, session_id=None):
     stats = {
@@ -92,6 +108,8 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
 
                     if update_database and team_link:
                         team_name, team_members_list, team_info, institution_name = scrape_team_page(team_link)
+                        report_storage_path = build_bucket_link(full_report_file_path)
+                        intro_storage_path = build_bucket_link(full_intro_file_path)
                         team_crud_services.update_or_create_team(
                             name=team_name,
                             members_list=team_members_list,
@@ -99,8 +117,8 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                             institution_name=institution_name,
                             comp_name=comp_name,
                             year=year,
-                            report_file_path=full_report_file_path,
-                            intro_file_path=full_intro_file_path,
+                            report_file_path=report_storage_path,
+                            intro_file_path=intro_storage_path,
                             team_link=team_link,
                             status="finalist"
                             )
