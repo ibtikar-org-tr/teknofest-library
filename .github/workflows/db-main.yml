@@ -30,4 +30,4 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           cd database
-          wrangler d1 execute teknofest-library --file main.sql --remote
+          wrangler d1 execute teknofest-library --file d1_schema.sql --remote
