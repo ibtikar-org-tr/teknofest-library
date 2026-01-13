@@ -1,6 +1,7 @@
 """
 Service for bulk creating/updating competitions with multilingual data
 """
+from typing import Optional
 from app.repositories import d1_competition_crud as competition_crud
 from app.services.scrape.competitions import links_service
 from app.services.unify.function import find_original_sentence
@@ -65,7 +66,7 @@ def scrape_competition_data(link: str):
     try:
         response = requests.get(link, timeout=10)
         response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
         
         name = get_competition_name(soup)
         description = get_competition_description(soup)
@@ -130,7 +131,7 @@ def get_competition_identifier(tr_link: str, en_link: str, ar_link: str):
     return None
 
 
-def get_competition_by_link(tr_link: str = None, en_link: str = None):
+def get_competition_by_link(tr_link: Optional[str] = None, en_link: Optional[str] = None):
     """
     Get competition by TR or EN link from database
     Links are more reliable identifiers than names
@@ -154,8 +155,8 @@ def get_competition_by_link(tr_link: str = None, en_link: str = None):
     return None
 
 
-def find_competition_in_db(tr_name: str = None, en_name: str = None, ar_name: str = None, 
-                           tr_link: str = None, en_link: str = None):
+def find_competition_in_db(tr_name: Optional[str] = None, en_name: Optional[str] = None, ar_name: Optional[str] = None, 
+                           tr_link: Optional[str] = None, en_link: Optional[str] = None):
     """
     Find competition in database with intelligent matching.
     Uses links first (most reliable), then fuzzy name matching.
@@ -338,7 +339,8 @@ def bulk_create_update_competitions_multilingual():
                     if new_value:
                         setattr(existing_competition, field, new_value)
                 
-                competition_crud_class.update_competition(existing_competition.id, existing_competition)
+                if existing_competition.id is not None:
+                    competition_crud_class.update_competition(existing_competition.id, existing_competition)
                 results['updated'] += 1
                 results['details'].append({
                     'index': idx,
