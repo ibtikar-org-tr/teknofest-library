@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query
 from app.services.scrape.competitions import links_service, scrape
 from app.services.unify.function import find_original_sentence
+from app.services.repo_additional import bulk_competition_service
 router = APIRouter()
 
 @router.get("/competition-scrape")
@@ -49,3 +50,32 @@ async def find_comp_name(
     threshold: float = Query(0.5, description="similarity threshold")
 ):
     return find_original_sentence(sentence=name, threshold=threshold)
+
+@router.post("/bulk-create-update-competitions")
+async def bulk_create_update_competitions(
+):
+    """
+    Create or update all competitions in the database with multilingual data.
+    
+    This endpoint uses predefined competition lists (Turkish, English, Arabic names and links)
+    which are already properly matched by position, combined with scraped descriptions and images.
+    
+    For each competition (54 total):
+    1. Gets TR/EN/AR names and links from predefined lists
+    2. Scrapes descriptions and images from actual competition pages
+    3. Merges all multilingual data into unified Competition records
+    4. Creates new or updates existing competitions in database
+    
+    Returns a summary including number of competitions created, updated, and failed.
+    """
+    results = bulk_competition_service.bulk_create_update_competitions_multilingual()
+    return {
+        "status": "success",
+        "summary": {
+            "created": results['created'],
+            "updated": results['updated'],
+            "failed": results['failed'],
+            "total": results['created'] + results['updated'] + results['failed']
+        },
+        "details": results['details']
+    }

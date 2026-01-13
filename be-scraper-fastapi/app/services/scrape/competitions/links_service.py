@@ -3,27 +3,38 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
 def get_all_links(lang="tr"):
-    link0 = f"https://teknofest.org/{lang}/yarismalar/"
-    response0 = requests.get(link0)
-    content0 = response0.content
-    soup0 = BeautifulSoup(content0, 'html.parser')
-    the_list0 = soup0.find('div', class_="tab-content mt-5 mobile-container", id="program")
+    try:
+        link0 = f"https://teknofest.org/{lang}/yarismalar/"
+        response0 = requests.get(link0, timeout=10)
+        response0.raise_for_status()
+        content0 = response0.content
+        soup0 = BeautifulSoup(content0, 'html.parser')
+        the_list0 = soup0.find('div', class_="tab-content mt-5 mobile-container", id="program")
 
-    items0 = the_list0.find_all('a', class_='btn')
+        if the_list0 is None:
+            print(f"Warning: Could not find competitions list for language '{lang}'")
+            return []
 
-    list_of_links = []
-    for i in items0:
-        x = "https://teknofest.org" + i.get('href')
-        if x not in list_of_links:
-            list_of_links.append(x)
-            print(x)
+        items0 = the_list0.find_all('a', class_='btn')
 
-    # with open("links.txt", 'w') as f: 
-    #     for item in list_of_links:
-    #         x = item + "\n"
-    #         f.write(x)
+        list_of_links = []
+        for i in items0:
+            href = i.get('href')
+            if href:
+                x = "https://teknofest.org" + href
+                if x not in list_of_links:
+                    list_of_links.append(x)
+                    print(x)
 
-    return list_of_links
+        # with open("links.txt", 'w') as f: 
+        #     for item in list_of_links:
+        #         x = item + "\n"
+        #         f.write(x)
+
+        return list_of_links
+    except Exception as e:
+        print(f"Error fetching links for language '{lang}': {str(e)}")
+        return []
 
 def get_name_from_link(link):
     x =  (urlparse(link)).path.strip('/').split('/')[-1]
@@ -40,19 +51,28 @@ def get_all_link_names(lang="tr"):
 
 
 def get_all_name(lang="tr"):
-    link0 = f"https://teknofest.org/{lang}/yarismalar/"
-    response0 = requests.get(link0)
-    content0 = response0.content
-    soup0 = BeautifulSoup(content0, 'html.parser')
-    the_list0 = soup0.find('div', class_="tab-content mt-5 mobile-container", id="program")
+    try:
+        link0 = f"https://teknofest.org/{lang}/yarismalar/"
+        response0 = requests.get(link0, timeout=10)
+        response0.raise_for_status()
+        content0 = response0.content
+        soup0 = BeautifulSoup(content0, 'html.parser')
+        the_list0 = soup0.find('div', class_="tab-content mt-5 mobile-container", id="program")
 
-    items0 = the_list0.find_all('span', class_='font-weight-bold competition')
+        if the_list0 is None:
+            print(f"Warning: Could not find competitions list for language '{lang}'")
+            return []
 
-    list_of_names = []
-    for i in items0:
-        x = i.text
-        if x not in list_of_names:
-            list_of_names.append(x)
-            print(x)
+        items0 = the_list0.find_all('span', class_='font-weight-bold competition')
 
-    return list_of_names
+        list_of_names = []
+        for i in items0:
+            x = i.text
+            if x not in list_of_names:
+                list_of_names.append(x)
+                print(x)
+
+        return list_of_names
+    except Exception as e:
+        print(f"Error fetching competition names for language '{lang}': {str(e)}")
+        return []
