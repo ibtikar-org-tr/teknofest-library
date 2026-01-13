@@ -50,7 +50,8 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
 
                     # download report file if exists
                     try:
-                        report_link = tr.find_all('td')[2].find('a')['href']
+                        report_link_raw = tr.find_all('td')[2].find('a')['href']
+                        report_link = urljoin("https://teknofest.org", report_link_raw)
                         base_file_name = unquote(os.path.basename(urlparse(report_link).path))
                         prefixed_file_name = f"{team_name}_{base_file_name}"
                         full_report_file_path = os.path.join(folder_path, prefixed_file_name)
