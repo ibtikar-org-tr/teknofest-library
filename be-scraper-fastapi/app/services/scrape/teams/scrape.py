@@ -42,7 +42,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     team_name = tr.find_all('td')[0].find('a').text.strip()
                     year = tr.find_all('td')[1].text.strip()
 
-                    folder_path = os.path.join(os.getcwd(), str(comp_name), "teams", str(year))
+                    folder_path = os.path.join(os.getcwd(), "competitions", str(comp_name), "teams", str(year))
                     os.makedirs(folder_path, exist_ok=True)
 
                     full_report_file_path = None

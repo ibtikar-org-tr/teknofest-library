@@ -49,7 +49,7 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                         unified_comp_name = find_original_sentence(comp_name_in_link)
                         if unified_comp_name is None or folder_name is None:
                             continue
-                        folder_path = os.path.join(os.getcwd(), unified_comp_name, "reports", folder_name)
+                        folder_path = os.path.join(os.getcwd(), "competitions", unified_comp_name, "reports", folder_name)
                         os.makedirs(folder_path, exist_ok=True)
                         report_file_path = os.path.join(folder_path, file_name)
                         
