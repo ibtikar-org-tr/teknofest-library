@@ -10,7 +10,8 @@
     {
       "binding": "D1_DB",
       "database_name": "teknofest-library",
-      "database_id": ""
+      "database_id": "e1cf4ebe-1ffc-4bfa-90f8-34bc048f8484",
+      "remote": true
     }
   ],
   "r2_buckets": [
