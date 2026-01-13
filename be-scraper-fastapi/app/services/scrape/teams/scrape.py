@@ -5,11 +5,30 @@ from bs4 import BeautifulSoup
 from app.services import download
 from app.services.unify.function import find_original_sentence
 from app.services.repo_additional import team_crud_services
+from app.services.scrape.competitions.scrape import get_session_id_for_specific_year
+from datetime import datetime
 
-def scrape_page(page, update_downloads: bool = False, update_database: bool = False):
+def scrape_page(page, update_downloads: bool = False, update_database: bool = False, year=None, session_id=None):
     try:
+        # set session_id if year is specified and session_id is not provided
+        if session_id:
+            pass  # Use provided session_id
+        elif year:
+            session_id = get_session_id_for_specific_year(year)
+            if not session_id:
+                print(f"Failed to get session ID for year {year}")
+                return
+        else:
+            year = str(datetime.now().year)
+        
         link = f"https://teknofest.org/tr/competitions/competition_report/?search=&page={page}"
-        response0 = requests.get(link)
+        
+        # Make request with session_id if available
+        if session_id:
+            response0 = requests.get(link, cookies={'sessionid': session_id})
+        else:
+            response0 = requests.get(link)
+        
         response0.raise_for_status()
         content0 = response0.content
         soup0 = BeautifulSoup(content0, 'html.parser')
