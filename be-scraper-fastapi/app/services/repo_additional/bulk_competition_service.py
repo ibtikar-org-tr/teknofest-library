@@ -16,26 +16,18 @@ from bs4 import BeautifulSoup
 def get_competition_name(soup):
     """Extract competition name from BeautifulSoup object"""
     try:
-        title_element = soup.find('h1', class_='h2')
-        if title_element:
-            return title_element.get_text(strip=True)
+        competition_name = soup.find('div', class_='container').find('h1').text.strip()
+        return competition_name
     except:
-        pass
-    return None
+        return None
 
 
 def get_competition_description(soup):
     """Extract competition description from BeautifulSoup object"""
     try:
-        description_element = soup.find('div', class_='competition-description')
-        if description_element:
-            return description_element.get_text(strip=True)
-        # Alternative selectors if above doesn't work
-        content_div = soup.find('div', class_='content')
-        if content_div:
-            paragraphs = content_div.find_all('p')
-            if paragraphs:
-                return paragraphs[0].get_text(strip=True)
+        # Get the description from the first tab content
+        description = soup.find('div', id='tabsNavigation1').text.strip()
+        return description if description else None
     except:
         pass
     return None
@@ -44,10 +36,12 @@ def get_competition_description(soup):
 def get_competition_image_link(soup):
     """Extract competition image link from BeautifulSoup object"""
     try:
-        image_element = soup.find('img', class_='competition-image')
+        from urllib.parse import unquote
+        image_element = soup.find('div', id='tabsNavigation1').find('img')
         if image_element:
             img_src = image_element.get('src')
             if img_src:
+                img_src = unquote(img_src)
                 if img_src.startswith('http'):
                     return img_src
                 else:
@@ -64,14 +58,36 @@ def scrape_competition_data(link: str):
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
+        name = get_competition_name(soup)
+        description = get_competition_description(soup)
+        image_link = get_competition_image_link(soup)
+        
+        print(f"    Scraped: {name or 'N/A'}")
+        
         return {
-            'name': get_competition_name(soup),
-            'description': get_competition_description(soup),
-            'image_link': get_competition_image_link(soup),
+            'name': name,
+            'description': description,
+            'image_link': image_link,
+            'link': link
+        }
+    except requests.exceptions.Timeout:
+        print(f"    ⚠ Timeout scraping {link}")
+        return {
+            'name': None,
+            'description': None,
+            'image_link': None,
+            'link': link
+        }
+    except requests.exceptions.RequestException as e:
+        print(f"    ⚠ Error scraping {link}: {str(e)}")
+        return {
+            'name': None,
+            'description': None,
+            'image_link': None,
             'link': link
         }
     except Exception as e:
-        print(f"Error scraping {link}: {str(e)}")
+        print(f"    ⚠ Unexpected error scraping {link}: {str(e)}")
         return {
             'name': None,
             'description': None,
