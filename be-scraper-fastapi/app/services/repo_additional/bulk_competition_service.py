@@ -6,7 +6,7 @@ from app.services.scrape.competitions import links_service
 from app.services.unify.function import find_original_sentence
 from app.services.unify.lists import (
     ar_names_list, tr_names_list, en_names_list, 
-    tr_links_list, en_links_list
+    tr_links_list, en_links_list, min_members_list, max_members_list
 )
 from app.models.competition import Competition
 import requests
@@ -200,6 +200,12 @@ def merge_competition_data(idx: int, tr_data: dict, en_data: dict):
     if idx < len(en_links_list):
         competition.en_link = f"https://teknofest.org/en/competitions/{en_links_list[idx].strip()}/"
     
+    # Set min and max members from CSV if available
+    if idx < len(min_members_list) and min_members_list[idx] is not None:
+        competition.min_member = min_members_list[idx]
+    if idx < len(max_members_list) and max_members_list[idx] is not None:
+        competition.max_member = max_members_list[idx]
+    
     # Add scraped descriptions if available
     if en_data.get('description'):
         competition.en_description = en_data['description']
@@ -290,7 +296,7 @@ def bulk_create_update_competitions_multilingual():
                 print(f"  Found existing competition (ID: {existing_competition.id})")
                 # Merge with existing data, preserving fields not set in new data
                 for field in ['tr_name', 'tr_description', 'tr_link', 'en_name', 'en_description', 'en_link', 
-                              'ar_name', 'ar_description', 'ar_link', 'image_path']:
+                              'ar_name', 'ar_description', 'ar_link', 'image_path', 'min_member', 'max_member']:
                     new_value = getattr(competition, field)
                     if new_value:
                         setattr(existing_competition, field, new_value)
@@ -304,7 +310,9 @@ def bulk_create_update_competitions_multilingual():
                     'competition_id': existing_competition.id,
                     'en_name': existing_competition.en_name,
                     'tr_name': existing_competition.tr_name,
-                    'ar_name': existing_competition.ar_name
+                    'ar_name': existing_competition.ar_name,
+                    'min_member': existing_competition.min_member,
+                    'max_member': existing_competition.max_member
                 })
                 print(f"  ✓ Updated")
             else:
@@ -318,7 +326,9 @@ def bulk_create_update_competitions_multilingual():
                     'action': 'created',
                     'en_name': competition.en_name,
                     'tr_name': competition.tr_name,
-                    'ar_name': competition.ar_name
+                    'ar_name': competition.ar_name,
+                    'min_member': competition.min_member,
+                    'max_member': competition.max_member
                 })
                 print(f"  ✓ Created")
                 
