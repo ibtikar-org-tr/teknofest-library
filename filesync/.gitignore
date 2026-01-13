@@ -1,0 +1,8 @@
+.env
+venv/
+*.md
+!README.md
+__pycache__/
+*.pyc
+.vscode/
+!.gitkeep
