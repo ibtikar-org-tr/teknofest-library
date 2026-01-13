@@ -33,7 +33,7 @@ docker build -t teknofest-scraper .
 
 2. Run the container:
 ```bash
-docker run -p 9666:9666 -v $(pwd)/downloads:/app/downloads teknofest-scraper
+docker run -d --name teknofest-scraper --env-file .env -p 9666:9666 -v $(pwd)/downloads:/app/downloads teknofest-scraper
 ```
 
 The `-v` flag mounts the local `downloads` directory to persist scraped files.
