@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "be-main-hono",
+  "name": "teknofest-library-be-main",
   "main": "src/index.ts",
   "compatibility_date": "2025-12-26",
   "vars": {
