@@ -30,7 +30,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
             response0 = requests.get(link)
         
         response0.raise_for_status()
-        content0 = response0.content
+        content0 = response0.text
         soup0 = BeautifulSoup(content0, 'html.parser')
         the_table0 = soup0.find('tbody', id="myTable")
 
@@ -42,10 +42,11 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     team_name = tr.find_all('td')[0].find('a').text.strip()
                     year = tr.find_all('td')[1].text.strip()
 
-                    folder_path = os.path.join(os.getcwd(), comp_name, "teams", year)
+                    folder_path = os.path.join(os.getcwd(), str(comp_name), "teams", str(year))
                     os.makedirs(folder_path, exist_ok=True)
 
                     full_report_file_path = None
+                    full_intro_file_path = None
 
                     # download report file if exists
                     try:
@@ -59,6 +60,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                         print(f"report failed for {team_name}")
 
                     # download team intro pahe as html file
+                    team_link = None
                     try:
                         team_link_relative = tr.find_all('td')[3].find('a')['href']
                         team_link = urljoin("https://teknofest.org", team_link_relative)
@@ -68,7 +70,7 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     except:
                         print(f"team file failed for {team_name}")
 
-                    if update_database:
+                    if update_database and team_link:
                         team_name, team_members_list, team_info, institution_name = scrape_team_page(team_link)
                         team_crud_services.update_or_create_team(
                             name=team_name,
@@ -100,29 +102,34 @@ def scrape_team_page(team_link):
         team_page_soup = BeautifulSoup(team_page.text, 'html.parser')
 
         # team name
-        team_name = team_page_soup.find('h1').text.strip()
+        h1_element = team_page_soup.find('h1')
+        team_name = h1_element.text.strip() if h1_element else None
 
         # team members list
         team_members_list = []
         members_row = team_page_soup.find('div', class_='report-team')
-        for member_element in members_row.find_all('p'):
-            member_name = member_element.get_text(strip=True)
-            member_name = member_name.encode('utf-8').decode('utf-8') # TODO not encoding properly
-            team_members_list.append(member_name)
+        if members_row:
+            for member_element in members_row.find_all('p'):
+                member_name = member_element.get_text(strip=True)
+                member_name = member_name.encode('utf-8').decode('utf-8') # TODO not encoding properly
+                team_members_list.append(member_name)
 
         # team info
         team_info_div = team_page_soup.find('div', class_='team-info')
-        team_info_h6 = team_info_div.find('h6')
-        if team_info_h6:
-            team_info_h6.extract()
-        team_info = team_info_div.text.strip()
+        team_info = None
+        if team_info_div:
+            team_info_h6 = team_info_div.find('h6')
+            if team_info_h6:
+                team_info_h6.extract()
+            team_info = team_info_div.text.strip()
 
-        institution_name = team_page_soup.find('p', class_='school').text.strip()
+        school_element = team_page_soup.find('p', class_='school')
+        institution_name = school_element.text.strip() if school_element else None
 
         return team_name, team_members_list, team_info, institution_name
     except requests.exceptions.RequestException as e:
         print(f"Error while fetching the page: {e}")
-        return None, None, None
+        return None, None, None, None
     
 
 
