@@ -23,9 +23,12 @@ class Settings:
         self.account_id = self._require("CLOUDFLARE_ACCOUNT_ID")
         self.access_key = self._require("FILESYNC_R2_ACCESS_KEY_ID")
         self.secret_key = self._require("FILESYNC_R2_SECRET_ACCESS_KEY")
-        self.endpoint = os.getenv(
-            "FILESYNC_R2_ENDPOINT",
-            f"https://{self.account_id}.r2.cloudflarestorage.com",
+        raw_endpoint = os.getenv("FILESYNC_R2_ENDPOINT", "").strip()
+        # Fallback to standard R2 endpoint when empty to avoid botocore ValueError
+        self.endpoint = (
+            raw_endpoint
+            if raw_endpoint
+            else f"https://{self.account_id}.r2.cloudflarestorage.com"
         )
 
     @staticmethod
