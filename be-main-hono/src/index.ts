@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import type { AppBindings } from './types/env'
 import competitionRouters from './routers/competition'
 import teamsRouter from './routers/teams'
@@ -9,8 +10,17 @@ import resultFilesRouter from './routers/result_files'
 
 const app = new Hono<AppBindings>();
 
+// CORS
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Health Check
 app.get('/', (c) => c.text('Hello Hono! App is running and healthy.'))
 
+// Routers
 app.route('/api/competitions', competitionRouters)
 app.route('/api/teams', teamsRouter)
 app.route('/api/members', membersRouter)
