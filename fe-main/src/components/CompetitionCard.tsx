@@ -15,6 +15,10 @@ export interface CompetitionProps {
   deadline: string;
   teamSize: string;
   prize: string;
+  tkNumber?: string;
+  t3kysNumber?: string;
+  years?: number[];
+  applicationLink?: string;
 }
 
 export default function CompetitionCard({ competition, index }: { competition: CompetitionProps; index: number }) {
@@ -82,6 +86,23 @@ export default function CompetitionCard({ competition, index }: { competition: C
             >
               {statusText[competition.status]}
             </Badge>
+            <div className="absolute top-4 left-4 rtl:right-4 rtl:left-auto z-20 flex flex-wrap gap-2 max-w-[70%]">
+              {competition.tkNumber && (
+                <Badge variant="outline" className="backdrop-blur-md border-primary/30 text-primary">
+                  {t("card.tkNumber")}: {competition.tkNumber}
+                </Badge>
+              )}
+              {competition.t3kysNumber && (
+                <Badge variant="outline" className="backdrop-blur-md border-primary/30 text-primary">
+                  {t("card.t3kysNumber")}: {competition.t3kysNumber}
+                </Badge>
+              )}
+              {competition.years && competition.years.length > 0 && (
+                <Badge variant="outline" className="backdrop-blur-md border-primary/30 text-primary">
+                  {t("card.years")}: {competition.years.join(", ")}
+                </Badge>
+              )}
+            </div>
             <div className="absolute bottom-4 left-4 rtl:right-4 rtl:left-auto z-20">
               <span className="text-primary text-xs font-bold uppercase tracking-wider mb-1 block">
                 {competition.category}
@@ -107,6 +128,16 @@ export default function CompetitionCard({ competition, index }: { competition: C
                 <span>{t('card.prizePool')}: {competition.prize}</span>
               </div>
             </div>
+            {competition.applicationLink && (
+              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                <span>{t("card.applyLink")}</span>
+                <Button asChild variant="link" className="px-0 text-primary">
+                  <a href={competition.applicationLink} target="_blank" rel="noreferrer">
+                    {t("card.applyLink")}
+                  </a>
+                </Button>
+              </div>
+            )}
           </CardContent>
 
           <CardFooter className="pb-6 pt-0">

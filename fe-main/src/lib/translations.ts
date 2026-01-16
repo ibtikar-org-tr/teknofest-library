@@ -32,7 +32,9 @@ export const translations = {
       transportation: "Transportation",
       noResults: "No competitions found",
       tryAdjusting: "Try adjusting your search or category filter.",
-      reset: "Reset Filters"
+      reset: "Reset Filters",
+      loading: "Loading competitions...",
+      error: "Unable to load competitions."
     },
     card: {
       applicationsOpen: "Applications Open",
@@ -42,12 +44,26 @@ export const translations = {
       teamSize: "Team Size",
       prizePool: "Prize Pool",
       viewDetails: "View Details",
-      members: "Members"
+      members: "Members",
+      notSpecified: "Not specified",
+      tkNumber: "TK No",
+      t3kysNumber: "T3KYS No",
+      years: "Years",
+      applyLink: "Apply"
     },
     cta: {
       title: "Ready to Change the World?",
       description: "Don't miss the chance to showcase your projects at the world's biggest technology festival. Applications are closing soon!",
       register: "Register Now"
+    },
+    detail: {
+      noDescription: "Description will be added soon.",
+      noYears: "Years not set",
+      loading: "Loading competition details...",
+      error: "Unable to load this competition.",
+      deadlineFallback: "To be announced",
+      prizeFallback: "Prize to be announced",
+      yearsLabel: "Years"
     },
     footer: {
       description: "The world's largest aviation, space, and technology festival. Building a technology-producing Turkey.",
@@ -99,7 +115,9 @@ export const translations = {
       transportation: "Ulaşım",
       noResults: "Yarışma bulunamadı",
       tryAdjusting: "Aramanızı veya kategori filtrenizi değiştirmeyi deneyin.",
-      reset: "Filtreleri Sıfırla"
+      reset: "Filtreleri Sıfırla",
+      loading: "Yarışmalar yükleniyor...",
+      error: "Yarışmalar yüklenemedi."
     },
     card: {
       applicationsOpen: "Başvurular Açık",
@@ -109,12 +127,26 @@ export const translations = {
       teamSize: "Takım Boyutu",
       prizePool: "Ödül Havuzu",
       viewDetails: "Detayları Gör",
-      members: "Üye"
+      members: "Üye",
+      notSpecified: "Belirtilmedi",
+      tkNumber: "TK No",
+      t3kysNumber: "T3KYS No",
+      years: "Yıllar",
+      applyLink: "Başvur"
     },
     cta: {
       title: "Dünyayı Değiştirmeye Hazır Mısın?",
       description: "Projelerinizi dünyanın en büyük teknoloji festivalinde sergileme şansını kaçırmayın. Başvurular yakında kapanıyor!",
       register: "Hemen Kayıt Ol"
+    },
+    detail: {
+      noDescription: "Açıklama yakında eklenecek.",
+      noYears: "Yıllar ayarlanmadı",
+      loading: "Yarışma detayları yükleniyor...",
+      error: "Bu yarışma yüklenemedi.",
+      deadlineFallback: "Duyurulacak",
+      prizeFallback: "Ödül duyurulacak",
+      yearsLabel: "Yıllar"
     },
     footer: {
       description: "Dünyanın en büyük havacılık, uzay ve teknoloji festivali. Teknoloji üreten bir Türkiye inşa ediyoruz.",
@@ -166,7 +198,9 @@ export const translations = {
       transportation: "النقل",
       noResults: "لم يتم العثور على مسابقات",
       tryAdjusting: "حاول تعديل البحث أو تصفية الفئات.",
-      reset: "إعادة تعيين المرشحات"
+      reset: "إعادة تعيين المرشحات",
+      loading: "جارٍ تحميل المسابقات...",
+      error: "تعذر تحميل المسابقات."
     },
     card: {
       applicationsOpen: "التطبيقات مفتوحة",
@@ -176,12 +210,26 @@ export const translations = {
       teamSize: "حجم الفريق",
       prizePool: "مجموع الجوائز",
       viewDetails: "عرض التفاصيل",
-      members: "أعضاء"
+      members: "أعضاء",
+      notSpecified: "غير محدد",
+      tkNumber: "رقم TK",
+      t3kysNumber: "رقم T3KYS",
+      years: "الأعوام",
+      applyLink: "تقديم"
     },
     cta: {
       title: "هل أنت مستعد لتغيير العالم؟",
       description: "لا تفوت فرصة عرض مشاريعك في أكبر مهرجان للتكنولوجيا في العالم. التسجيل يغلق قريباً!",
       register: "سجل الآن"
+    },
+    detail: {
+      noDescription: "سيضاف الوصف قريباً.",
+      noYears: "لم يتم تحديد الأعوام",
+      loading: "جارٍ تحميل تفاصيل المسابقة...",
+      error: "تعذر تحميل هذه المسابقة.",
+      deadlineFallback: "سيتم الإعلان لاحقاً",
+      prizeFallback: "سيتم الإعلان عن الجائزة لاحقاً",
+      yearsLabel: "الأعوام"
     },
     footer: {
       description: "أكبر مهرجان للطيران والفضاء والتكنولوجيا في العالم. نبني تركيا منتجة للتكنولوجيا.",

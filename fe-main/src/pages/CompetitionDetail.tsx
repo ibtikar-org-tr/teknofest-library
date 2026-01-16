@@ -5,24 +5,43 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Trophy, Calendar, Users, Download, ArrowRight, CheckCircle2 } from "lucide-react";
-import { Link, useRoute } from "wouter";
+import { useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import {
+    buildApiUrl,
+    formatTeamSize,
+    pickLocalizedField,
+    type CompetitionApi,
+} from "@/lib/competitions";
+import { useLanguage } from "@/lib/LanguageContext";
 import heroBg from "@assets/generated_images/rocket_competition.png";
 
 export default function CompetitionDetail() {
   const [match, params] = useRoute("/competition/:id");
-  const id = match ? params.id : "1";
+    const id = match ? params.id : "1";
+    const { language, t } = useLanguage();
 
-  // Mock data - normally would fetch based on ID
-  const competition = {
-    title: "Rocket Competition",
-    subtitle: "High Altitude Category",
-    description: "Design, build, and launch a rocket that reaches 20,000 feet carrying a scientific payload. Teams must handle all aspects from propulsion to recovery systems.",
-    prize: "₺100,000",
-    deadline: "March 15, 2025",
-    teamSize: "3-5 Members",
-    status: "Open",
-    image: heroBg
-  };
+    const { data, isLoading, error } = useQuery<CompetitionApi>({
+        queryKey: [buildApiUrl(`/api/competitions/${id}`)],
+    });
+
+    const localized = (suffix: "name" | "description" | "link" | "application_link") =>
+        data ? pickLocalizedField(data, language, suffix) : null;
+
+    const title = localized("name") ?? t("filters.title");
+    const description = localized("description") ?? t("detail.noDescription");
+    const applicationLink = localized("application_link");
+    const externalLink = localized("link");
+    const teamSize = formatTeamSize(
+        data?.min_member ?? null,
+        data?.max_member ?? null,
+        t("card.members"),
+        t("card.notSpecified"),
+    );
+    const yearsText = data?.years?.length ? data.years.join(", ") : t("detail.noYears");
+    const tkNumber = data?.tk_number ?? "-";
+    const t3kysNumber = data?.t3kys_number ?? "-";
+    const image = data?.image_path ?? heroBg;
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
@@ -32,8 +51,8 @@ export default function CompetitionDetail() {
       <div className="relative h-[50vh] min-h-[400px] w-full overflow-hidden flex items-end">
         <div className="absolute inset-0 z-0">
           <img
-            src={competition.image}
-            alt={competition.title}
+                        src={image}
+                        alt={title}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
@@ -42,23 +61,31 @@ export default function CompetitionDetail() {
         <div className="container mx-auto px-4 pb-12 relative z-10 flex flex-col md:flex-row justify-between items-end gap-6">
           <div>
             <div className="flex gap-2 mb-4">
-               <Badge className="bg-primary hover:bg-primary text-white border-none">Aerospace</Badge>
-               <Badge variant="outline" className="bg-background/20 backdrop-blur-md border-white/20 text-white">University Level</Badge>
+                            <Badge className="bg-primary hover:bg-primary text-white border-none">General</Badge>
+                            <Badge variant="outline" className="bg-background/20 backdrop-blur-md border-white/20 text-white">{t("detail.yearsLabel")}: {yearsText}</Badge>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold font-display text-white mb-2">{competition.title}</h1>
-            <p className="text-xl text-white/80">{competition.subtitle}</p>
+                        <h1 className="text-4xl md:text-6xl font-bold font-display text-white mb-2">{title}</h1>
+                        <p className="text-xl text-white/80">{description}</p>
           </div>
           
           <div className="flex gap-4">
-             <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 text-lg">
-                Apply Now <ArrowRight className="ml-2 w-5 h-5" />
-             </Button>
+                        {applicationLink ? (
+                            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 text-lg" asChild>
+                                <a href={applicationLink} target="_blank" rel="noreferrer">
+                                    {t("card.applyLink")} <ArrowRight className="ml-2 w-5 h-5" />
+                                </a>
+                            </Button>
+                        ) : (
+                            <Button size="lg" className="bg-secondary text-secondary-foreground font-bold h-14 px-8 text-lg" disabled>
+                                {t("card.applyLink")}
+                            </Button>
+                        )}
           </div>
         </div>
       </div>
 
       <main className="flex-grow container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2">
                 <Tabs defaultValue="overview" className="w-full">
@@ -70,10 +97,16 @@ export default function CompetitionDetail() {
                     </TabsList>
                     
                     <TabsContent value="overview" className="space-y-6">
+                                                {isLoading && (
+                                                    <div className="text-muted-foreground">{t("detail.loading")}</div>
+                                                )}
+                                                {error && (
+                                                    <div className="text-red-500">{t("detail.error")}</div>
+                                                )}
                         <div className="prose dark:prose-invert max-w-none">
                             <h3 className="text-2xl font-bold font-display mb-4">Challenge Description</h3>
                             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                                {competition.description}
+                                {description}
                             </p>
                             <p className="text-muted-foreground mb-6">
                                 The Rocket Competition challenges students to demonstrate their engineering skills in a real-world scenario. 
@@ -97,18 +130,45 @@ export default function CompetitionDetail() {
                         <div className="border border-border rounded-xl p-6 bg-card">
                             <h3 className="text-xl font-bold mb-4">Technical Regulations</h3>
                             <p className="mb-6 text-muted-foreground">Download the full technical rulebook for detailed specifications.</p>
-                            <Button variant="outline" className="w-full flex items-center justify-between h-16 px-6 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 text-primary rounded-lg">
-                                        <Download className="w-5 h-5" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-bold">Competition Rulebook v2.1</div>
-                                        <div className="text-xs text-muted-foreground">PDF • 2.4 MB</div>
-                                    </div>
-                                </div>
-                                <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                            </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full h-16 px-0 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all"
+                                                            asChild={Boolean(externalLink)}
+                                                            disabled={!externalLink}
+                                                        >
+                                                            {externalLink ? (
+                                                                <a
+                                                                    href={externalLink}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="flex items-center justify-between w-full h-full px-6"
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                                                                            <Download className="w-5 h-5" />
+                                                                        </div>
+                                                                        <div className="text-left">
+                                                                            <div className="font-bold">Competition Rulebook v2.1</div>
+                                                                            <div className="text-xs text-muted-foreground">PDF • 2.4 MB</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                                                                </a>
+                                                            ) : (
+                                                                <div className="flex items-center justify-between w-full h-full px-6 text-muted-foreground">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                                                                            <Download className="w-5 h-5" />
+                                                                        </div>
+                                                                        <div className="text-left">
+                                                                            <div className="font-bold">Competition Rulebook v2.1</div>
+                                                                            <div className="text-xs text-muted-foreground">PDF • 2.4 MB</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                                                                </div>
+                                                            )}
+                                                        </Button>
                         </div>
                     </TabsContent>
                     
@@ -165,7 +225,7 @@ export default function CompetitionDetail() {
                             </div>
                             <div>
                                 <div className="text-sm text-muted-foreground">Deadline</div>
-                                <div className="font-medium">{competition.deadline}</div>
+                                <div className="font-medium">{t("detail.deadlineFallback")}</div>
                             </div>
                         </div>
                         
@@ -175,7 +235,7 @@ export default function CompetitionDetail() {
                             </div>
                             <div>
                                 <div className="text-sm text-muted-foreground">Team Size</div>
-                                <div className="font-medium">{competition.teamSize}</div>
+                                <div className="font-medium">{teamSize}</div>
                             </div>
                         </div>
 
@@ -185,7 +245,25 @@ export default function CompetitionDetail() {
                             </div>
                             <div>
                                 <div className="text-sm text-muted-foreground">Prize Pool</div>
-                                <div className="font-medium">{competition.prize}</div>
+                                <div className="font-medium">{t("detail.prizeFallback")}</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
+                                <Users className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className="text-sm text-muted-foreground">{t("card.tkNumber")}</div>
+                                <div className="font-medium">{tkNumber}</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
+                                <Users className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className="text-sm text-muted-foreground">{t("card.t3kysNumber")}</div>
+                                <div className="font-medium">{t3kysNumber}</div>
                             </div>
                         </div>
                     </div>

@@ -2,14 +2,20 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
 import CompetitionCard, { type CompetitionProps } from "@/components/CompetitionCard";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { useLanguage } from "@/lib/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import {
+  buildApiUrl,
+  formatTeamSize,
+  pickLocalizedField,
+  type CompetitionApi,
+} from "@/lib/competitions";
 
-// Mock Data with real images
 import rocketImg from "@assets/generated_images/rocket_competition.png";
 import aiImg from "@assets/generated_images/ai_competition.png";
 import droneImg from "@assets/generated_images/drone_competition.png";
@@ -17,77 +23,65 @@ import roboticsImg from "@assets/generated_images/robotics_competition.png";
 import agriImg from "@assets/generated_images/agritech_competition.png";
 import heroBg from "@assets/generated_images/teknofest_hero_background.png"; // reusing as fallback
 
-const COMPETITIONS: CompetitionProps[] = [
-  {
-    id: "1",
-    title: "Rocket Competition",
-    category: "Aerospace",
-    image: rocketImg,
-    status: "open",
-    deadline: "Mar 15, 2025",
-    teamSize: "3-5 Members",
-    prize: "₺100,000",
-  },
-  {
-    id: "2",
-    title: "Artificial Intelligence in Health",
-    category: "AI & Software",
-    image: aiImg,
-    status: "open",
-    deadline: "Apr 01, 2025",
-    teamSize: "2-4 Members",
-    prize: "₺80,000",
-  },
-  {
-    id: "3",
-    title: "Fighting UAV Competition",
-    category: "Aerospace",
-    image: droneImg,
-    status: "coming_soon",
-    deadline: "May 10, 2025",
-    teamSize: "4-6 Members",
-    prize: "₺150,000",
-  },
-  {
-    id: "4",
-    title: "Industrial Robotics",
-    category: "Robotics",
-    image: roboticsImg,
-    status: "open",
-    deadline: "Mar 20, 2025",
-    teamSize: "3-5 Members",
-    prize: "₺90,000",
-  },
-  {
-    id: "5",
-    title: "Agricultural Technologies",
-    category: "Agriculture",
-    image: agriImg,
-    status: "closed",
-    deadline: "Jan 15, 2025",
-    teamSize: "2-5 Members",
-    prize: "₺75,000",
-  },
-  {
-    id: "6",
-    title: "Smart Transportation",
-    category: "Transportation",
-    image: heroBg,
-    status: "open",
-    deadline: "Apr 15, 2025",
-    teamSize: "3-5 Members",
-    prize: "₺85,000",
-  },
-];
+const FALLBACK_CATEGORY = "General";
+const FALLBACK_STATUS: CompetitionProps["status"] = "open";
+const FALLBACK_DEADLINE = "TBD";
+const FALLBACK_PRIZE = "TBA";
+const CATEGORIES = ["All", FALLBACK_CATEGORY];
+const FALLBACK_IMAGES = [rocketImg, aiImg, droneImg, roboticsImg, agriImg, heroBg];
 
-const CATEGORIES = ["All", "Aerospace", "AI & Software", "Robotics", "Agriculture", "Transportation"];
+const mapCompetitionToCard = (
+  competition: CompetitionApi,
+  index: number,
+  language: ReturnType<typeof useLanguage>["language"],
+  t: ReturnType<typeof useLanguage>["t"],
+): CompetitionProps => {
+  const title = pickLocalizedField(competition, language, "name") ?? t("filters.title");
+  const applicationLink =
+    pickLocalizedField(competition, language, "application_link") ?? undefined;
+  return {
+    id: String(competition.id),
+    title,
+    category: FALLBACK_CATEGORY,
+    image: competition.image_path ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length],
+    status: FALLBACK_STATUS,
+    deadline: FALLBACK_DEADLINE,
+    teamSize: formatTeamSize(
+      competition.min_member,
+      competition.max_member,
+      t("card.members"),
+      t("card.notSpecified"),
+    ),
+    prize: FALLBACK_PRIZE,
+    tkNumber: competition.tk_number ?? undefined,
+    t3kysNumber: competition.t3kys_number ?? undefined,
+    years: competition.years ?? [],
+    applicationLink,
+  };
+};
 
 export default function CompetitionsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredCompetitions = COMPETITIONS.filter((comp) => {
+  const {
+    data: apiCompetitions,
+    isLoading,
+    error,
+  } = useQuery<CompetitionApi[]>({
+    queryKey: [buildApiUrl("/api/competitions")],
+  });
+
+  const competitions = useMemo(
+    () =>
+      (apiCompetitions ?? []).map((competition, index) =>
+        mapCompetitionToCard(competition, index, language, t),
+      ),
+    [apiCompetitions, language, t],
+  );
+
+  const filteredCompetitions = competitions.filter((comp) => {
     const matchesCategory = activeCategory === "All" || comp.category === activeCategory;
     const matchesSearch = comp.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -149,7 +143,25 @@ export default function CompetitionsPage() {
 
             {/* Grid */}
             <AnimatePresence mode="wait">
-              {filteredCompetitions.length > 0 ? (
+              {isLoading ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-20 text-muted-foreground"
+                >
+                  {t("filters.loading") ?? "Loading competitions..."}
+                </motion.div>
+              ) : error ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-20 text-red-500"
+                >
+                  {t("filters.error") ?? "Failed to load competitions."}
+                </motion.div>
+              ) : filteredCompetitions.length > 0 ? (
                 <motion.div 
                   layout
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
