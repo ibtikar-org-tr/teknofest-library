@@ -40,11 +40,11 @@ CREATE TABLE IF NOT EXISTS competition_data (
 );
 
 
-CREATE INDEX idx_competitions_tk_number ON competitions(tk_number);
-CREATE INDEX idx_competitions_t3kys_number ON competitions(t3kys_number);
-CREATE INDEX idx_competitions_tr_name ON competitions(tr_name);
-CREATE INDEX idx_competitions_en_name ON competitions(en_name);
-CREATE INDEX idx_competitions_ar_name ON competitions(ar_name);
+CREATE INDEX IF NOT EXISTS idx_competitions_tk_number ON competitions(tk_number);
+CREATE INDEX IF NOT EXISTS idx_competitions_t3kys_number ON competitions(t3kys_number);
+CREATE INDEX IF NOT EXISTS idx_competitions_tr_name ON competitions(tr_name);
+CREATE INDEX IF NOT EXISTS idx_competitions_en_name ON competitions(en_name);
+CREATE INDEX IF NOT EXISTS idx_competitions_ar_name ON competitions(ar_name);
 
 -- Teams Table
 CREATE TABLE IF NOT EXISTS teams (
@@ -70,10 +70,10 @@ CREATE TABLE IF NOT EXISTS teams (
     FOREIGN KEY (competition_id) REFERENCES competitions(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_teams_competition_id ON teams(competition_id);
-CREATE INDEX idx_teams_name ON teams(name);
-CREATE INDEX idx_teams_status ON teams(status);
-CREATE INDEX idx_teams_leader ON teams(leader);
+CREATE INDEX IF NOT EXISTS idx_teams_competition_id ON teams(competition_id);
+CREATE INDEX IF NOT EXISTS idx_teams_name ON teams(name);
+CREATE INDEX IF NOT EXISTS idx_teams_status ON teams(status);
+CREATE INDEX IF NOT EXISTS idx_teams_leader ON teams(leader);
 
 -- Members Table
 CREATE TABLE IF NOT EXISTS members (
@@ -103,12 +103,12 @@ CREATE TABLE IF NOT EXISTS members (
     comments TEXT -- JSON array of UUIDs
 );
 
-CREATE INDEX idx_members_email ON members(email);
-CREATE INDEX idx_members_membership_number ON members(membership_number);
-CREATE INDEX idx_members_university ON members(university);
-CREATE INDEX idx_members_status ON members(status);
-CREATE INDEX idx_members_is_advisor ON members(is_advisor);
-CREATE INDEX idx_members_is_leader ON members(is_leader);
+CREATE INDEX IF NOT EXISTS idx_members_email ON members(email);
+CREATE INDEX IF NOT EXISTS idx_members_membership_number ON members(membership_number);
+CREATE INDEX IF NOT EXISTS idx_members_university ON members(university);
+CREATE INDEX IF NOT EXISTS idx_members_status ON members(status);
+CREATE INDEX IF NOT EXISTS idx_members_is_advisor ON members(is_advisor);
+CREATE INDEX IF NOT EXISTS idx_members_is_leader ON members(is_leader);
 
 -- Resources Table
 CREATE TABLE IF NOT EXISTS resources (
@@ -125,10 +125,10 @@ CREATE TABLE IF NOT EXISTS resources (
     comments TEXT -- JSON array of UUIDs
 );
 
-CREATE INDEX idx_resources_competition_id ON resources(competition_id);
-CREATE INDEX idx_resources_team_id ON resources(team_id);
-CREATE INDEX idx_resources_resource_type ON resources(resource_type);
-CREATE INDEX idx_resources_year ON resources(year);
+CREATE INDEX IF NOT EXISTS idx_resources_competition_id ON resources(competition_id);
+CREATE INDEX IF NOT EXISTS idx_resources_team_id ON resources(team_id);
+CREATE INDEX IF NOT EXISTS idx_resources_resource_type ON resources(resource_type);
+CREATE INDEX IF NOT EXISTS idx_resources_year ON resources(year);
 
 -- Report Files Table
 CREATE TABLE IF NOT EXISTS report_files (
@@ -146,11 +146,11 @@ CREATE TABLE IF NOT EXISTS report_files (
     FOREIGN KEY (competition_id) REFERENCES competitions(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_report_files_competition_id ON report_files(competition_id);
-CREATE INDEX idx_report_files_team_id ON report_files(team_id);
-CREATE INDEX idx_report_files_year ON report_files(year);
-CREATE INDEX idx_report_files_stage ON report_files(stage);
-CREATE INDEX idx_report_files_rank ON report_files(rank);
+CREATE INDEX IF NOT EXISTS idx_report_files_competition_id ON report_files(competition_id);
+CREATE INDEX IF NOT EXISTS idx_report_files_team_id ON report_files(team_id);
+CREATE INDEX IF NOT EXISTS idx_report_files_year ON report_files(year);
+CREATE INDEX IF NOT EXISTS idx_report_files_stage ON report_files(stage);
+CREATE INDEX IF NOT EXISTS idx_report_files_rank ON report_files(rank);
 
 -- Result Files Table
 CREATE TABLE IF NOT EXISTS result_files (
@@ -165,42 +165,42 @@ CREATE TABLE IF NOT EXISTS result_files (
     FOREIGN KEY (competition_id) REFERENCES competitions(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_result_files_competition_id ON result_files(competition_id);
-CREATE INDEX idx_result_files_year ON result_files(year);
-CREATE INDEX idx_result_files_stage ON result_files(stage);
+CREATE INDEX IF NOT EXISTS idx_result_files_competition_id ON result_files(competition_id);
+CREATE INDEX IF NOT EXISTS idx_result_files_year ON result_files(year);
+CREATE INDEX IF NOT EXISTS idx_result_files_stage ON result_files(stage);
 
 -- Triggers for updated_at timestamps
-CREATE TRIGGER update_competitions_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_competitions_timestamp 
 AFTER UPDATE ON competitions
 BEGIN
     UPDATE competitions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_teams_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_teams_timestamp 
 AFTER UPDATE ON teams
 BEGIN
     UPDATE teams SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_members_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_members_timestamp 
 AFTER UPDATE ON members
 BEGIN
     UPDATE members SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_resources_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_resources_timestamp 
 AFTER UPDATE ON resources
 BEGIN
     UPDATE resources SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_report_files_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_report_files_timestamp 
 AFTER UPDATE ON report_files
 BEGIN
     UPDATE report_files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_result_files_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_result_files_timestamp 
 AFTER UPDATE ON result_files
 BEGIN
     UPDATE result_files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
