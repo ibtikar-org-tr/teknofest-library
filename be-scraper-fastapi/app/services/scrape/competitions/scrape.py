@@ -252,34 +252,39 @@ def get_competition_awards(soup):
     try:
         awards_data = {}
         
-        # Find all h4 elements that contain "Ödül" (awards)
-        all_h4s = soup.find_all('h4')
-        if __name__ == "__main__": print(f"Found {len(all_h4s)} h4 elements while searching for awards.")
-        
-        for heading in all_h4s:
-            heading_text = heading.get_text().strip()
-            if 'Ödül' in heading_text.lower() or \
-            'ödüller' in heading_text.lower() or \
-            'award' in heading_text.lower() or \
-            'awards' in heading_text.lower():
-                category_name = heading_text
-                if __name__ == "__main__": print(f"Processing awards category: {category_name}")
-            
-                
-                # Find the next table after this heading
+        navtabs = soup.find('ul', class_='nav nav-tabs')
+        awards_tab_href = None
+        for tab in navtabs.find_all('li'):
+            tab_name = tab.get_text().strip()
+            if "Ödül" in tab_name or "ödül" in tab_name or "Award" in tab_name or "award" in tab_name:
+                if __name__ == "__main__": print(f"Found award tab: {tab_name}")        
+                a_tag = tab.find('a')
+                href = a_tag['href'].lstrip('#')
+                if __name__ == "__main__": print(f"Awards tab href: {href}")
+                if href:
+                    awards_tab_href = href
+                else:
+                    continue
+
+        # now scrape awards section
+        if awards_tab_href:
+            awards_section = soup.find('div', id=awards_tab_href)
+            if __name__ == "__main__": print(f"Awards Section Found: {awards_section is not None}")
+            all_h4s = awards_section.find_all('h4')
+            for heading in all_h4s:
+                heading_text = heading.get_text().strip()
+                if __name__ == "__main__": print(f"Processing awards category: {heading_text}")
                 table = heading.find_next('table', class_='table table-hover')
-                
                 if table:
-                    # Verify this is an awards table by checking headers
                     thead = table.find('thead')
                     if thead:
                         headers = [th.get_text().strip() for th in thead.find_all('th')]
                         # Check if it's an awards table (Derece/Ödül columns)
                         if 'Derece' not in headers or 'Ödül' not in headers:
                             # Also check for English headers
-                            if 'Rank' not in headers or 'Prize' not in headers:
+                            if 'Degree' not in headers or 'Award' not in headers:
+                                if __name__ == "__main__": print(f"Skipping non-awards table for category: {heading_text}")
                                 continue
-                    
                     tbody = table.find('tbody')
                     if tbody:
                         category_awards = []
@@ -288,16 +293,18 @@ def get_competition_awards(soup):
                         for row in rows:
                             cols = row.find_all('td')
                             if len(cols) >= 2:
-                                rank = cols[0].get_text().strip()
-                                prize = cols[1].get_text().strip()
-                                if rank and prize:
+                                degree = cols[0].get_text().strip()
+                                award = cols[1].get_text().strip()
+                                if degree and award:
                                     category_awards.append({
-                                        'rank': rank,
-                                        'prize': prize
+                                        'degree': degree,
+                                        'award': award
                                     })
                         
                         if category_awards:
-                            awards_data[category_name] = category_awards
+                            awards_data[heading_text] = category_awards
+                else:
+                    if __name__ == "__main__": print(f"No awards table found for category: {heading_text}")
         
         # If only one category, return just the list instead of dict
         if len(awards_data) == 1:
