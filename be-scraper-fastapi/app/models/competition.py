@@ -29,7 +29,18 @@ class Competition(SQLModel, table=True):
     years: list[str] = Field(default_factory=list, sa_column=Column(JSON)) # The years that the competition is held
     min_member: Optional[int] = None # Minimum number of members in a team
     max_member: Optional[int] = None # Maximum number of members in a team
+    ggroup: Optional[str] = None # competition google group link
     # comments: list[uuid.UUID]
+
+class CompetitionData(SQLModel, table=True):
+    competition_id: int = Field(primary_key=True)
+    year: str = Field(primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = None
+    timeline: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSON)) # timeline dates in JSON format (takvim)
+    awards: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSON)) # awards details in JSON format
+    criteria: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSON)) # evaluation criteria files links in JSON format
 
 class Report_File(SQLModel, table=True):
     id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)

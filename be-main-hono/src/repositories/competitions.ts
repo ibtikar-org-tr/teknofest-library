@@ -1,12 +1,14 @@
 import type { Environment } from "../types/env";
 import type {
   Competition,
+  CompetitionData,
   CreateCompetitionPayload,
   UpdateCompetitionPayload,
 } from "../types/competition";
 import { mapCompetitionRow } from "../types/competition";
 import { buildUpdateQuery, toJsonText } from "../utils/sql";
 
+// Competition related functions
 const TABLE = "competitions";
 
 export const listCompetitions = async (env: Environment): Promise<Competition[]> => {
@@ -50,6 +52,7 @@ export const createCompetition = async (
     "years",
     "min_member",
     "max_member",
+    "ggroup"
   ];
   const placeholders = cols.map(() => "?").join(", ");
   const params = [
@@ -71,6 +74,7 @@ export const createCompetition = async (
     yearsText,
     payload.min_member ?? null,
     payload.max_member ?? null,
+    payload.ggroup ?? null
   ];
 
   await env.D1_DB
@@ -104,4 +108,57 @@ export const deleteCompetition = async (
 ): Promise<boolean> => {
   const res = await env.D1_DB.prepare(`DELETE FROM ${TABLE} WHERE id = ?`).bind(id).run();
   return (res.success as boolean) ?? true;
+};
+
+
+// Competition Data related functions
+
+const DATA_TABLE = "competition_data";
+
+export const getCompetitionData = async (
+  env: Environment,
+  competitionId: number,
+  year: number
+): Promise<CompetitionData | null> => {
+  const { results } = await env.D1_DB
+    .prepare(`SELECT * FROM ${DATA_TABLE} WHERE competition_id = ? AND year = ?`)
+    .bind(competitionId, year)
+    .all();
+  const row = results?.[0] as any;
+  return row
+    ? {
+        competition_id: row.competition_id as number,
+        year: row.year as number,
+        timeline: JSON.parse(row.timeline),
+        awards: JSON.parse(row.awards),
+        criteria: JSON.parse(row.criteria),
+      }
+    : null;
+};
+
+export const upsertCompetitionData = async (
+  env: Environment,
+  data: CompetitionData
+): Promise<void> => {
+  const timelineText = toJsonText(data.timeline);
+  const awardsText = toJsonText(data.awards);
+  const criteriaText = toJsonText(data.criteria);
+
+  await env.D1_DB
+    .prepare(
+      `INSERT INTO ${DATA_TABLE} (competition_id, year, timeline, awards, criteria)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(competition_id, year) DO UPDATE SET
+         timeline = excluded.timeline,
+         awards = excluded.awards,
+         criteria = excluded.criteria`
+    )
+    .bind(
+      data.competition_id,
+      data.year,
+      timelineText,
+      awardsText,
+      criteriaText
+    )
+    .run();
 };

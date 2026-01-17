@@ -25,8 +25,20 @@ CREATE TABLE IF NOT EXISTS competitions (
     ar_link TEXT,
     years TEXT, -- JSON array of years
     min_member INTEGER,
-    max_member INTEGER
+    max_member INTEGER,
+    ggroup TEXT
 );
+
+CREATE TABLE IF NOT EXISTS competition_data (
+    competition_id INTEGER,
+    year TEXT,
+    timeline TEXT, -- JSON object
+    awards TEXT, -- JSON object
+    criteria TEXT, -- JSON object
+    PRIMARY KEY (competition_id, year),
+    FOREIGN KEY (competition_id) REFERENCES competitions(id) ON DELETE CASCADE
+);
+
 
 CREATE INDEX idx_competitions_tk_number ON competitions(tk_number);
 CREATE INDEX idx_competitions_t3kys_number ON competitions(t3kys_number);

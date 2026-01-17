@@ -1,5 +1,5 @@
 from app.initializers.d1_client import d1_client
-from app.models.competition import Competition, Report_File, Result_File
+from app.models.competition import Competition, CompetitionData, Report_File, Result_File
 from typing import Optional, List
 import json
 import uuid
@@ -267,6 +267,80 @@ class CompetitionCRUD:
             max_member=row.get("max_member")
         )
 
+class CompetitionDataCRUD:
+    """Cloudflare D1 implementation of CompetitionDataCRUD"""
+    
+    def __init__(self):
+        self.client = d1_client
+    
+    def get_competition_data(self, competition_id: int, year: str) -> Optional[CompetitionData]:
+        """Get competition data by competition ID and year"""
+        sql = "SELECT * FROM competition_data WHERE competition_id = ? AND year = ?"
+        result = self.client.execute(sql, [str(competition_id), year])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_competition_data(result["results"][0])
+        return None
+    
+    def create_competition_data(self, competition_data: CompetitionData) -> CompetitionData:
+        """Create new competition data"""
+        now = datetime.utcnow().isoformat()
+        
+        sql = """
+        INSERT INTO competition_data (
+            competition_id, year, created_at, updated_at, deleted_at,
+            timeline, awards, criteria
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        
+        params = [
+            str(competition_data.competition_id), competition_data.year,
+            now, now, None,
+            json.dumps(competition_data.timeline),
+            json.dumps(competition_data.awards),
+            json.dumps(competition_data.criteria)
+        ]
+        
+        self.client.execute(sql, params)
+        return competition_data
+    
+    def update_competition_data(self, competition_id: int, year: str, competition_data: CompetitionData) -> Optional[CompetitionData]:
+        """Update existing competition data"""
+        db_competition_data = self.get_competition_data(competition_id, year)
+        if db_competition_data is None:
+            return None
+        
+        now = datetime.utcnow().isoformat()
+        
+        sql = """
+        UPDATE competition_data SET
+            updated_at = ?, timeline = ?, awards = ?, criteria = ?
+        WHERE competition_id = ? AND year = ?
+        """
+        
+        params = [
+            now,
+            json.dumps(competition_data.timeline),
+            json.dumps(competition_data.awards),
+            json.dumps(competition_data.criteria),
+            str(competition_id), competition_data.year
+        ]
+        
+        self.client.execute(sql, params)
+        return self.get_competition_data(competition_id, year)
+    
+    def _row_to_competition_data(self, row: dict) -> CompetitionData:
+        """Convert database row to CompetitionData model"""
+        return CompetitionData(
+            competition_id=int(row["competition_id"]),
+            year=row["year"],
+            created_at=datetime.fromisoformat(row["created_at"]) if row.get("created_at") else datetime.utcnow(),
+            updated_at=datetime.fromisoformat(row["updated_at"]) if row.get("updated_at") else datetime.utcnow(),
+            deleted_at=datetime.fromisoformat(row["deleted_at"]) if row.get("deleted_at") else None,
+            timeline=json.loads(row.get("timeline", "{}")) if isinstance(row.get("timeline"), str) else row.get("timeline", {}),
+            awards=json.loads(row.get("awards", "{}")) if isinstance(row.get("awards"), str) else row.get("awards", {}),
+            criteria=json.loads(row.get("criteria", "{}")) if isinstance(row.get("criteria"), str) else row.get("criteria", {})
+        )
 
 class ReportFileCRUD:
     """Cloudflare D1 implementation of ReportFileCRUD"""

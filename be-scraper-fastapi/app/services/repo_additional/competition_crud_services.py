@@ -181,3 +181,44 @@ def update_or_create_report_file(
 
     return report_file_obj_new
 
+# crud for CompetitionData
+def update_or_create_competition_data(
+        competition_id: int,
+        year,
+        timeline = None,
+        awards = None,
+        criteria = None
+):
+    print(f"""
+            received competition data info:
+            competition_id: {competition_id}
+            year: {year}
+            timeline: {timeline}
+            awards: {awards}
+            criteria: {criteria}
+        """)
+    
+    competition_data_crud_class = competition_crud.CompetitionDataCRUD()
+    if not competition_id:
+        return None
+    competition_data_obj_from_db = competition_data_crud_class.get_competition_data(competition_id, year)
+    competition_data_obj_new = None
+    if competition_data_obj_from_db:
+        competition_data_obj_new = competition_data_obj_from_db
+    else:
+        competition_data_obj_new = competition_crud.CompetitionData(competition_id=competition_id, year=year)
+
+    if timeline:
+        competition_data_obj_new.timeline = timeline
+    if awards:
+        competition_data_obj_new.awards = awards
+    if criteria:
+        competition_data_obj_new.criteria = criteria
+
+    if competition_data_obj_from_db:  # update existing competition data
+        competition_data_crud_class.update_competition_data(competition_id, year, competition_data_obj_new)
+
+    else:  # create new competition data
+        competition_data_crud_class.create_competition_data(competition_data_obj_new)
+
+    return competition_data_obj_new

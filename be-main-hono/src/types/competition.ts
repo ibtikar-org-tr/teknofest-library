@@ -21,6 +21,15 @@ export interface Competition {
 	years: number[];
 	min_member: number | null;
 	max_member: number | null;
+	ggroup: string | null;
+}
+
+export interface CompetitionData {
+	competition_id: number;
+	year: number;
+	timeline: Record<string, string>;
+	awards: Record<string, string>;
+	criteria: Record<string, string>;
 }
 
 export interface CreateCompetitionPayload {
@@ -42,6 +51,7 @@ export interface CreateCompetitionPayload {
 	years?: number[];
 	min_member?: number | null;
 	max_member?: number | null;
+	ggroup?: string | null;
 }
 
 export type UpdateCompetitionPayload = Partial<CreateCompetitionPayload>;
@@ -76,6 +86,7 @@ export const mapCompetitionRow = (row: any): Competition => {
 		})(),
 		min_member: row.min_member != null ? Number(row.min_member) : null,
 		max_member: row.max_member != null ? Number(row.max_member) : null,
+		ggroup: row.ggroup ?? null,
 	};
 };
 
