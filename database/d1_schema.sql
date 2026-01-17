@@ -205,3 +205,9 @@ AFTER UPDATE ON result_files
 BEGIN
     UPDATE result_files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
+
+CREATE TRIGGER IF NOT EXISTS update_competition_data_timestamp 
+AFTER UPDATE ON competition_data
+BEGIN
+    UPDATE competition_data SET updated_at = CURRENT_TIMESTAMP WHERE competition_id = NEW.competition_id AND year = NEW.year;
+END;
