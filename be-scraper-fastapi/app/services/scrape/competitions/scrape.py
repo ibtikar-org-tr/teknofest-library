@@ -181,7 +181,8 @@ def get_page_lang(response):
     
 def get_competition_name(soup):
     try:
-        competition_name = soup.find('div', class_='container').find('h1').text.strip()
+        # competition_name = soup.find('div', class_='container').find('h1').text.strip()
+        competition_name = soup.find('section', class_='title-competitions').find('h1').text.strip()
         return competition_name
     except:
         return None
