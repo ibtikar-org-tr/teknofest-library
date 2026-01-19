@@ -5,9 +5,7 @@ import {
 	getCompetition,
 	createCompetition,
 	updateCompetition,
-	deleteCompetition,
-	getCompetitionData,
-	upsertCompetitionData,
+	deleteCompetition
 } from '../repositories/competitions';
 
 const competitionRouters = new Hono<AppBindings>();
@@ -47,28 +45,6 @@ competitionRouters.delete('/:id', async (c) => {
 	const id = Number(c.req.param('id'));
 	const ok = await deleteCompetition(c.env, id);
 	return c.json({ ok });
-});
-
-// Get competition data (timeline, awards, criteria) by competition ID and year
-competitionRouters.get('/:id/data/:year', async (c) => {
-	const id = Number(c.req.param('id'));
-	const year = Number(c.req.param('year'));
-	const data = await getCompetitionData(c.env, id, year);
-	if (!data) return c.json({ message: 'Competition data not found' }, 404);
-	return c.json(data);
-});
-
-// Create or update competition data
-competitionRouters.put('/:id/data/:year', async (c) => {
-	const id = Number(c.req.param('id'));
-	const year = Number(c.req.param('year'));
-	const body = await c.req.json();
-	await upsertCompetitionData(c.env, {
-		competition_id: id,
-		year: year,
-		...body,
-	});
-	return c.json({ message: 'Competition data updated successfully' });
 });
 
 export default competitionRouters;

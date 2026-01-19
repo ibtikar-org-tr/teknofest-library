@@ -7,6 +7,7 @@ import membersRouter from './routers/members'
 import resourcesRouter from './routers/resources'
 import reportFilesRouter from './routers/report_files'
 import resultFilesRouter from './routers/result_files'
+import competitionDataRouters from './routers/competitionData'
 
 const app = new Hono<AppBindings>();
 
@@ -23,6 +24,7 @@ app.get('/', (c) => c.text('Hello Hono! App is running and healthy.'))
 
 // Routers
 app.route('/api/competitions', competitionRouters)
+app.route('/api/competition-data', competitionDataRouters)
 app.route('/api/teams', teamsRouter)
 app.route('/api/members', membersRouter)
 app.route('/api/resources', resourcesRouter)
