@@ -122,7 +122,7 @@ export const getCompetitionData = async (
 ): Promise<CompetitionData | null> => {
   const { results } = await env.D1_DB
     .prepare(`SELECT * FROM ${DATA_TABLE} WHERE competition_id = ? AND year = ?`)
-    .bind(competitionId, year)
+    .bind(competitionId, year.toString())
     .all();
   const row = results?.[0] as any;
   return row
@@ -155,7 +155,7 @@ export const upsertCompetitionData = async (
     )
     .bind(
       data.competition_id,
-      data.year,
+      data.year.toString(),
       timelineText,
       awardsText,
       criteriaText
