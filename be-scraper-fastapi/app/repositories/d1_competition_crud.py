@@ -284,18 +284,14 @@ class CompetitionDataCRUD:
     
     def create_competition_data(self, competition_data: CompetitionData) -> CompetitionData:
         """Create new competition data"""
-        now = datetime.utcnow().isoformat()
-        
         sql = """
         INSERT INTO competition_data (
-            competition_id, year, created_at, updated_at, deleted_at,
-            timeline, awards, criteria
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            competition_id, year, timeline, awards, criteria
+        ) VALUES (?, ?, ?, ?, ?)
         """
         
         params = [
             str(competition_data.competition_id), competition_data.year,
-            now, now, None,
             json.dumps(competition_data.timeline),
             json.dumps(competition_data.awards),
             json.dumps(competition_data.criteria)
@@ -310,16 +306,13 @@ class CompetitionDataCRUD:
         if db_competition_data is None:
             return None
         
-        now = datetime.utcnow().isoformat()
-        
         sql = """
         UPDATE competition_data SET
-            updated_at = ?, timeline = ?, awards = ?, criteria = ?
+            timeline = ?, awards = ?, criteria = ?
         WHERE competition_id = ? AND year = ?
         """
         
         params = [
-            now,
             json.dumps(competition_data.timeline),
             json.dumps(competition_data.awards),
             json.dumps(competition_data.criteria),
@@ -334,9 +327,6 @@ class CompetitionDataCRUD:
         return CompetitionData(
             competition_id=int(row["competition_id"]),
             year=row["year"],
-            created_at=datetime.fromisoformat(row["created_at"]) if row.get("created_at") else datetime.utcnow(),
-            updated_at=datetime.fromisoformat(row["updated_at"]) if row.get("updated_at") else datetime.utcnow(),
-            deleted_at=datetime.fromisoformat(row["deleted_at"]) if row.get("deleted_at") else None,
             timeline=json.loads(row.get("timeline", "{}")) if isinstance(row.get("timeline"), str) else row.get("timeline", {}),
             awards=json.loads(row.get("awards", "{}")) if isinstance(row.get("awards"), str) else row.get("awards", {}),
             criteria=json.loads(row.get("criteria", "{}")) if isinstance(row.get("criteria"), str) else row.get("criteria", {})

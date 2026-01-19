@@ -35,9 +35,6 @@ class Competition(SQLModel, table=True):
 class CompetitionData(SQLModel, table=True):
     competition_id: int = Field(primary_key=True)
     year: str = Field(primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    deleted_at: Optional[datetime] = None
     timeline: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSON)) # timeline dates in JSON format (takvim)
     awards: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSON)) # awards details in JSON format
     criteria: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSON)) # evaluation criteria files links in JSON format
