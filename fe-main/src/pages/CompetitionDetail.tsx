@@ -73,11 +73,9 @@ export default function CompetitionDetail() {
         <div className="container mx-auto px-4 pb-12 relative z-10 flex flex-col md:flex-row justify-between items-end gap-6">
           <div>
             <div className="flex gap-2 mb-4">
-                            <Badge className="bg-primary hover:bg-primary text-white border-none">General</Badge>
                             <Badge variant="outline" className="bg-background/20 backdrop-blur-md border-white/20 text-white">{t("detail.yearsLabel")}: {yearsText}</Badge>
             </div>
                         <h1 className="text-4xl md:text-6xl font-bold font-display text-white mb-2">{title}</h1>
-                        <p className="text-xl text-white/80">{description}</p>
           </div>
           
           <div className="flex gap-4">
