@@ -33,7 +33,7 @@ export default function CompetitionDetail() {
 
     // Fetch competition data (timeline, awards, criteria)
     const { data: competitionData, isLoading: isLoadingData } = useQuery<CompetitionDataApi>({
-        queryKey: [buildApiUrl(`/api/competitions/${id}/data/${currentYear}`)],
+        queryKey: [buildApiUrl(`/api/competition-data/${id}/${currentYear}`)],
         enabled: !!data, // Only fetch when competition data is loaded
     });
 
