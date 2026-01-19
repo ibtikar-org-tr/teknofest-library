@@ -52,7 +52,7 @@ export default function CompetitionAwards({ awards, isLoading }: CompetitionAwar
 function AwardsList({ awards }: { awards: AwardEntry[] }) {
   // Get the first place award for special display
   const firstPlace = awards.find(
-    (a) => a.rank.toLowerCase().includes("birinci") || a.rank.toLowerCase().includes("first")
+    (a) => a.degree && (a.degree.toLowerCase().includes("birinci") || a.degree.toLowerCase().includes("first"))
   );
   const otherAwards = awards.filter((a) => a !== firstPlace);
 
@@ -65,9 +65,9 @@ function AwardsList({ awards }: { awards: AwardEntry[] }) {
           </div>
           <div>
             <div className="text-sm font-bold text-primary uppercase tracking-wider mb-1">
-              {firstPlace.rank}
+              {firstPlace.degree}
             </div>
-            <div className="text-3xl font-bold font-display">{firstPlace.prize}</div>
+            <div className="text-3xl font-bold font-display">{firstPlace.award}</div>
           </div>
         </div>
       )}
@@ -77,9 +77,9 @@ function AwardsList({ awards }: { awards: AwardEntry[] }) {
           {otherAwards.map((award, index) => (
             <div key={index} className="p-4 border border-border bg-card rounded-xl">
               <div className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                {award.rank}
+                {award.degree}
               </div>
-              <div className="text-2xl font-bold font-display">{award.prize}</div>
+              <div className="text-2xl font-bold font-display">{award.award}</div>
             </div>
           ))}
         </div>

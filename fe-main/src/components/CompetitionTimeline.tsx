@@ -2,7 +2,7 @@ import { Calendar } from "lucide-react";
 import type { TimelineEntry } from "@/lib/competitions";
 
 interface CompetitionTimelineProps {
-  timeline: TimelineEntry[] | null;
+  timeline: TimelineEntry[] | Record<string, never> | null;
   isLoading?: boolean;
 }
 
@@ -20,7 +20,10 @@ export default function CompetitionTimeline({ timeline, isLoading }: Competition
     );
   }
 
-  if (!timeline || timeline.length === 0) {
+  // Handle empty object or null/empty array
+  const isValidTimeline = timeline && Array.isArray(timeline) && timeline.length > 0;
+  
+  if (!isValidTimeline) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
