@@ -129,9 +129,9 @@ export const getCompetitionData = async (
     ? {
         competition_id: row.competition_id as number,
         year: row.year as number,
-        timeline: JSON.parse(row.timeline),
-        awards: JSON.parse(row.awards),
-        criteria: JSON.parse(row.criteria),
+        timeline: row.timeline ? JSON.parse(row.timeline) : null,
+        awards: row.awards ? JSON.parse(row.awards) : null,
+        criteria: row.criteria ? JSON.parse(row.criteria) : null,
       }
     : null;
 };

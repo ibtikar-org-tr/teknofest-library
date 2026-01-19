@@ -12,9 +12,12 @@ import {
     formatTeamSize,
     pickLocalizedField,
     type CompetitionApi,
+    type CompetitionDataApi,
 } from "@/lib/competitions";
 import { useLanguage } from "@/lib/LanguageContext";
 import heroBg from "@assets/generated_images/rocket_competition.png";
+import CompetitionTimeline from "@/components/CompetitionTimeline";
+import CompetitionAwards from "@/components/CompetitionAwards";
 
 export default function CompetitionDetail() {
   const [match, params] = useRoute("/competition/:id");
@@ -23,6 +26,15 @@ export default function CompetitionDetail() {
 
     const { data, isLoading, error } = useQuery<CompetitionApi>({
         queryKey: [buildApiUrl(`/api/competitions/${id}`)],
+    });
+
+    // Get the latest year or default to current year
+    const currentYear = data?.years?.length ? Math.max(...data.years) : new Date().getFullYear();
+
+    // Fetch competition data (timeline, awards, criteria)
+    const { data: competitionData, isLoading: isLoadingData } = useQuery<CompetitionDataApi>({
+        queryKey: [buildApiUrl(`/api/competitions/${id}/data/${currentYear}`)],
+        enabled: !!data, // Only fetch when competition data is loaded
     });
 
     const localized = (suffix: "name" | "description" | "link" | "application_link") =>
@@ -173,25 +185,7 @@ export default function CompetitionDetail() {
                     </TabsContent>
                     
                     <TabsContent value="awards">
-                         <div className="grid gap-6">
-                            <div className="p-6 border border-primary/20 bg-primary/5 rounded-xl flex items-center gap-6">
-                                <Trophy className="w-12 h-12 text-primary" />
-                                <div>
-                                    <div className="text-sm font-bold text-primary uppercase tracking-wider mb-1">First Place</div>
-                                    <div className="text-3xl font-bold font-display">₺100,000</div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="p-6 border border-border bg-card rounded-xl">
-                                    <div className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1">Second Place</div>
-                                    <div className="text-2xl font-bold font-display">₺80,000</div>
-                                </div>
-                                <div className="p-6 border border-border bg-card rounded-xl">
-                                    <div className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1">Third Place</div>
-                                    <div className="text-2xl font-bold font-display">₺60,000</div>
-                                </div>
-                            </div>
-                         </div>
+                        <CompetitionAwards awards={competitionData?.awards ?? null} isLoading={isLoadingData} />
                     </TabsContent>
 
                     <TabsContent value="faq">

@@ -49,7 +49,6 @@ const mapCompetitionToCard = (
     teamSize: formatTeamSize(
       competition.min_member,
       competition.max_member,
-      t("card.members"),
       t("card.notSpecified"),
     ),
     prize: FALLBACK_PRIZE,

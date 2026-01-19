@@ -24,12 +24,22 @@ export interface Competition {
 	ggroup: string | null;
 }
 
+export interface TimelineEntry {
+	description: string;
+	date: string;
+}
+
+export interface AwardEntry {
+	rank: string;
+	prize: string;
+}
+
 export interface CompetitionData {
 	competition_id: number;
 	year: number;
-	timeline: Record<string, string>;
-	awards: Record<string, string>;
-	criteria: Record<string, string>;
+	timeline: TimelineEntry[] | null;
+	awards: Record<string, AwardEntry[]> | AwardEntry[] | null;
+	criteria: Record<string, any> | null;
 }
 
 export interface CreateCompetitionPayload {

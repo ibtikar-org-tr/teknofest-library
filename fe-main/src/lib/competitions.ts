@@ -25,6 +25,24 @@ export interface CompetitionApi {
   max_member: number | null;
 }
 
+export interface TimelineEntry {
+  description: string;
+  date: string;
+}
+
+export interface AwardEntry {
+  rank: string;
+  prize: string;
+}
+
+export interface CompetitionDataApi {
+  competition_id: number;
+  year: number;
+  timeline: TimelineEntry[] | null;
+  awards: Record<string, AwardEntry[]> | AwardEntry[] | null;
+  criteria: Record<string, string> | null;
+}
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export const buildApiUrl = (path: string) => {
