@@ -31,16 +31,16 @@ export interface TimelineEntry {
 }
 
 export interface AwardEntry {
-  rank: string;
-  prize: string;
+  degree: string;
+  award: string;
 }
 
 export interface CompetitionDataApi {
   competition_id: number;
-  year: number;
-  timeline: TimelineEntry[] | null;
+  year: string;
+  timeline: TimelineEntry[] | Record<string, never> | null;
   awards: Record<string, AwardEntry[]> | AwardEntry[] | null;
-  criteria: Record<string, string> | null;
+  criteria: Record<string, string> | Record<string, never> | null;
 }
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
