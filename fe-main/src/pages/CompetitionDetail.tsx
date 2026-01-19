@@ -262,26 +262,12 @@ export default function CompetitionDetail() {
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-border">
-                        <h4 className="font-bold mb-2">Timeline</h4>
-                        <ol className="relative border-l border-border ml-2 space-y-4">
-                            <li className="mb-2 ml-4">
-                                <div className="absolute w-3 h-3 bg-primary rounded-full -left-1.5 border border-white mt-1.5"></div>
-                                <time className="text-xs text-muted-foreground">Jan 15</time>
-                                <h5 className="text-sm font-semibold">Applications Open</h5>
-                            </li>
-                            <li className="mb-2 ml-4">
-                                <div className="absolute w-3 h-3 bg-primary rounded-full -left-1.5 border border-white mt-1.5"></div>
-                                <time className="text-xs text-muted-foreground">Mar 15</time>
-                                <h5 className="text-sm font-semibold">Proposal Deadline</h5>
-                            </li>
-                            <li className="ml-4 opacity-50">
-                                <div className="absolute w-3 h-3 bg-border rounded-full -left-1.5 border border-white mt-1.5"></div>
-                                <time className="text-xs text-muted-foreground">Aug 20</time>
-                                <h5 className="text-sm font-semibold">Finals</h5>
-                            </li>
-                        </ol>
-                    </div>
+                    {competitionData?.timeline && Array.isArray(competitionData.timeline) && competitionData.timeline.length > 0 && (
+                        <div className="pt-6 border-t border-border">
+                            <h4 className="font-bold mb-2">Timeline</h4>
+                            <CompetitionTimeline timeline={competitionData.timeline} isLoading={isLoadingData} />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

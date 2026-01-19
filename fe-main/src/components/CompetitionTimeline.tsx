@@ -32,9 +32,12 @@ export default function CompetitionTimeline({ timeline, isLoading }: Competition
     );
   }
 
+  // TypeScript knows timeline is an array here
+  const timelineArray = timeline as TimelineEntry[];
+
   return (
     <ol className="relative border-l border-border ml-2 space-y-4">
-      {timeline.map((entry, index) => (
+      {timelineArray.map((entry, index) => (
         <li key={index} className="mb-2 ml-4">
           <div className="absolute w-3 h-3 bg-primary rounded-full -left-1.5 border-2 border-background mt-1.5"></div>
           <time className="text-xs text-muted-foreground font-medium">{entry.date}</time>
