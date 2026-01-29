@@ -49,3 +49,15 @@ def find_original_sentence(sentence, groups=full_groups, threshold=None):
                 return lookup[close_matches[0]]
     
     return None  # No match found
+
+if __name__ == "__main__":
+    test_sentences = [
+        "chip-design-competition",
+        "chip-design",
+        "5g",
+        "biotek"
+    ]
+    
+    for sentence in test_sentences:
+        result = find_original_sentence(sentence)
+        print(f"Input: {sentence} => Matched: {result}")

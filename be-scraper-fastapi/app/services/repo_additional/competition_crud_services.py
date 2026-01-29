@@ -231,3 +231,16 @@ def update_or_create_competition_data(
         competition_data_crud_class.create_competition_data(competition_data_obj_new)
 
     return competition_data_obj_new
+
+
+if __name__ == "__main__":
+    # test get_competition_obj_via_any_name
+    test_names = [
+        "chip-design-competition",
+        "chip",
+        "5g",
+        "biotek"
+    ]
+    for name in test_names:
+        comp_obj = get_competition_obj_via_any_name(name)
+        print(f"Input: {name} => Competition Object: {comp_obj}")
