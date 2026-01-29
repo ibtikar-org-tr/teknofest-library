@@ -428,6 +428,15 @@ class ReportFileCRUD:
                 report_files.append(self._row_to_report_file(row))
         return report_files
     
+    def get_report_file_by_file_path(self, file_path: str) -> Optional[Report_File]:
+        """Get report file by file path"""
+        sql = "SELECT * FROM report_files WHERE file_path = ? LIMIT 1"
+        result = self.client.execute(sql, [file_path])
+        
+        if result.get("results") and len(result["results"]) > 0:
+            return self._row_to_report_file(result["results"][0])
+        return None
+
     def _row_to_report_file(self, row: dict) -> Report_File:
         """Convert database row to Report_File model"""
         return Report_File(

@@ -141,7 +141,7 @@ def update_or_create_report_file(
 
     # get competition object
     competition_obj_from_db = get_competition_obj_via_any_name(comp_name)
-    competition_crud_class = competition_crud.CompetitionCRUD()
+
     if competition_obj_from_db:
         competition_id = competition_obj_from_db.id
     else:
@@ -160,6 +160,10 @@ def update_or_create_report_file(
     try:
         if team_id is not None:
             report_file_obj_from_db = report_file_crud_class.get_report_files_by_competition_id_and_team_id(int(competition_id), int(team_id))[0]
+            if report_file_obj_from_db:
+                report_file_obj_new = report_file_obj_from_db
+        if not report_file_obj_from_db and file_path is not None:
+            report_file_obj_from_db = report_file_crud_class.get_report_file_by_file_path(file_path)
             if report_file_obj_from_db:
                 report_file_obj_new = report_file_obj_from_db
     except:
