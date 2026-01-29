@@ -8,6 +8,7 @@ from app.services.unify.function import find_original_sentence
 from app.services.filename_utils import sanitize_filename
 from datetime import datetime
 from app.services.repo_additional import competition_crud_services
+from app.services.helpers.bucket_link import build_bucket_link
 
 def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: bool = False, update_database: bool = False, year=None, session_id=None):
     # Initialize counters
@@ -66,6 +67,7 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                         folder_path = os.path.join(os.getcwd(), "competitions", safe_comp_name, "reports", safe_folder_name)
                         os.makedirs(folder_path, exist_ok=True)
                         report_file_path = os.path.join(folder_path, safe_file_name)
+                        report_storage_path = build_bucket_link(report_file_path) if report_file_path else None
                         
                         if update_downloads:
                             download.download_file(report_file_url, report_file_path)
@@ -75,7 +77,7 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                             competition_crud_services.update_or_create_report_file(
                                 comp_name=unified_comp_name,
                                 year=year,
-                                file_path=report_file_path,
+                                file_path=report_storage_path,
                                 rank="finalist",
                                 stage="final-report",
                             )

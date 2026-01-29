@@ -8,22 +8,7 @@ from app.services.repo_additional import team_crud_services
 from app.services.scrape.competitions.scrape import get_session_id_for_specific_year
 from app.services.filename_utils import sanitize_filename
 from datetime import datetime
-from app.initializers import env
-
-def build_bucket_link(local_path: str):
-    """Return public bucket URL for a local download path when BUCKET_LINK is set."""
-    bucket_link = env.BUCKET_LINK
-    if not bucket_link or not local_path:
-        return local_path
-
-    bucket_link = bucket_link.rstrip("/")
-    try:
-        rel_path = os.path.relpath(local_path, start=os.getcwd())
-    except ValueError:
-        return local_path
-
-    rel_path = rel_path.replace(os.sep, "/")
-    return f"{bucket_link}/{rel_path}"
+from app.services.helpers.bucket_link import build_bucket_link
 
 def scrape_page(page, update_downloads: bool = False, update_database: bool = False, year=None, session_id=None):
     stats = {
