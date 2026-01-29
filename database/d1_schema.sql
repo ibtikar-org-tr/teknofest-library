@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS competitions (
 CREATE TABLE IF NOT EXISTS competition_data (
     competition_id INTEGER,
     year TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     timeline TEXT, -- JSON object
     awards TEXT, -- JSON object
     criteria TEXT, -- JSON object

@@ -286,8 +286,8 @@ class CompetitionDataCRUD:
         """Create new competition data"""
         sql = """
         INSERT INTO competition_data (
-            competition_id, year, timeline, awards, criteria
-        ) VALUES (?, ?, ?, ?, ?)
+            competition_id, year, created_at, updated_at, timeline, awards, criteria
+        ) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)
         """
         
         params = [
@@ -308,7 +308,7 @@ class CompetitionDataCRUD:
         
         sql = """
         UPDATE competition_data SET
-            timeline = ?, awards = ?, criteria = ?
+            updated_at = CURRENT_TIMESTAMP, timeline = ?, awards = ?, criteria = ?
         WHERE competition_id = ? AND year = ?
         """
         
