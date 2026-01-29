@@ -338,7 +338,7 @@ class ReportFileCRUD:
     def __init__(self):
         self.client = d1_client
     
-    def get_report_file(self, report_file_id: int) -> Optional[Report_File]:
+    def get_report_file(self, report_file_id: uuid.UUID) -> Optional[Report_File]:
         """Get a report file by ID"""
         sql = "SELECT * FROM report_files WHERE id = ?"
         result = self.client.execute(sql, [str(report_file_id)])
@@ -381,7 +381,7 @@ class ReportFileCRUD:
         report_file.id = uuid.UUID(file_id)
         return report_file
     
-    def update_report_file(self, report_file_id: int, report_file: Report_File) -> Optional[Report_File]:
+    def update_report_file(self, report_file_id: uuid.UUID, report_file: Report_File) -> Optional[Report_File]:
         """Update an existing report file"""
         db_report_file = self.get_report_file(report_file_id)
         if db_report_file is None:
@@ -407,7 +407,7 @@ class ReportFileCRUD:
         self.client.execute(sql, params)
         return self.get_report_file(report_file_id)
     
-    def delete_report_file(self, report_file_id: int) -> Optional[Report_File]:
+    def delete_report_file(self, report_file_id: uuid.UUID) -> Optional[Report_File]:
         """Delete a report file"""
         db_report_file = self.get_report_file(report_file_id)
         if db_report_file is None:

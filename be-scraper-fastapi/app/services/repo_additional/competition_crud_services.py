@@ -1,3 +1,4 @@
+import uuid
 from app.repositories import d1_competition_crud as competition_crud
 from app.services.unify.function import find_original_sentence
 from app.models.competition import Competition, Report_File
@@ -10,15 +11,16 @@ def get_competition_application_link_via_en_name(name: str):
     return competition_obj.application_link_tr
 
 def get_competition_obj_via_any_name(name: str | None):
+    print(f"Searching competition for name: {name}")
     if name is None:
         return None
     competition_crud_class = competition_crud.CompetitionCRUD()
     unified_name = find_original_sentence(name)
     competition_obj = None
     if unified_name:
-        competition_obj = competition_crud_class.get_competition_by_en_name(name=unified_name)
+        competition_obj = competition_crud_class.get_competition_by_en_link(en_link=unified_name)
     if not competition_obj:
-        competition_obj = competition_crud_class.get_competition_by_en_link(en_link=unified_name) if unified_name else None
+        competition_obj = competition_crud_class.get_competition_by_en_name(name=unified_name) if unified_name else None
         if not competition_obj:
             competition_obj = competition_crud_class.get_competition_by_tr_name(name=name)
             if not competition_obj:
@@ -143,15 +145,18 @@ def update_or_create_report_file(
     if competition_obj_from_db:
         competition_id = competition_obj_from_db.id
     else:
+        print(f"No competition found for name: {comp_name}")
         return
 
     # create new report file object
     if not competition_id:
+        print(f"No competition ID found for competition name: {comp_name}")
         return
     
     report_file_crud_class = competition_crud.ReportFileCRUD()
     report_file_obj_new: Report_File = Report_File(competition_id=competition_id, year=year or "", file_path=file_path or "")
-    
+    report_file_obj_from_db = None
+
     try:
         if team_id is not None:
             report_file_obj_from_db = report_file_crud_class.get_report_files_by_competition_id_and_team_id(int(competition_id), int(team_id))[0]
@@ -176,8 +181,12 @@ def update_or_create_report_file(
     if language:
         report_file_obj_new.language = language
 
-    if report_file_obj_new.id:
-        report_file_crud_class.update_report_file(int(report_file_obj_new.id), report_file_obj_new)
+    if report_file_obj_from_db and report_file_obj_from_db.id:
+        print(f"Updating existing report file with ID: {report_file_obj_from_db.id}")
+        report_file_crud_class.update_report_file(report_file_obj_from_db.id, report_file_obj_new)
+    else:
+        print(f"Creating new report file for competition ID: {competition_id}, team ID: {team_id}")
+        report_file_crud_class.create_report_file(report_file_obj_new)
 
     return report_file_obj_new
 
