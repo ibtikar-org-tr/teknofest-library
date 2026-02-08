@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Trophy, Calendar, Users, Download, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Trophy, Calendar, Users, Download, ArrowRight, CheckCircle2, FileText, Link2, Cpu, Database, BookOpen } from "lucide-react";
 import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -149,88 +149,154 @@ export default function CompetitionDetail() {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="resources">
-                        <div className="space-y-6">
-                            {isLoadingReportFiles || isLoadingResources ? (
-                                <div className="text-muted-foreground">{t("detail.loading")}</div>
-                            ) : (reportFiles?.length ?? 0) === 0 && (resources?.length ?? 0) === 0 ? (
-                                <div className="text-muted-foreground text-center py-8">No resources available</div>
-                            ) : (
-                                <>
-                                    {/* Report Files Section */}
-                                    {(reportFiles?.length ?? 0) > 0 && (
-                                        <div>
-                                            <h3 className="text-2xl font-bold font-display mb-4">Report Files</h3>
-                                            <div className="space-y-3">
-                                                {reportFiles?.map((file) => (
-                                                    <div key={file.id} className="p-4 border border-border rounded-lg bg-card hover:bg-card/80 transition-colors">
-                                                        <div className="flex items-start justify-between">
-                                                            <div className="flex-1">
-                                                                <div className="font-medium mb-2">
-                                                                    Year: {file.year}
-                                                                    {file.stage && ` • Stage: ${file.stage}`}
-                                                                    {file.rank && ` • Rank: ${file.rank}`}
+                    <TabsContent value="resources" className="space-y-8">
+                        {isLoadingReportFiles || isLoadingResources ? (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-muted-foreground animate-pulse">{t("detail.loading")}</div>
+                            </div>
+                        ) : (reportFiles?.length ?? 0) === 0 && (resources?.length ?? 0) === 0 ? (
+                            <div className="border-2 border-dashed border-border rounded-xl p-12 text-center">
+                                <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                                <p className="text-muted-foreground">No resources available for this competition</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Report Files Section */}
+                                {(reportFiles?.length ?? 0) > 0 && (
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2 bg-primary/10 rounded-lg">
+                                                <FileText className="w-6 h-6 text-primary" />
+                                            </div>
+                                            <h3 className="text-2xl font-bold font-display">Report Files</h3>
+                                            <Badge className="ml-auto bg-primary/20 text-primary hover:bg-primary/30">
+                                                {reportFiles.length}
+                                            </Badge>
+                                        </div>
+                                        <div className="grid gap-4">
+                                            {reportFiles?.map((file) => (
+                                                <div
+                                                    key={file.id}
+                                                    className="group relative p-6 border border-border rounded-xl bg-gradient-to-br from-card to-card/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+                                                >
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                                                                    <Download className="w-4 h-4 text-primary" />
                                                                 </div>
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {file.file_path}
+                                                                <div>
+                                                                    <div className="font-semibold text-lg">{file.year}</div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {file.stage && <span className="inline-block mr-3">📋 {file.stage}</span>}
+                                                                        {file.rank && <span className="inline-block">🏆 {file.rank}</span>}
+                                                                    </div>
                                                                 </div>
+                                                            </div>
+                                                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                                                {file.file_path}
+                                                            </p>
+                                                            <div className="flex flex-wrap gap-2">
                                                                 {file.language && (
-                                                                    <Badge variant="secondary" className="mt-2">
+                                                                    <Badge variant="outline" className="bg-secondary/50">
                                                                         {file.language.toUpperCase()}
                                                                     </Badge>
                                                                 )}
+                                                                {file.stage && (
+                                                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                                                                        {file.stage}
+                                                                    </Badge>
+                                                                )}
                                                             </div>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                asChild
-                                                            >
-                                                                <a href={file.file_path} target="_blank" rel="noreferrer">
-                                                                    <Download className="w-4 h-4" />
-                                                                </a>
-                                                            </Button>
                                                         </div>
+                                                        <Button
+                                                            size="lg"
+                                                            className="bg-primary hover:bg-primary/90 text-white shrink-0"
+                                                            asChild
+                                                        >
+                                                            <a href={file.file_path} target="_blank" rel="noreferrer">
+                                                                <Download className="w-4 h-4 mr-2" />
+                                                                Download
+                                                            </a>
+                                                        </Button>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    )}
+                                    </div>
+                                )}
 
-                                    {/* Resources Section */}
-                                    {(resources?.length ?? 0) > 0 && (
-                                        <div>
-                                            <h3 className="text-2xl font-bold font-display mb-4">Additional Resources</h3>
-                                            <div className="space-y-3">
-                                                {resources?.map((resource) => (
-                                                    <div key={resource.id} className="p-4 border border-border rounded-lg bg-card hover:bg-card/80 transition-colors">
-                                                        <div className="flex items-start justify-between">
+                                {/* Resources Section */}
+                                {(resources?.length ?? 0) > 0 && (
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2 bg-blue-500/10 rounded-lg">
+                                                <Link2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <h3 className="text-2xl font-bold font-display">Learning Resources</h3>
+                                            <Badge className="ml-auto bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/30">
+                                                {resources.length}
+                                            </Badge>
+                                        </div>
+                                        <div className="grid gap-4">
+                                            {resources?.map((resource) => {
+                                                const getResourceIcon = (type: string) => {
+                                                    const lower = type.toLowerCase();
+                                                    if (lower.includes('database')) return <Database className="w-5 h-5" />;
+                                                    if (lower.includes('tutorial') || lower.includes('course')) return <BookOpen className="w-5 h-5" />;
+                                                    if (lower.includes('api') || lower.includes('doc')) return <Cpu className="w-5 h-5" />;
+                                                    return <Link2 className="w-5 h-5" />;
+                                                };
+
+                                                return (
+                                                    <div
+                                                        key={resource.id}
+                                                        className="group relative p-6 border border-border rounded-xl bg-gradient-to-br from-card to-card/50 hover:border-blue-400/30 hover:shadow-lg transition-all duration-300"
+                                                    >
+                                                        <div className="flex items-start justify-between gap-4">
                                                             <div className="flex-1">
-                                                                <div className="font-medium mb-1">{resource.resource_type}</div>
-                                                                <p className="text-sm text-muted-foreground mb-3">
+                                                                <div className="flex items-start gap-3 mb-3">
+                                                                    <div className="p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors mt-1">
+                                                                        {getResourceIcon(resource.resource_type)}
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <div className="font-semibold text-lg capitalize">
+                                                                            {resource.resource_type.replace(/_/g, ' ')}
+                                                                        </div>
+                                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                                            Year {resource.year}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                                                                     {resource.description}
                                                                 </p>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    Year: {resource.year}
+                                                                <div className="inline-block">
+                                                                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-700 dark:text-blue-400">
+                                                                        External Resource
+                                                                    </Badge>
                                                                 </div>
                                                             </div>
                                                             <Button
-                                                                variant="ghost"
-                                                                size="sm"
+                                                                size="lg"
+                                                                variant="outline"
+                                                                className="border-blue-400/30 hover:border-blue-400 hover:bg-blue-500/10 shrink-0"
                                                                 asChild
                                                             >
                                                                 <a href={resource.resource_url} target="_blank" rel="noreferrer">
-                                                                    <ArrowRight className="w-4 h-4" />
+                                                                    <ArrowRight className="w-4 h-4 mr-2" />
+                                                                    Visit
                                                                 </a>
                                                             </Button>
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                );
+                                            })}
                                         </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="rules">
