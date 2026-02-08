@@ -2,7 +2,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
 
 export default function Calendar() {
   const events = [
@@ -54,7 +53,7 @@ export default function Calendar() {
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-border md:-translate-x-1/2"></div>
 
           <div className="space-y-12">
-            {events.map((group, groupIndex) => (
+            {events.map((group) => (
               <div key={group.month} className="relative">
                 {/* Month Header */}
                 <div className="flex items-center justify-start md:justify-center mb-8 pl-12 md:pl-0">

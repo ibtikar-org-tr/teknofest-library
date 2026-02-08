@@ -50,6 +50,7 @@ const mapCompetitionToCard = (
       competition.min_member,
       competition.max_member,
       t("card.notSpecified"),
+      t("card.notSpecified"),
     ),
     prize: FALLBACK_PRIZE,
     tkNumber: competition.tk_number ?? undefined,

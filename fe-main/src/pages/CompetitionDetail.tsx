@@ -170,7 +170,7 @@ export default function CompetitionDetail() {
                                             </div>
                                             <h3 className="text-2xl font-bold font-display">Report Files</h3>
                                             <Badge className="ml-auto bg-primary/20 text-primary hover:bg-primary/30">
-                                                {reportFiles.length}
+                                                {reportFiles?.length ?? 0}
                                             </Badge>
                                         </div>
                                         <div className="grid gap-4">
@@ -232,7 +232,7 @@ export default function CompetitionDetail() {
                                             </div>
                                             <h3 className="text-2xl font-bold font-display">Learning Resources</h3>
                                             <Badge className="ml-auto bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/30">
-                                                {resources.length}
+                                                {resources?.length ?? 0}
                                             </Badge>
                                         </div>
                                         <div className="grid gap-4">

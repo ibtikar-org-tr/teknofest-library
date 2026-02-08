@@ -1,4 +1,4 @@
-import { Rocket, Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
+import { Rocket, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/lib/LanguageContext";
 
