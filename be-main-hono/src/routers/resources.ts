@@ -4,6 +4,14 @@ import { listResources, getResource, createResource, updateResource, deleteResou
 
 const resourcesRouter = new Hono<AppBindings>();
 
+// Get resources by competition ID
+resourcesRouter.get('/competition/:competitionId', async (c) => {
+  const competitionId = c.req.param('competitionId');
+  const data = await listResources(c.env);
+  const filtered = data.filter(resource => resource.competition_id === competitionId);
+  return c.json(filtered);
+});
+
 // Get all resources
 resourcesRouter.get('/', async (c) => {
   const data = await listResources(c.env);

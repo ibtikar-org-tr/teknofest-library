@@ -4,6 +4,14 @@ import { listReportFiles, getReportFile, createReportFile, updateReportFile, del
 
 const reportFilesRouter = new Hono<AppBindings>();
 
+// Get report files by competition ID
+reportFilesRouter.get('/competition/:competitionId', async (c) => {
+  const competitionId = c.req.param('competitionId');
+  const data = await listReportFiles(c.env);
+  const filtered = data.filter(file => file.competition_id === Number(competitionId));
+  return c.json(filtered);
+});
+
 // Get all report files
 reportFilesRouter.get('/', async (c) => {
   const data = await listReportFiles(c.env);

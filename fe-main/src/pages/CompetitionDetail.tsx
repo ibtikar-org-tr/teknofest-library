@@ -37,6 +37,18 @@ export default function CompetitionDetail() {
         enabled: !!data, // Only fetch when competition data is loaded
     });
 
+    // Fetch report files for this competition
+    const { data: reportFiles, isLoading: isLoadingReportFiles } = useQuery<any[]>({
+        queryKey: [buildApiUrl(`/api/report-files/competition/${id}`)],
+        enabled: !!data,
+    });
+
+    // Fetch resources for this competition
+    const { data: resources, isLoading: isLoadingResources } = useQuery<any[]>({
+        queryKey: [buildApiUrl(`/api/resources/competition/${id}`)],
+        enabled: !!data,
+    });
+
     const localized = (suffix: "name" | "description" | "link" | "application_link") =>
         data ? pickLocalizedField(data, language, suffix) : null;
 
@@ -99,8 +111,9 @@ export default function CompetitionDetail() {
             {/* Main Content */}
             <div className="lg:col-span-2">
                 <Tabs defaultValue="overview" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1 mb-8">
+                    <TabsList className="grid w-full grid-cols-5 bg-muted/50 p-1 mb-8">
                         <TabsTrigger value="overview">Overview</TabsTrigger>
+                        <TabsTrigger value="resources">Resources</TabsTrigger>
                         <TabsTrigger value="rules">Rules</TabsTrigger>
                         <TabsTrigger value="awards">Awards</TabsTrigger>
                         <TabsTrigger value="faq">FAQ</TabsTrigger>
@@ -133,6 +146,90 @@ export default function CompetitionDetail() {
                                     </li>
                                 ))}
                             </ul>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="resources">
+                        <div className="space-y-6">
+                            {isLoadingReportFiles || isLoadingResources ? (
+                                <div className="text-muted-foreground">{t("detail.loading")}</div>
+                            ) : (reportFiles?.length ?? 0) === 0 && (resources?.length ?? 0) === 0 ? (
+                                <div className="text-muted-foreground text-center py-8">No resources available</div>
+                            ) : (
+                                <>
+                                    {/* Report Files Section */}
+                                    {(reportFiles?.length ?? 0) > 0 && (
+                                        <div>
+                                            <h3 className="text-2xl font-bold font-display mb-4">Report Files</h3>
+                                            <div className="space-y-3">
+                                                {reportFiles?.map((file) => (
+                                                    <div key={file.id} className="p-4 border border-border rounded-lg bg-card hover:bg-card/80 transition-colors">
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                <div className="font-medium mb-2">
+                                                                    Year: {file.year}
+                                                                    {file.stage && ` • Stage: ${file.stage}`}
+                                                                    {file.rank && ` • Rank: ${file.rank}`}
+                                                                </div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    {file.file_path}
+                                                                </div>
+                                                                {file.language && (
+                                                                    <Badge variant="secondary" className="mt-2">
+                                                                        {file.language.toUpperCase()}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                asChild
+                                                            >
+                                                                <a href={file.file_path} target="_blank" rel="noreferrer">
+                                                                    <Download className="w-4 h-4" />
+                                                                </a>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Resources Section */}
+                                    {(resources?.length ?? 0) > 0 && (
+                                        <div>
+                                            <h3 className="text-2xl font-bold font-display mb-4">Additional Resources</h3>
+                                            <div className="space-y-3">
+                                                {resources?.map((resource) => (
+                                                    <div key={resource.id} className="p-4 border border-border rounded-lg bg-card hover:bg-card/80 transition-colors">
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                <div className="font-medium mb-1">{resource.resource_type}</div>
+                                                                <p className="text-sm text-muted-foreground mb-3">
+                                                                    {resource.description}
+                                                                </p>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    Year: {resource.year}
+                                                                </div>
+                                                            </div>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                asChild
+                                                            >
+                                                                <a href={resource.resource_url} target="_blank" rel="noreferrer">
+                                                                    <ArrowRight className="w-4 h-4" />
+                                                                </a>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </TabsContent>
 
