@@ -180,9 +180,9 @@ export default function CompetitionDetail() {
                                                     className="group relative p-6 border border-border rounded-xl bg-gradient-to-br from-card to-card/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
                                                 >
                                                     <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1">
+                                                        <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-3 mb-3">
-                                                                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                                                                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors shrink-0">
                                                                     <Download className="w-4 h-4 text-primary" />
                                                                 </div>
                                                                 <div>
@@ -193,9 +193,6 @@ export default function CompetitionDetail() {
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                                                {file.file_path}
-                                                            </p>
                                                             <div className="flex flex-wrap gap-2">
                                                                 {file.language && (
                                                                     <Badge variant="outline" className="bg-secondary/50">
