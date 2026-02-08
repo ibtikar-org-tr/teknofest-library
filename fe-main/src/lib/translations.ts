@@ -13,7 +13,7 @@ export const translations = {
       askAi: "Ask AI"
     },
     hero: {
-      tag: "#Teknofest2025",
+      tag: "#Teknofest2026",
       title_start: "THE FUTURE IS",
       title_end: "IN THE SKIES",
       description: "Join the world's largest aviation, space, and technology festival. Competing in 40+ different categories to build the technology of tomorrow.",
@@ -72,7 +72,7 @@ export const translations = {
       contact: "Contact Us",
       privacy: "Privacy Policy",
       terms: "Terms of Service",
-      rights: "© 2025 Teknofest. All rights reserved. Designed with Replit.",
+      rights: "© 2026 Teknofest Arabic Platform - the Library.",
       links: {
         competitions: "Competitions",
         announcements: "Announcements",
@@ -96,7 +96,7 @@ export const translations = {
       askAi: "AI'ya Sor"
     },
     hero: {
-      tag: "#Teknofest2025",
+      tag: "#Teknofest2026",
       title_start: "GELECEK",
       title_end: "GÖKLERDE",
       description: "Dünyanın en büyük havacılık, uzay ve teknoloji festivaline katılın. Yarının teknolojisini inşa etmek için 40'tan fazla kategoride yarışın.",
@@ -155,7 +155,7 @@ export const translations = {
       contact: "İletişim",
       privacy: "Gizlilik Politikası",
       terms: "Kullanım Şartları",
-      rights: "© 2025 Teknofest. Tüm hakları saklıdır. Replit ile tasarlanmıştır.",
+      rights: "© 2026 Teknofest Arapça Platformu - Kütüphane.",
       links: {
         competitions: "Yarışmalar",
         announcements: "Duyurular",
@@ -179,7 +179,7 @@ export const translations = {
       askAi: "اسأل الذكاء الاصطناعي"
     },
     hero: {
-      tag: "#تكنوفيست2025",
+      tag: "#تكنوفست2026",
       title_start: "المستقبل",
       title_end: "في السماء",
       description: "انضم إلى أكبر مهرجان للطيران والفضاء والتكنولوجيا في العالم. تنافس في أكثر من 40 فئة مختلفة لبناء تكنولوجيا الغد.",
@@ -238,7 +238,7 @@ export const translations = {
       contact: "اتصل بنا",
       privacy: "سياسة الخصوصية",
       terms: "شروط الخدمة",
-      rights: "© 2025 تكنوفيست. جميع الحقوق محفوظة. صمم بواسطة Replit.",
+      rights: "2026 منصّة تكنوفست بالعربي - المكتبة",
       links: {
         competitions: "المسابقات",
         announcements: "الإعلانات",
