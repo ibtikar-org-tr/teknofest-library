@@ -1,0 +1,41 @@
+name: (main) [fe-main] Frontend CI/CD
+
+on:
+  push:
+    branches: 
+      - main
+    paths:
+      - 'fe-main/**'
+      - .github/workflows/fe-main.yml
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Frontend
+    runs-on: ubuntu-latest
+    environment: main
+    defaults:
+      run:
+        working-directory: ./fe-main
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: npm run build
+
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy
