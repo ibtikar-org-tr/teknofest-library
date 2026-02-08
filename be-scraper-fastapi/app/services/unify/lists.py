@@ -13,6 +13,8 @@ tr_links_list = []
 en_links_list = []
 min_members_list = []
 max_members_list = []
+tk_number_list = []
+t3kys_number_list = []
 
 # Parse CSV file
 try:
@@ -24,8 +26,10 @@ try:
             ar_name = row.get('ar_name', '').strip()
             tr_name = row.get('tr_name', '').strip()
             en_name = row.get('en_name', '').strip()
-            min_members = row.get('min#', '').strip()
-            max_members = row.get('max#', '').strip()
+            min_members = row.get('min_member', '').strip()
+            max_members = row.get('max_member', '').strip()
+            tk_number = row.get('tk_number', '').strip()
+            t3kys_number = row.get('t3kys_number', '').strip()
             
             # Only add if we have at least TR and EN links
             if tr_link and en_link:
@@ -36,6 +40,8 @@ try:
                 en_names_list.append(en_name)
                 min_members_list.append(int(min_members) if min_members else None)
                 max_members_list.append(int(max_members) if max_members else None)
+                tk_number_list.append(int(tk_number) if tk_number else None)
+                t3kys_number_list.append(int(t3kys_number) if t3kys_number else None)
 except FileNotFoundError:
     print(f"Warning: CSV file not found at {csv_file_path}")
 except Exception as e:

@@ -7,9 +7,11 @@ from app.services.scrape.competitions import links_service
 from app.services.unify.function import find_original_sentence
 from app.services.unify.lists import (
     ar_names_list, tr_names_list, en_names_list, 
-    tr_links_list, en_links_list, min_members_list, max_members_list
+    tr_links_list, en_links_list, min_members_list, max_members_list,
+    tk_number_list, t3kys_number_list
 )
 from app.models.competition import Competition
+import random
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -219,6 +221,23 @@ def merge_competition_data(idx: int, tr_data: dict, en_data: dict):
     """
     competition = Competition()
     
+    # Set competition ID based on priority: tk_number > t3kys_number > random
+    competition_id = None
+    if idx < len(tk_number_list) and tk_number_list[idx] is not None:
+        competition_id = tk_number_list[idx]
+    elif idx < len(t3kys_number_list) and t3kys_number_list[idx] is not None:
+        competition_id = t3kys_number_list[idx]
+    else:
+        competition_id = random.randint(100000, 999999)
+    
+    competition.id = competition_id
+    
+    # Set tk_number and t3kys_number fields
+    if idx < len(tk_number_list) and tk_number_list[idx] is not None:
+        competition.tk_number = str(tk_number_list[idx])
+    if idx < len(t3kys_number_list) and t3kys_number_list[idx] is not None:
+        competition.t3kys_number = str(t3kys_number_list[idx])
+    
     # Use predefined data from lists (these are already properly matched by index)
     if idx < len(tr_names_list):
         competition.tr_name = tr_names_list[idx].strip()
@@ -393,6 +412,8 @@ def bulk_create_update_competitions_from_remote(year: str = None):
                 competition.image_path = en_data['image_link']
             elif tr_data.get('image_link'):
                 competition.image_path = tr_data['image_link']
+
+            # set id
             
             # Add year to years list
             competition.years = [year]
