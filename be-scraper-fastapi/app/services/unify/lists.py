@@ -8,7 +8,9 @@ csv_file_path = os.path.join(current_dir, 'lists.csv')
 # Initialize lists
 ar_names_list = []
 tr_names_list = []
+tr_slugs_list = []
 en_names_list = []
+en_slugs_list = []
 tr_links_list = []
 en_links_list = []
 min_members_list = []
@@ -21,8 +23,10 @@ try:
     with open(csv_file_path, 'r', encoding='utf-8') as f:
         csv_reader = csv.DictReader(f)
         for row in csv_reader:
-            tr_link = row.get('tr_slug', '').strip()
-            en_link = row.get('en_slug', '').strip()
+            tr_link = row.get('tr_link', '').strip()
+            tr_slug = row.get('tr_slug', '').strip()
+            en_link = row.get('en_link', '').strip()
+            en_slug = row.get('en_slug', '').strip()
             ar_name = row.get('ar_name', '').strip()
             tr_name = row.get('tr_name', '').strip()
             en_name = row.get('en_name', '').strip()
@@ -34,7 +38,9 @@ try:
             # Only add if we have at least TR and EN links
             if tr_link and en_link:
                 tr_links_list.append(tr_link)
+                tr_slugs_list.append(tr_slug)
                 en_links_list.append(en_link)
+                en_slugs_list.append(en_slug)
                 ar_names_list.append(ar_name)
                 tr_names_list.append(tr_name)
                 en_names_list.append(en_name)
