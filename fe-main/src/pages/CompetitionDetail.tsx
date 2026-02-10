@@ -3,8 +3,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Trophy, Calendar, Users, Download, ArrowRight, CheckCircle2, FileText, Link2, Cpu, Database, BookOpen } from "lucide-react";
+import { Trophy, Calendar, Users, Download, ArrowRight, FileText, Link2, Cpu, Database, BookOpen } from "lucide-react";
 import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -126,27 +125,19 @@ export default function CompetitionDetail() {
                                                 {error && (
                                                     <div className="text-red-500">{t("detail.error")}</div>
                                                 )}
-                        <div className="prose dark:prose-invert max-w-none">
-                            <h3 className="text-2xl font-bold font-display mb-4">Challenge Description</h3>
-                            <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                                {description}
-                            </p>
-                            <p className="text-muted-foreground mb-6">
-                                The Rocket Competition challenges students to demonstrate their engineering skills in a real-world scenario. 
-                                Teams are required to design a rocket that can carry a 4kg payload to a target altitude of 20,000 feet 
-                                and recover it safely. The payload must perform specific scientific experiments during the flight.
-                            </p>
-
-                            <h3 className="text-2xl font-bold font-display mb-4 mt-8">Key Objectives</h3>
-                            <ul className="grid gap-3">
-                                {["Reach target altitude of 20,000 ft", "Deploy recovery system safely", "Payload integration and functionality", "Real-time telemetry transmission"].map((item, i) => (
-                                    <li key={i} className="flex items-start gap-3 p-4 border border-border rounded-lg bg-card">
-                                        <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                                        <span>{item}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {description && (
+                            <div className="prose dark:prose-invert max-w-none">
+                                <h3 className="text-2xl font-bold font-display mb-4">Challenge Description</h3>
+                                <p className="text-muted-foreground text-lg leading-relaxed">
+                                    {description}
+                                </p>
+                            </div>
+                        )}
+                        {!description && !isLoading && (
+                            <div className="text-center py-12 text-muted-foreground">
+                                {t("detail.noDescription")}
+                            </div>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="resources" className="space-y-8">
@@ -297,49 +288,32 @@ export default function CompetitionDetail() {
                     </TabsContent>
 
                     <TabsContent value="rules">
-                        <div className="border border-border rounded-xl p-6 bg-card">
-                            <h3 className="text-xl font-bold mb-4">Technical Regulations</h3>
-                            <p className="mb-6 text-muted-foreground">Download the full technical rulebook for detailed specifications.</p>
-                                                        <Button
-                                                            variant="outline"
-                                                            className="w-full h-16 px-0 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all"
-                                                            asChild={Boolean(externalLink)}
-                                                            disabled={!externalLink}
-                                                        >
-                                                            {externalLink ? (
-                                                                <a
-                                                                    href={externalLink}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="flex items-center justify-between w-full h-full px-6"
-                                                                >
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
-                                                                            <Download className="w-5 h-5" />
-                                                                        </div>
-                                                                        <div className="text-left">
-                                                                            <div className="font-bold">Competition Rulebook v2.1</div>
-                                                                            <div className="text-xs text-muted-foreground">PDF • 2.4 MB</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                                                                </a>
-                                                            ) : (
-                                                                <div className="flex items-center justify-between w-full h-full px-6 text-muted-foreground">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
-                                                                            <Download className="w-5 h-5" />
-                                                                        </div>
-                                                                        <div className="text-left">
-                                                                            <div className="font-bold">Competition Rulebook v2.1</div>
-                                                                            <div className="text-xs text-muted-foreground">PDF • 2.4 MB</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                                                                </div>
-                                                            )}
-                                                        </Button>
-                        </div>
+                        {externalLink ? (
+                            <div className="border border-border rounded-xl p-6 bg-card">
+                                <h3 className="text-xl font-bold mb-4">Technical Regulations</h3>
+                                <p className="mb-6 text-muted-foreground">Download the full technical rulebook for detailed specifications.</p>
+                                <Button
+                                    variant="outline"
+                                    className="w-full h-12 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all"
+                                    asChild
+                                >
+                                    <a
+                                        href={externalLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center justify-center gap-2"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        View Rulebook
+                                    </a>
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="border-2 border-dashed border-border rounded-xl p-12 text-center">
+                                <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                                <p className="text-muted-foreground">No rulebook available for this competition</p>
+                            </div>
+                        )}
                     </TabsContent>
                     
                     <TabsContent value="awards">
@@ -347,20 +321,10 @@ export default function CompetitionDetail() {
                     </TabsContent>
 
                     <TabsContent value="faq">
-                        <Accordion type="single" collapsible>
-                            <AccordionItem value="item-1">
-                                <AccordionTrigger>Can we use commercial motors?</AccordionTrigger>
-                                <AccordionContent>
-                                    Yes, teams in the High Altitude category are allowed to use commercial solid rocket motors from approved vendors.
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="item-2">
-                                <AccordionTrigger>Is there a reimbursement for materials?</AccordionTrigger>
-                                <AccordionContent>
-                                    Finalist teams will receive a material support budget of up to ₺20,000 to cover construction costs.
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
+                        <div className="border-2 border-dashed border-border rounded-xl p-12 text-center">
+                            <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                            <p className="text-muted-foreground">No FAQs available for this competition</p>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </div>
