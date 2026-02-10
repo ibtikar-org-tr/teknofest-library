@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Calendar, Users, Download, ArrowRight, FileText, Link2, Cpu, Database, BookOpen } from "lucide-react";
+import { Users, Download, ArrowRight, FileText, Link2, Cpu, Database, BookOpen } from "lucide-react";
 import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -62,8 +62,6 @@ export default function CompetitionDetail() {
         t("card.notSpecified"),
     );
     const yearsText = data?.years?.length ? data.years.join(", ") : t("detail.noYears");
-    const tkNumber = data?.tk_number ?? "-";
-    const t3kysNumber = data?.t3kys_number ?? "-";
     const image = data?.image_path ?? heroBg;
 
   return (
@@ -71,14 +69,14 @@ export default function CompetitionDetail() {
       <Navbar />
       
       {/* Hero Banner */}
-      <div className="relative h-[50vh] min-h-[400px] w-full overflow-hidden flex items-end">
+    <div className="relative h-[50vh] min-h-100 w-full overflow-hidden flex items-end">
         <div className="absolute inset-0 z-0">
           <img
                         src={image}
                         alt={title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent" />
         </div>
         
         <div className="container mx-auto px-4 pb-12 relative z-10 flex flex-col md:flex-row justify-between items-end gap-6">
@@ -105,7 +103,7 @@ export default function CompetitionDetail() {
         </div>
       </div>
 
-      <main className="flex-grow container mx-auto px-4 py-12">
+    <main className="grow container mx-auto px-4 py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2">
@@ -168,7 +166,7 @@ export default function CompetitionDetail() {
                                             {reportFiles?.map((file) => (
                                                 <div
                                                     key={file.id}
-                                                    className="group relative p-6 border border-border rounded-xl bg-gradient-to-br from-card to-card/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+                                                    className="group relative p-6 border border-border rounded-xl bg-linear-to-br from-card to-card/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
                                                 >
                                                     <div className="flex items-start justify-between gap-4">
                                                         <div className="flex-1 min-w-0">
@@ -239,7 +237,7 @@ export default function CompetitionDetail() {
                                                 return (
                                                     <div
                                                         key={resource.id}
-                                                        className="group relative p-6 border border-border rounded-xl bg-gradient-to-br from-card to-card/50 hover:border-blue-400/30 hover:shadow-lg transition-all duration-300"
+                                                        className="group relative p-6 border border-border rounded-xl bg-linear-to-br from-card to-card/50 hover:border-blue-400/30 hover:shadow-lg transition-all duration-300"
                                                     >
                                                         <div className="flex items-start justify-between gap-4">
                                                             <div className="flex-1">

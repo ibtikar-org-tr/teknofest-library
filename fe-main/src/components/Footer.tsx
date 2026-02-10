@@ -1,4 +1,4 @@
-import { Rocket, Twitter, Instagram } from "lucide-react";
+import { Rocket, Instagram } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/lib/LanguageContext";
 import { PiTelegramLogo } from "react-icons/pi";

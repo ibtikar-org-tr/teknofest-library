@@ -38,7 +38,7 @@ export default function Navbar() {
         "fixed top-0 w-full z-50 border-b transition-all duration-300",
         isScrolled 
           ? "bg-background/95 backdrop-blur-md border-border h-16 shadow-md" 
-          : "bg-background/50 backdrop-blur-sm border-white/10 h-20 supports-[backdrop-filter]:bg-background/30"
+          : "bg-background/50 backdrop-blur-sm border-white/10 h-20 supports-backdrop-filter:bg-background/30"
       )}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -49,7 +49,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 group">
           <div className="relative w-10 h-10 flex items-center justify-center bg-primary rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-300">
             <Rocket className="text-white w-6 h-6 animate-pulse" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-tr from-black/20 to-transparent" />
           </div>
           <span className="text-2xl font-bold font-display tracking-wider text-foreground">
             TK<span className="text-primary">Library</span>
@@ -71,7 +71,7 @@ export default function Navbar() {
               {location === link.href && (
                 <motion.div 
                   layoutId="underline" 
-                  className="absolute left-0 right-0 bottom-[-2px] h-[2px] bg-primary"
+                  className="absolute left-0 right-0 -bottom-0.5 h-0.5 bg-primary"
                 />
               )}
             </Link>

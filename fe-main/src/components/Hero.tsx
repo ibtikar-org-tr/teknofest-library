@@ -34,7 +34,7 @@ export default function Hero() {
   };
 
   return (
-    <div ref={ref} className="relative h-[80vh] min-h-[600px] w-full overflow-hidden flex items-center justify-center">
+    <div ref={ref} className="relative h-[80vh] min-h-150 w-full overflow-hidden flex items-center justify-center">
       {/* Background Image with Overlay */}
       <motion.div style={{ y, opacity }} className="absolute inset-0 z-0">
         <img
@@ -42,8 +42,8 @@ export default function Hero() {
           alt="Teknofest Hero"
           className="w-full h-full object-cover scale-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-r from-background/90 via-background/60 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-transparent" />
       </motion.div>
 
       {/* Content */}
@@ -63,7 +63,7 @@ export default function Hero() {
           <motion.h1 variants={textVariants} className="text-5xl md:text-7xl font-bold font-display leading-tight mb-6 text-foreground">
             {t('hero.title_start')} <br />
             <motion.span 
-              className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-red-600 inline-block"
+              className="text-transparent bg-clip-text bg-linear-to-r from-primary to-red-600 inline-block"
               animate={{ backgroundPosition: ["0%", "100%", "0%"] }}
               transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
               style={{ backgroundSize: "200%" }}
@@ -84,11 +84,11 @@ export default function Hero() {
                   competitionsSection.scrollIntoView({ behavior: 'smooth' });
                 } else { console.warn("Competitions section not found") }
                 }}
-                size="lg" className="bg-primary hover:bg-primary/90 text-white text-lg px-8 h-14 rounded-none skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105 active:scale-95 duration-200">
-              <span className="skew-x-[10deg] rtl:skew-x-[-10deg]">{t('hero.discover')}</span>
+                size="lg" className="bg-primary hover:bg-primary/90 text-white text-lg px-8 h-14 rounded-none skew-x-[-10deg] rtl:skew-x-10 transition-transform hover:scale-105 active:scale-95 duration-200">
+              <span className="skew-x-10 rtl:skew-x-[-10deg]">{t('hero.discover')}</span>
             </Button>
-            <Button size="lg" variant="outline" className="border-primary/50 text-foreground hover:bg-primary/5 text-lg px-8 h-14 rounded-none skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105 active:scale-95 duration-200">
-              <span className="skew-x-[10deg] rtl:skew-x-[-10deg] flex items-center gap-2">
+            <Button size="lg" variant="outline" className="border-primary/50 text-foreground hover:bg-primary/5 text-lg px-8 h-14 rounded-none skew-x-[-10deg] rtl:skew-x-10 transition-transform hover:scale-105 active:scale-95 duration-200">
+              <span className="skew-x-10 rtl:skew-x-[-10deg] flex items-center gap-2">
                 {t('hero.watch')} 
                 <ArrowRight className={`w-5 h-5 ${isRtl ? 'rotate-180' : ''}`} />
               </span>

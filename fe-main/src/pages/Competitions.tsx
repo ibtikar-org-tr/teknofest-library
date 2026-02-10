@@ -91,7 +91,7 @@ export default function CompetitionsPage() {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <Navbar />
       
-      <main className="flex-grow">
+      <main className="grow">
         <Hero />
 
         <section className="container mx-auto px-4 py-16 -mt-20 relative z-20" id="mainpage_competitions_section">
@@ -210,7 +210,7 @@ export default function CompetitionsPage() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="max-w-4xl mx-auto bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-3xl p-12 border border-primary/20"
+            className="max-w-4xl mx-auto bg-linear-to-r from-primary/10 via-primary/5 to-primary/10 rounded-3xl p-12 border border-primary/20"
           >
             <h2 className="text-4xl font-bold font-display mb-6">{t('cta.title')}</h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
