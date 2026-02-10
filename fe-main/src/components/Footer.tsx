@@ -1,6 +1,7 @@
-import { Rocket, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
+import { Rocket, Twitter, Instagram } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/lib/LanguageContext";
+import { PiTelegramLogo } from "react-icons/pi";
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -23,14 +24,14 @@ export default function Footer() {
               {t('footer.description')}
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground hover:bg-primary hover:text-white transition-colors">
+              {/* <a href="#" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground hover:bg-primary hover:text-white transition-colors">
                 <Twitter className="w-4 h-4" />
-              </a>
+              </a> */}
               <a href="#" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground hover:bg-primary hover:text-white transition-colors">
                 <Instagram className="w-4 h-4" />
               </a>
               <a href="#" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground hover:bg-primary hover:text-white transition-colors">
-                <Youtube className="w-4 h-4" />
+                <PiTelegramLogo className="w-4 h-4" />
               </a>
             </div>
           </div>
