@@ -52,7 +52,7 @@ export default function Navbar() {
             <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
           </div>
           <span className="text-2xl font-bold font-display tracking-wider text-foreground">
-            TEKNO<span className="text-primary">FEST</span>
+            TK<span className="text-primary">Library</span>
           </span>
         </Link>
 

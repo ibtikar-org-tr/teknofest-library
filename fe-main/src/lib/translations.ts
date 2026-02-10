@@ -66,7 +66,7 @@ export const translations = {
       yearsLabel: "Years"
     },
     footer: {
-      description: "The world's largest aviation, space, and technology festival. Building a technology-producing Turkey.",
+      description: "One library for all your needs.",
       quickLinks: "Quick Links",
       categories: "Categories",
       contact: "Contact Us",
@@ -99,7 +99,7 @@ export const translations = {
       tag: "#Teknofest2026",
       title_start: "GELECEK",
       title_end: "GÖKLERDE",
-      description: "Dünyanın en büyük havacılık, uzay ve teknoloji festivaline katılın. Yarının teknolojisini inşa etmek için 40'tan fazla kategoride yarışın.",
+      description: "Tüm ihtiyaçlarınız için tek kütüphane.",
       discover: "Yarışmaları Keşfet",
       watch: "Videoyu İzle"
     },
@@ -232,7 +232,7 @@ export const translations = {
       yearsLabel: "الأعوام"
     },
     footer: {
-      description: "أكبر مهرجان للطيران والفضاء والتكنولوجيا في العالم. نبني تركيا منتجة للتكنولوجيا.",
+      description: "مكتبة واحدة لجميع احتياجاتك.",
       quickLinks: "روابط سريعة",
       categories: "الفئات",
       contact: "اتصل بنا",

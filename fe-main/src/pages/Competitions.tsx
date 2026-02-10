@@ -94,7 +94,7 @@ export default function CompetitionsPage() {
       <main className="flex-grow">
         <Hero />
 
-        <section className="container mx-auto px-4 py-16 -mt-20 relative z-20">
+        <section className="container mx-auto px-4 py-16 -mt-20 relative z-20" id="mainpage_competitions_section">
           <motion.div 
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -216,8 +216,12 @@ export default function CompetitionsPage() {
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
               {t('cta.description')}
             </p>
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white text-lg px-10 py-6 rounded-full shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-1">
-              {t('cta.register')}
+            <Button
+              onClick={() => window.open("https://www.teknofest.org", "_blank", "noopener,noreferrer")}
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-white text-lg px-10 py-6 rounded-full shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-1 hover:cursor-pointer active:translate-y-0.5"
+            >
+              {t("cta.register")}
             </Button>
           </motion.div>
         </section>

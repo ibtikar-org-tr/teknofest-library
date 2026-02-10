@@ -77,7 +77,14 @@ export default function Hero() {
           </motion.p>
           
           <motion.div variants={textVariants} className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white text-lg px-8 h-14 rounded-none skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105 active:scale-95 duration-200">
+            <Button 
+                onClick={() => {
+                const competitionsSection = document.getElementById('mainpage_competitions_section');
+                if (competitionsSection) {
+                  competitionsSection.scrollIntoView({ behavior: 'smooth' });
+                } else { console.warn("Competitions section not found") }
+                }}
+                size="lg" className="bg-primary hover:bg-primary/90 text-white text-lg px-8 h-14 rounded-none skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105 active:scale-95 duration-200">
               <span className="skew-x-[10deg] rtl:skew-x-[-10deg]">{t('hero.discover')}</span>
             </Button>
             <Button size="lg" variant="outline" className="border-primary/50 text-foreground hover:bg-primary/5 text-lg px-8 h-14 rounded-none skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105 active:scale-95 duration-200">

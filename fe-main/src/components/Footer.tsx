@@ -16,7 +16,7 @@ export default function Footer() {
                 <Rocket className="text-white w-5 h-5" />
               </div>
               <span className="text-xl font-bold font-display tracking-wider">
-                TEKNO<span className="text-primary">FEST</span>
+                TK<span className="text-primary">Library</span>
               </span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed mb-6">
@@ -58,7 +58,7 @@ export default function Footer() {
           </div>
 
           {/* Contact */}
-          <div>
+          {/* <div>
             <h4 className="font-display font-bold text-lg mb-6">{t('footer.contact')}</h4>
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-sm text-muted-foreground">
@@ -74,7 +74,7 @@ export default function Footer() {
                 <span>contact@teknofest.org</span>
               </li>
             </ul>
-          </div>
+          </div> */}
         </div>
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
