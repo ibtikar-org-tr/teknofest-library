@@ -337,16 +337,6 @@ export default function CompetitionDetail() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
-                                <Calendar className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <div className="text-sm text-muted-foreground">Deadline</div>
-                                <div className="font-medium">{t("detail.deadlineFallback")}</div>
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
                                 <Users className="w-5 h-5" />
                             </div>
                             <div>
@@ -354,17 +344,7 @@ export default function CompetitionDetail() {
                                 <div className="font-medium">{teamSize}</div>
                             </div>
                         </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
-                                <Trophy className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <div className="text-sm text-muted-foreground">Prize Pool</div>
-                                <div className="font-medium">{t("detail.prizeFallback")}</div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4">
+                        {/* <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
                                 <Users className="w-5 h-5" />
                             </div>
@@ -372,16 +352,7 @@ export default function CompetitionDetail() {
                                 <div className="text-sm text-muted-foreground">{t("card.tkNumber")}</div>
                                 <div className="font-medium">{tkNumber}</div>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
-                                <Users className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <div className="text-sm text-muted-foreground">{t("card.t3kysNumber")}</div>
-                                <div className="font-medium">{t3kysNumber}</div>
-                            </div>
-                        </div>
+                        </div> */}
                     </div>
 
                     {competitionData?.timeline && Array.isArray(competitionData.timeline) && competitionData.timeline.length > 0 && (
