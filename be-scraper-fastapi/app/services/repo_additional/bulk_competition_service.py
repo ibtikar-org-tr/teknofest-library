@@ -10,6 +10,11 @@ from app.services.scrape.competitions.scrape import (
     get_competition_description,
     get_competition_image_link, 
     get_competition_application_link)
+from app.services.scrape.competitions.scrape import (
+    get_competition_timeline,
+    get_competition_awards,
+    get_session_id_for_specific_year)
+from app.services.repo_additional.competition_crud_services import update_or_create_competition_data
 from app.services.unify.lists import (
     ar_names_list, tr_names_list, en_names_list, 
     tr_links_list, en_links_list, min_members_list, max_members_list,
@@ -562,6 +567,53 @@ def bulk_create_update_competitions_multilingual(source: str = "lists", year: st
                 if existing_competition.id is not None:
                     competition_crud_class.update_competition(existing_competition.id, existing_competition)
                 results['updated'] += 1
+                
+                # Scrape timeline and awards data for competition_data
+                competition_id = existing_competition.id
+                try:
+                    timeline = None
+                    awards = None
+                
+                    # Try scraping from EN link first (usually more complete)
+                    if en_url:
+                        try:
+                            response = requests.get(en_url, timeout=10)
+                            response.raise_for_status()
+                            soup = BeautifulSoup(response.text, 'html.parser')
+                            timeline = get_competition_timeline(soup)
+                            awards = get_competition_awards(soup)
+                        except Exception as e:
+                            if __name__ == "__main__":
+                                print(f"    Could not scrape from EN link: {e}")
+                
+                    # If EN didn't work or wasn't available, try TR link
+                    if (not timeline or not awards) and tr_url:
+                        try:
+                            response = requests.get(tr_url, timeout=10)
+                            response.raise_for_status()
+                            soup = BeautifulSoup(response.text, 'html.parser')
+                            if not timeline:
+                                timeline = get_competition_timeline(soup)
+                            if not awards:
+                                awards = get_competition_awards(soup)
+                        except Exception as e:
+                            if __name__ == "__main__":
+                                print(f"    Could not scrape from TR link: {e}")
+                
+                    # Update competition data if we have timeline or awards
+                    if timeline or awards:
+                        update_or_create_competition_data(
+                            competition_id=competition_id,
+                            year=year,
+                            timeline=timeline,
+                            awards=awards
+                        )
+                        if __name__ == "__main__":
+                            print(f"    ✓ Updated competition data")
+                except Exception as e:
+                    if __name__ == "__main__":
+                        print(f"    Warning: Could not update competition data: {e}")
+                
                 results['details'].append({
                     'index': idx,
                     'identifier': identifier,
@@ -579,6 +631,60 @@ def bulk_create_update_competitions_multilingual(source: str = "lists", year: st
                 # Create new competition
                 competition_crud_class.create_competition(competition)
                 results['created'] += 1
+                
+                # Get the created competition's ID and scrape timeline/awards data
+                competition_id = None
+                if competition.tk_number:
+                    # Retrieve the newly created competition to get its ID
+                    created_competition = competition_crud_class.get_competition_by_tk_number(competition.tk_number)
+                    if created_competition:
+                        competition_id = created_competition.id
+            
+                if competition_id:
+                    try:
+                        timeline = None
+                        awards = None
+                    
+                        # Try scraping from EN link first (usually more complete)
+                        if en_url:
+                            try:
+                                response = requests.get(en_url, timeout=10)
+                                response.raise_for_status()
+                                soup = BeautifulSoup(response.text, 'html.parser')
+                                timeline = get_competition_timeline(soup)
+                                awards = get_competition_awards(soup)
+                            except Exception as e:
+                                if __name__ == "__main__":
+                                    print(f"    Could not scrape from EN link: {e}")
+                    
+                        # If EN didn't work or wasn't available, try TR link
+                        if (not timeline or not awards) and tr_url:
+                            try:
+                                response = requests.get(tr_url, timeout=10)
+                                response.raise_for_status()
+                                soup = BeautifulSoup(response.text, 'html.parser')
+                                if not timeline:
+                                    timeline = get_competition_timeline(soup)
+                                if not awards:
+                                    awards = get_competition_awards(soup)
+                            except Exception as e:
+                                if __name__ == "__main__":
+                                    print(f"    Could not scrape from TR link: {e}")
+                    
+                        # Create competition data if we have timeline or awards
+                        if timeline or awards:
+                            update_or_create_competition_data(
+                                competition_id=competition_id,
+                                year=year,
+                                timeline=timeline,
+                                awards=awards
+                            )
+                            if __name__ == "__main__":
+                                print(f"    ✓ Created competition data")
+                    except Exception as e:
+                        if __name__ == "__main__":
+                            print(f"    Warning: Could not create competition data: {e}")
+                
                 results['details'].append({
                     'index': idx,
                     'identifier': identifier,
