@@ -1,4 +1,4 @@
-name: (main) [be-main-hono] Deploy Main Backend Microservice via SSH
+name: (main) [be-main-hono] Deploy Main Backend via Cloudflare Workers
 
 on:
   push:
