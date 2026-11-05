@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" fill="none">
+  <g stroke="#F5F5F7" stroke-opacity="0.35">
+    <circle cx="340" cy="190" r="70"/>
+    <circle cx="340" cy="190" r="118"/>
+    <circle cx="340" cy="190" r="168"/>
+    <path d="M172 190h336M340 22v336"/>
+    <path d="M220 70l240 240M220 310l240-240" stroke-dasharray="6 8"/>
+  </g>
+  <g stroke="#F5F5F7" stroke-opacity="0.45" fill="none">
+    <path d="M80 80h90v54H80z"/>
+    <path d="M80 107h90"/>
+    <path d="M430 300h90v54h-90z"/>
+    <path d="M430 327h90"/>
+    <path d="M170 80h40M520 327h28"/>
+    <path d="M80 134v40h48"/>
+    <path d="M478 300V248h42"/>
+  </g>
+  <g fill="#8B5CF6">
+    <circle cx="340" cy="190" r="4"/>
+    <circle cx="170" cy="80" r="3.5"/>
+    <circle cx="520" cy="327" r="3.5"/>
+    <circle cx="128" cy="174" r="3"/>
+    <circle cx="520" cy="248" r="3"/>
+  </g>
+  <g stroke="#8B5CF6" stroke-opacity="0.8">
+    <path d="M340 190l-86-48"/>
+    <path d="M340 190l92 86"/>
+  </g>
+  <g fill="#F5F5F7" fill-opacity="0.5" font-family="ui-monospace, monospace" font-size="10">
+    <text x="86" y="74">A-01</text>
+    <text x="436" y="294">B-04</text>
+  </g>
+</svg>
