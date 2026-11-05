@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "teknofest-kitchen-be",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-12-01",
+  "dev": {
+    "port": 9680
+  },
+  "vars": {
+    "APP_NAME": "teknofest-kitchen"
+  },
+  "d1_databases": [
+    {
+      "binding": "D1_DB",
+      "database_name": "teknofest-kitchen",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
