@@ -1,17 +1,17 @@
-name: (main) [filesync] Deploy File Sync Microservice via SSH
+name: (main) [library-filesync] Deploy Library File Sync Microservice via SSH
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'filesync/**'
-      - .github/workflows/filesync.yml
+      - 'library-filesync/**'
+      - .github/workflows/library-filesync.yml
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy File Sync Microservice
+    name: Deploy Library File Sync Microservice
     runs-on: ubuntu-latest
     environment: main
 
@@ -31,7 +31,7 @@ jobs:
             git checkout main
             git pull
             git pull origin main
-            cd filesync
+            cd library-filesync
 
             # insert all environment variables into .env file
             cat > .env << 'ENVEOF'
