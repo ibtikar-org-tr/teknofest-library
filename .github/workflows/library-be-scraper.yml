@@ -1,17 +1,17 @@
-name: (main) [be-scraper-fastapi] Deploy Scraper Backend Microservice via SSH
+name: (main) [library-be-scraper-fastapi] Deploy Library Scraper Backend Microservice via SSH
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'be-scraper-fastapi/**'
-      - .github/workflows/be-scraper.yml
+      - 'library-be-scraper-fastapi/**'
+      - .github/workflows/library-be-scraper.yml
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy Scraper Backend Microservice
+    name: Deploy Library Scraper Backend Microservice
     runs-on: ubuntu-latest
     environment: main
 
@@ -31,7 +31,7 @@ jobs:
             git checkout main
             git pull
             git pull origin main
-            cd be-scraper-fastapi
+            cd library-be-scraper-fastapi
 
             # insert all environment variables into .env file
             cat > .env << 'ENVEOF'
