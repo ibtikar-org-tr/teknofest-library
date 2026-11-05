@@ -3,6 +3,9 @@
   "name": "teknofest-library-be-main",
   "main": "src/index.ts",
   "compatibility_date": "2025-12-01",
+  "dev": {
+    "port": 9671
+  },
   "vars": {
     "MY_VAR": "my-variable"
   },

@@ -13,7 +13,7 @@ import type {
   TeamWithSpace,
 } from '../types'
 
-const API_BASE_URL = import.meta.env.VITE_API_TARGET || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_TARGET || 'http://localhost:9680'
 
 // Create axios instance
 const api = axios.create({

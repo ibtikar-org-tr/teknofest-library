@@ -12,4 +12,10 @@ export default defineConfig({
       '@assets/generated_images': path.resolve(__dirname, './src/assets'),
     },
   },
+  server: {
+    port: 9670,
+  },
+  preview: {
+    port: 9670,
+  },
 })
