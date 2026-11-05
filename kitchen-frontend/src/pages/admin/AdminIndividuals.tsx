@@ -52,7 +52,7 @@ export default function AdminIndividuals() {
         ])
         setIndividuals(individualsData)
         setTeamsWithSpace(teamsData)
-      } catch (error) {
+      } catch {
         toast.error('حدث خطأ في تحميل البيانات')
       } finally {
         setLoading(false)

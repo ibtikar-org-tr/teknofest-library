@@ -36,7 +36,7 @@ export default function AdminManagement() {
           }
         })
         setWeights(initialWeights)
-      } catch (error) {
+      } catch {
         toast.error('حدث خطأ في تحميل البيانات')
       } finally {
         setLoading(false)

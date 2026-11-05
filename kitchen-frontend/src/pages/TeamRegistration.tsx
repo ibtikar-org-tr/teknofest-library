@@ -259,7 +259,7 @@ export default function TeamRegistration() {
         setValue(`members.${index}.email`, '')
         setValue(`members.${index}.phone`, '')
       }
-    } catch (error) {
+    } catch {
       if (membershipRequestIds.current[index] !== requestId) {
         return
       }
@@ -279,7 +279,7 @@ export default function TeamRegistration() {
   }
 
   // Debounce function
-  const useDebounce = (callback: Function, delay: number) => {
+  const useDebounce = (callback: (...args: never[]) => void, delay: number) => {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     
     useEffect(() => {

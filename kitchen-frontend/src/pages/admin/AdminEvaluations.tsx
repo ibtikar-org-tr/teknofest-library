@@ -40,7 +40,7 @@ export default function AdminEvaluations() {
       try {
         const data = await projectsService.getAll()
         setProjects(data)
-      } catch (error) {
+      } catch {
         toast.error('حدث خطأ في تحميل المشاريع')
       } finally {
         setLoading(false)
@@ -61,7 +61,7 @@ export default function AdminEvaluations() {
     try {
       const data = await evaluationsService.getProjectEvaluationsWithDetails(project.id!)
       setViewingEvaluations(data)
-    } catch (error) {
+    } catch {
       toast.error('حدث خطأ في تحميل التقييمات')
     } finally {
       setLoadingEvaluations(false)

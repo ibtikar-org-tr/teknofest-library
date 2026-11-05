@@ -126,7 +126,7 @@ export default function IndividualRegistration() {
     }
   }
 
-  const useDebounce = (callback: Function, delay: number) => {
+  const useDebounce = (callback: (...args: never[]) => void, delay: number) => {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {

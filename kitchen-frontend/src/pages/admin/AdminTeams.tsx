@@ -25,7 +25,7 @@ export default function AdminTeams() {
       try {
         const data = await teamsService.getAll()
         setTeams(data)
-      } catch (error) {
+      } catch {
         toast.error('حدث خطأ في تحميل الفرق')
       } finally {
         setLoading(false)
@@ -66,7 +66,7 @@ export default function AdminTeams() {
           t.id === team.id ? { ...t, telegram_group_link: telegramLink } : t
         )
       )
-    } catch (error) {
+    } catch {
       toast.error('حدث خطأ في إرسال الرابط')
     } finally {
       setSendingEmail(null)

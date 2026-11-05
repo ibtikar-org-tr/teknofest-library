@@ -32,7 +32,7 @@ export default function AdminProjects() {
       try {
         const data = await projectsService.getAll()
         setProjects(data)
-      } catch (error) {
+      } catch {
         toast.error('حدث خطأ في تحميل المشاريع')
       } finally {
         setLoading(false)
@@ -62,7 +62,7 @@ export default function AdminProjects() {
       }
 
       toast.success(result.message)
-    } catch (error) {
+    } catch {
       toast.error('حدث خطأ في تغيير حالة التميز')
     } finally {
       setTogglingFeature(null)
@@ -88,7 +88,7 @@ export default function AdminProjects() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       toast.success('تم تحميل الملف')
-    } catch (error) {
+    } catch {
       toast.error('حدث خطأ في تحميل الملف')
     } finally {
       setDownloading(null)

@@ -29,31 +29,20 @@ interface AdminLayoutProps {
   children: React.ReactNode
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const location = useLocation()
-  const navigate = useNavigate()
+interface SidebarContentProps {
+  sidebarOpen: boolean
+  isSuperAdmin: boolean
+  pathname: string
+  onLogout: () => void
+}
 
-  useEffect(() => {
-    const checkSuperAdmin = async () => {
-      try {
-        const response = await adminService.checkSuperAdmin()
-        setIsSuperAdmin(response.is_super_admin)
-      } catch (error) {
-        setIsSuperAdmin(false)
-      }
-    }
-    checkSuperAdmin()
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token')
-    navigate('/admin/login')
-  }
-
-  const SidebarContent = () => (
+function SidebarContent({
+  sidebarOpen,
+  isSuperAdmin,
+  pathname,
+  onLogout,
+}: SidebarContentProps) {
+  return (
     <>
       {/* Logo */}
       <div className="p-6 border-b border-teknofest-light-blue/20">
@@ -73,7 +62,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <ul className="space-y-2">
           {sidebarLinks.map((link) => {
             const Icon = link.icon
-            const isActive = location.pathname === link.to
+            const isActive = pathname === link.to
             return (
               <li key={link.to}>
                 <Link
@@ -96,7 +85,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Link
                 to={superAdminLink.to}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                  location.pathname === superAdminLink.to
+                  pathname === superAdminLink.to
                     ? 'bg-teknofest-orange text-white'
                     : 'text-gray-300 hover:bg-teknofest-medium-blue'
                 }`}
@@ -112,7 +101,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Logout */}
       <div className="p-4 border-t border-teknofest-light-blue/20">
         <button
-          onClick={handleLogout}
+          onClick={onLogout}
           className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
@@ -128,6 +117,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
     </>
   )
+}
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      try {
+        const response = await adminService.checkSuperAdmin()
+        setIsSuperAdmin(response.is_super_admin)
+      } catch {
+        setIsSuperAdmin(false)
+      }
+    }
+    checkSuperAdmin()
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token')
+    navigate('/admin/login')
+  }
 
   return (
     <div className="min-h-screen bg-teknofest-dark-blue flex">
@@ -137,7 +151,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
-        <SidebarContent />
+        <SidebarContent
+          sidebarOpen={sidebarOpen}
+          isSuperAdmin={isSuperAdmin}
+          pathname={location.pathname}
+          onLogout={handleLogout}
+        />
       </aside>
 
       {/* Mobile Sidebar */}
@@ -148,7 +167,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             onClick={() => setMobileOpen(false)}
           />
           <aside className="absolute right-0 top-0 h-full w-64 bg-teknofest-blue flex flex-col">
-            <SidebarContent />
+            <SidebarContent
+              sidebarOpen={sidebarOpen}
+              isSuperAdmin={isSuperAdmin}
+              pathname={location.pathname}
+              onLogout={handleLogout}
+            />
           </aside>
         </div>
       )}
