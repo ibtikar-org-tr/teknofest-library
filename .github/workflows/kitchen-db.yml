@@ -1,0 +1,25 @@
+name: (master) [kitchen-db] Kitchen Database
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-db:
+    runs-on: ubuntu-latest
+    environment: master
+    steps:
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Create database via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            docker pull postgres:latest
+            docker stop library-kitchen-db || true
+            docker rm library-kitchen-db || true
+            docker run -d --name library-kitchen-db -e POSTGRES_USER=library_kitchen_user -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} -e POSTGRES_DB=library_kitchen_db -p 127.0.0.1:9681:5432 postgres:latest
+            docker network create library-kitchen
+            docker network connect library-kitchen library-kitchen-db
+          EOF
