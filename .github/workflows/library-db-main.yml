@@ -1,4 +1,4 @@
-name: (main) [db] Database Migartion Trigger
+name: (main) [library-db] Database Migartion Trigger
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
 
       - name: Modify the wrangler file configuration to replace database_id
         run: |
-          cd database
+          cd library-database
           # Update wrangler.toml with environment variables using sed
           sed -i "s|database_id = \".*\"|database_id = \"${{ vars.CLOUDFLARE_D1_DATABASE_ID }}\"|g" wrangler.toml
 
