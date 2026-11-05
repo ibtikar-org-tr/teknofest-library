@@ -128,6 +128,7 @@ export type Dictionary = {
     cornersLabel: string
     cornersTitle: string
     corners: { title: string; body: string }[]
+    registerCta: string
   }
   kitchen: {
     label: string
@@ -139,6 +140,7 @@ export type Dictionary = {
     steps: { title: string; body: string }[]
     mentorsTitle: string
     mentorsBody: string
+    registerCta: string
   }
   footer: {
     blurb: string

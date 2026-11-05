@@ -401,6 +401,7 @@ export const tr: Dictionary = {
         body: 'Dikkat çeken bir kurulum; جيلٌ_يبتكر yazılı bir ayna.',
       },
     ],
+    registerCta: 'Öğrenci takımları ve girişimler için kayıt',
   },
   kitchen: {
     label: 'Mutfak',
@@ -435,6 +436,7 @@ export const tr: Dictionary = {
     mentorsTitle: 'Danışmanlar',
     mentorsBody:
       'Her danışman bir takım alır. Genç erkek ve genç kadın takımlarının danışman isimleri ikinci günden önce duyurulur.',
+    registerCta: 'TEKNOFEST takımları için kayıt',
   },
   footer: {
     blurb:

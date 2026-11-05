@@ -401,6 +401,7 @@ export const en: Dictionary = {
         body: 'A striking set, with a mirror titled جيلٌ_يبتكر.',
       },
     ],
+    registerCta: 'Register student teams & startups',
   },
   kitchen: {
     label: 'Kitchen',
@@ -435,6 +436,7 @@ export const en: Dictionary = {
     mentorsTitle: 'Mentors',
     mentorsBody:
       'Each mentor takes one team. Names of mentors for young men’s teams and young women’s teams will be announced before day two.',
+    registerCta: 'Register TEKNOFEST teams',
   },
   footer: {
     blurb:

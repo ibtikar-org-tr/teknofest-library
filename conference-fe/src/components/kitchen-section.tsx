@@ -47,13 +47,13 @@ export function KitchenSection() {
           <aside className="flex flex-col justify-between gap-6 bg-navy p-8 text-navy-foreground md:col-span-5">
             <p className="text-pretty leading-relaxed text-navy-foreground/80">{t.footer.blurb}</p>
             <a
-              href={LINKS.register}
+              href={LINKS.registerTeknofestTeams}
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-12 items-center justify-center self-start bg-primary px-6 font-bold text-white skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105"
             >
               <span className="flex items-center gap-2 skew-x-[10deg] rtl:skew-x-[-10deg]">
-                {t.nav.registerNow}
+                {t.kitchen.registerCta}
                 <ArrowRight className={cn('size-4', dir === 'rtl' && 'rotate-180')} />
               </span>
             </a>

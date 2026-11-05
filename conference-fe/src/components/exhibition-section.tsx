@@ -1,8 +1,11 @@
+import { ArrowRight } from 'lucide-react'
 import { SectionLabel } from '@/components/section-label'
 import { useLocale } from '@/i18n/locale-provider'
+import { LINKS } from '@/lib/links'
+import { cn } from '@/lib/utils'
 
 export function ExhibitionSection() {
-  const { t } = useLocale()
+  const { t, dir } = useLocale()
 
   return (
     <section id="exhibition" className="bg-secondary py-20 md:py-28">
@@ -25,6 +28,18 @@ export function ExhibitionSection() {
             </article>
           ))}
         </div>
+
+        <a
+          href={LINKS.registerStudentStartups}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-8 inline-flex h-12 items-center justify-center bg-primary px-6 font-bold text-white skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105"
+        >
+          <span className="flex items-center gap-2 skew-x-[10deg] rtl:skew-x-[-10deg]">
+            {t.exhibition.registerCta}
+            <ArrowRight className={cn('size-4', dir === 'rtl' && 'rotate-180')} />
+          </span>
+        </a>
 
         <div className="mt-16">
           <SectionLabel title={t.exhibition.cornersLabel} />
