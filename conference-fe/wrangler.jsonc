@@ -16,7 +16,7 @@
   },
   "routes": [
     {
-      "pattern": "teknfest.ibtikar.tr",
+      "pattern": "tac.ibtikar.tr",
       "custom_domain": true
     }
   ]
