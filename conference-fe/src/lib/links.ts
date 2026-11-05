@@ -1,10 +1,8 @@
 const WHATSAPP_NUMBER = '905057371422'
-const REGISTER_TEXT = encodeURIComponent(
-  'مرحبا، أود التسجيل في مؤتمر تكنوفست بالعربي 2026',
-)
 
 export const LINKS = {
-  register: `https://wa.me/${WHATSAPP_NUMBER}?text=${REGISTER_TEXT}`,
+  register:
+    'https://vms.ibtikar.tr/event/98c0bf0a-9c94-4f60-a612-ab740c1350c7',
   telegramChannel: 'https://t.me/ibtikar_org',
   telegramContact: 'https://t.me/ibtikar_org_tr',
   bylaws: 'https://github.com/ibtikar-org-tr/bylaws',
