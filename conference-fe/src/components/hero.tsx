@@ -66,6 +66,25 @@ export function Hero() {
               </span>
             </a>
           </div>
+
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-2">
+            <a
+              href={LINKS.registerStudentStartups}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-semibold text-foreground underline decoration-primary/60 underline-offset-4 transition-colors hover:text-primary"
+            >
+              {t.registerPaths.studentStartups}
+            </a>
+            <a
+              href={LINKS.registerTeknofestTeams}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-semibold text-foreground underline decoration-primary/60 underline-offset-4 transition-colors hover:text-primary"
+            >
+              {t.registerPaths.teknofestTeams}
+            </a>
+          </div>
         </div>
       </div>
 

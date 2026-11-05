@@ -39,6 +39,13 @@ export const tr: Dictionary = {
       { value: '09–19', label: 'Saat' },
     ],
   },
+  registerPaths: {
+    label: 'Kayıt',
+    title: 'Size uyan kayıt yolunu seçin.',
+    body: 'Genel katılım için Şimdi kaydol. Öğrenci takımları, girişimler ve TEKNOFEST ekipleri için ayrı formlar var.',
+    studentStartups: 'Öğrenci takımları ve girişimler',
+    teknofestTeams: 'TEKNOFEST takımları',
+  },
   about: {
     label: 'Konferans hakkında',
     title: 'Öğrencilere TEKNOFEST’i tanıt, sonraki yıldızları ilhamla büyüt',

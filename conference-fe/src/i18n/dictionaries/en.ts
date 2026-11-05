@@ -39,6 +39,13 @@ export const en: Dictionary = {
       { value: '09–19', label: 'Hours' },
     ],
   },
+  registerPaths: {
+    label: 'Registration',
+    title: 'Choose the path that fits you.',
+    body: 'General attendance uses Register now. Student teams, startups, and TEKNOFEST squads have their own forms.',
+    studentStartups: 'Student teams & startups',
+    teknofestTeams: 'TEKNOFEST teams',
+  },
   about: {
     label: 'About the conference',
     title: 'Introduce students to TEKNOFEST — and inspire the next stars',

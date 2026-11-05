@@ -106,6 +106,28 @@ export function SiteHeader() {
                 {t.nav.registerNow}
               </a>
             </li>
+            <li>
+              <a
+                href={LINKS.registerStudentStartups}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setOpen(false)}
+                className="block py-2 text-base font-medium text-foreground transition-colors hover:text-primary"
+              >
+                {t.registerPaths.studentStartups}
+              </a>
+            </li>
+            <li>
+              <a
+                href={LINKS.registerTeknofestTeams}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setOpen(false)}
+                className="block py-2 text-base font-medium text-foreground transition-colors hover:text-primary"
+              >
+                {t.registerPaths.teknofestTeams}
+              </a>
+            </li>
           </ul>
         </nav>
       ) : null}

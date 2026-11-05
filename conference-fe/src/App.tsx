@@ -1,5 +1,6 @@
 import { SiteHeader } from '@/components/site-header'
 import { Hero } from '@/components/hero'
+import { RegisterPathsSection } from '@/components/register-paths-section'
 import { AboutSection } from '@/components/about-section'
 import { FactsSection } from '@/components/facts-section'
 import { PrinciplesSection } from '@/components/principles-section'
@@ -16,6 +17,7 @@ function App() {
       <SiteHeader />
       <main className="grow">
         <Hero />
+        <RegisterPathsSection />
         <FactsSection />
         <AboutSection />
         <PrinciplesSection />

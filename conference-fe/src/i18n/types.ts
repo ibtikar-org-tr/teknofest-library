@@ -87,6 +87,13 @@ export type Dictionary = {
     aboutProgram: string
     stats: { value: string; label: string }[]
   }
+  registerPaths: {
+    label: string
+    title: string
+    body: string
+    studentStartups: string
+    teknofestTeams: string
+  }
   about: {
     label: string
     title: string
