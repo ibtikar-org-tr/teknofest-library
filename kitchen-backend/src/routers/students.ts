@@ -54,7 +54,10 @@ studentsRouter.post('/individual', async (c) => {
 })
 
 studentsRouter.get('/individuals', async (c) => {
-  const individuals = await listIndividuals(c.env)
+  const unassignedOnly = c.req.query('unassigned_only') === 'true'
+  const individuals = unassignedOnly
+    ? (await listIndividuals(c.env)).filter((i) => !i.is_assigned)
+    : await listIndividuals(c.env)
   return c.json(individuals)
 })
 
@@ -66,6 +69,41 @@ studentsRouter.get('/individual/:individual_id', async (c) => {
 })
 
 studentsRouter.get('/fields', (c) => c.json(PROJECT_FIELDS))
+
+studentsRouter.get('/teams-with-space', async (c) => {
+  const teams = await listTeams(c.env)
+  const withSpace = []
+  for (const team of teams) {
+    if (!team.is_active) continue
+    const full = await getTeam(c.env, team.id)
+    const memberCount = full?.members?.length ?? 0
+    if (memberCount >= 6) continue
+    withSpace.push({
+      id: team.id,
+      team_name: team.team_name,
+      gender: team.gender,
+      field: team.field,
+      member_count: memberCount,
+      available_slots: 6 - memberCount,
+      members: (full?.members ?? []).map((m) => ({
+        id: m.id,
+        full_name: m.full_name,
+        email: m.email,
+        is_leader: m.is_leader,
+      })),
+    })
+  }
+  return c.json(withSpace)
+})
+
+studentsRouter.get('/verify-membership-number/:membership_number', async (c) => {
+  const membershipNumber = c.req.param('membership_number')
+  // Port of iforgot verification still pending; accept format for FE registration flow
+  return c.json({
+    valid: Boolean(membershipNumber && membershipNumber.length >= 3),
+    membership_number: membershipNumber,
+  })
+})
 
 studentsRouter.get('/stats', async (c) => {
   const teams = await listTeams(c.env)
