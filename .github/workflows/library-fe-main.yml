@@ -1,22 +1,22 @@
-name: (main) [fe-main] Frontend CI/CD
+name: (main) [library-fe-main] Frontend CI/CD
 
 on:
   push:
     branches: 
       - main
     paths:
-      - 'fe-main/**'
-      - .github/workflows/fe-main.yml
+      - 'library-fe-main/**'
+      - .github/workflows/library-fe-main.yml
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy Frontend
+    name: Build and Deploy Library Frontend
     runs-on: ubuntu-latest
     environment: main
     defaults:
       run:
-        working-directory: ./fe-main
+        working-directory: ./library-fe-main
 
     steps:
       - name: Checkout Repository
