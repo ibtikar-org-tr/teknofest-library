@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'conference-frontend/**'
+      - 'conference-fe/**'
       - '.github/workflows/conference-frontend.yml'
   workflow_dispatch:
 
@@ -15,7 +15,7 @@ jobs:
     environment: main
     defaults:
       run:
-        working-directory: ./conference-frontend
+        working-directory: ./conference-fe
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
