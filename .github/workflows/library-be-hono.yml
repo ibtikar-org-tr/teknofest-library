@@ -1,17 +1,17 @@
-name: (main) [be-main-hono] Deploy Main Backend via Cloudflare Workers
+name: (main) [library-be-main-hono] Deploy Library Backend via Cloudflare Workers
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'be-main-hono/**'
-      - .github/workflows/be-hono.yml
+      - 'library-be-main-hono/**'
+      - .github/workflows/library-be-hono.yml
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy Main Backend Microservice
+    name: Deploy Library Backend Microservice
     runs-on: ubuntu-latest
     environment: main
     steps:
@@ -28,13 +28,13 @@ jobs:
 
       - name: install project dependencies
         run: |
-          cd be-main-hono
+          cd library-be-main-hono
           npm install
           npm run cf-typegen
 
       - name: Update wrangler config with environment variables
         run: |
-          cd be-main-hono
+          cd library-be-main-hono
           # Update wrangler.jsonc with environment variables using sed
           sed -i "s|\"database_id\":[[:space:]]*\"[^\"]*\"|\"database_id\": \"${{ vars.CLOUDFLARE_D1_DATABASE_ID }}\"|g" wrangler.jsonc
 
@@ -42,5 +42,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          cd be-main-hono
+          cd library-be-main-hono
           wrangler deploy
