@@ -4,12 +4,11 @@ export const tr: Dictionary = {
   dir: 'ltr',
   locale: 'tr-TR',
   brand: 'IBTIKAR',
-  siteName: 'TAC',
-  siteNameAr: 'مؤتمر تكنوفست بالعربي',
+  siteName: 'TAC 2026',
   techLogoAlt: 'Ibtikar Tech programı',
-  documentTitle: 'TAC 2026 — Arapça TEKNOFEST Konferansı',
+  documentTitle: 'TAC 2026',
   metaDescription:
-    'TAC 2026 (Arapça TEKNOFEST Konferansı / مؤتمر تكنوفست بالعربي), İbtikar Gönüllü Topluluğu’nun 21–22 Kasım’da İstanbul’da düzenlediği iki günlük konferanstır. Yıldız Sahnesi, paneller, açık sergi ve TEKNOFEST Mutfağı ile takımlar kurulur, öne çıkanlar İbtikar’ın TEKNOFEST ekiplerine aday gösterilir.',
+    'TAC 2026, İbtikar Gönüllü Topluluğu’nun 21–22 Kasım’da İstanbul’da düzenlediği iki günlük konferanstır. Yıldız Sahnesi, paneller, açık sergi ve TEKNOFEST Mutfağı ile takımlar kurulur, öne çıkanlar İbtikar’ın TEKNOFEST ekiplerine aday gösterilir.',
   nav: {
     about: 'Konferans',
     facts: 'Künye',
@@ -21,7 +20,7 @@ export const tr: Dictionary = {
     tac2023: 'TAC 2023',
     tac2024: 'TAC 2024',
     registerNow: 'Şimdi kaydol',
-    homeAria: 'TAC — Arapça TEKNOFEST Konferansı ana sayfa',
+    homeAria: 'TAC 2026 ana sayfa',
     primaryNav: 'Ana menü',
     mobileNav: 'Mobil menü',
     openMenu: 'Menüyü aç',
@@ -29,7 +28,7 @@ export const tr: Dictionary = {
   },
   hero: {
     eyebrow: 'Ibtikar Tech — İbtikar Gönüllü Topluluğu — İstanbul',
-    brandTitle: 'TAC',
+    brandTitle: 'TAC 2026',
     titleLine1: 'İnovasyon yapan',
     titleLine2Before: 'bir',
     titleLine2Accent: 'nesil',
@@ -466,7 +465,7 @@ export const tr: Dictionary = {
   },
   footer: {
     blurb:
-      'TAC 2026 — Arapça TEKNOFEST Konferansı (مؤتمر تكنوفست بالعربي), İbtikar Gönüllü Topluluğu’nun Ibtikar Tech programı üzerinden düzenlediği konferanstır. İstanbul’da öğrencilerle TEKNOFEST’i konuşur, fikirleri birlikte pişiririz.',
+      'TAC 2026, İbtikar Gönüllü Topluluğu’nun Ibtikar Tech programı üzerinden düzenlediği konferanstır. İstanbul’da öğrencilerle TEKNOFEST’i konuşur, fikirleri birlikte pişiririz.',
     getInTouch: 'Bize yazın',
     connect: 'Bağlantı',
     partners: 'Paydaşlar',

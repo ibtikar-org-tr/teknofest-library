@@ -86,13 +86,12 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-8">
         <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-1">
-            <a
+            <BrandLockup
+              compact
               href={isArchive ? homeHref : '#top'}
-              className="mb-6 inline-block"
-              onClick={isArchive ? (e) => navigateToPage(e, 'home') : undefined}
-            >
-              <BrandLockup compact />
-            </a>
+              onNavigate={isArchive ? (e) => navigateToPage(e, 'home') : undefined}
+              className="mb-6"
+            />
             <p className="mb-6 text-sm leading-relaxed text-muted-foreground">{t.footer.blurb}</p>
             <div className="flex flex-wrap gap-3">
               {CONNECT_HREFS.slice(0, 5).map((item) => (

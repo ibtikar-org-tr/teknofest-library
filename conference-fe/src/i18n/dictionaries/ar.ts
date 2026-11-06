@@ -4,12 +4,11 @@ export const ar: Dictionary = {
   dir: 'rtl',
   locale: 'ar',
   brand: 'إبتكار',
-  siteName: 'TAC',
-  siteNameAr: 'مؤتمر تكنوفست بالعربي',
+  siteName: 'TAC 2026',
   techLogoAlt: 'برنامج Ibtikar Tech',
-  documentTitle: 'TAC 2026 — مؤتمر تكنوفست بالعربي',
+  documentTitle: 'TAC 2026',
   metaDescription:
-    'TAC 2026 — مؤتمر تكنوفست بالعربي فعالية ينظمها تجمّع إبتكار في إسطنبول يومي 21 و22 نوفمبر. منصّة النجوم، حلقات نقاش، معرض خارجي، ومطبخ تكنوفست لتشكيل الفرق وترشيح المتميزين لمسابقات TechnoFest.',
+    'TAC 2026 فعالية ينظمها تجمّع إبتكار في إسطنبول يومي 21 و22 نوفمبر. منصّة النجوم، حلقات نقاش، معرض خارجي، ومطبخ تكنوفست لتشكيل الفرق وترشيح المتميزين لمسابقات TechnoFest.',
   nav: {
     about: 'عن المؤتمر',
     facts: 'التفاصيل',
@@ -21,7 +20,7 @@ export const ar: Dictionary = {
     tac2023: 'TAC 2023',
     tac2024: 'TAC 2024',
     registerNow: 'سجّل الآن',
-    homeAria: 'الصفحة الرئيسية لـ TAC — مؤتمر تكنوفست بالعربي',
+    homeAria: 'الصفحة الرئيسية لـ TAC 2026',
     primaryNav: 'التنقّل الرئيسي',
     mobileNav: 'تنقّل الجوّال',
     openMenu: 'فتح القائمة',
@@ -29,7 +28,7 @@ export const ar: Dictionary = {
   },
   hero: {
     eyebrow: 'Ibtikar Tech — تجمّع ابتكار — إسطنبول',
-    brandTitle: 'TAC',
+    brandTitle: 'TAC 2026',
     titleLine1: 'جيل',
     titleLine2Before: '',
     titleLine2Accent: 'يبتكر',
@@ -64,7 +63,7 @@ export const ar: Dictionary = {
   },
   pastEditions: {
     label: 'النسخ السابقة',
-    title: 'أرشيف TAC — مؤتمر تكنوفست بالعربي',
+    title: 'أرشيف TAC',
     body: 'استعرض النسخ السابقة من المؤتمر في إسطنبول — الفقرات، اللحظات، وصور من الحدث.',
     tac2023Title: 'TAC 2023 — النسخة الأولى',
     tac2023Body: '4 نوفمبر 2023 · جامعة صباح الدين الزعيم — انطلاقة المؤتمر بالتعريف ومنصّة النجوم ومطبخ تكنوفست.',
@@ -465,7 +464,7 @@ export const ar: Dictionary = {
   },
   footer: {
     blurb:
-      'TAC 2026 — مؤتمر تكنوفست بالعربي من تنظيم تجمّع إبتكار التطوّعي عبر برنامج Ibtikar Tech. نلتقي في إسطنبول لنعرّف الطلاب بالتكنوفست ونطبخ أفكارهم معاً.',
+      'TAC 2026 من تنظيم تجمّع إبتكار التطوّعي عبر برنامج Ibtikar Tech. نلتقي في إسطنبول لنعرّف الطلاب بالتكنوفست ونطبخ أفكارهم معاً.',
     getInTouch: 'تواصل معنا',
     connect: 'تواصل',
     partners: 'شركاء النجاح',

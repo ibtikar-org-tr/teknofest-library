@@ -54,14 +54,13 @@ export function SiteHeader() {
       )}
     >
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
-        <a
+        <BrandLockup
+          compact
           href={brandHref}
-          aria-label={brandLabel}
+          ariaLabel={brandLabel}
+          onNavigate={isArchive ? (e) => navigateToPage(e, 'home') : undefined}
           className="min-w-0"
-          onClick={isArchive ? (e) => navigateToPage(e, 'home') : undefined}
-        >
-          <BrandLockup compact />
-        </a>
+        />
 
         <nav className="hidden items-center gap-6 xl:flex" aria-label={t.nav.primaryNav}>
           {navLinks.map((link) => (
