@@ -5,9 +5,9 @@ export function FactsSection() {
   const { t } = useLocale()
 
   return (
-    <section id="facts" className="relative z-20 -mt-16 pb-8 md:-mt-20">
+    <section id="facts" className="relative bg-background pb-8 pt-10 md:pb-12 md:pt-14">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="rounded-2xl border border-white/10 bg-card/50 p-6 shadow-2xl backdrop-blur-xl md:p-8">
+        <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-lg backdrop-blur-xl md:p-8">
           <SectionLabel title={t.facts.label} />
           <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
             {t.facts.title}

@@ -20,7 +20,7 @@ export function RegisterPathsSection() {
   ] as const
 
   return (
-    <section id="register-paths" className="border-y border-border/60 bg-navy py-14 md:py-16">
+    <section id="register-paths" className="relative z-10 border-y border-border/60 bg-navy py-14 md:py-16">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <SectionLabel title={t.registerPaths.label} />
         <h2 className="mt-4 max-w-2xl font-display text-2xl font-bold leading-tight text-navy-foreground md:text-3xl">
