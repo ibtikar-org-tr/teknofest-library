@@ -60,7 +60,7 @@ export function TacArchivePage({ year }: TacArchivePageProps) {
 
               <h1 className="mt-5 font-display text-[2rem] font-extrabold leading-[1.08] tracking-tight text-balance sm:text-5xl lg:text-6xl">
                 <span className="block">{h.titleTop}</span>
-                <span className="mt-1 block bg-linear-to-r from-primary to-red-600 bg-clip-text text-transparent">
+                <span className="mt-1 block bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
                   {h.titleBottom}
                 </span>
               </h1>

@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Chakra Petch", "Inter", ui-monospace, monospace;
-  --font-display: "Chakra Petch", "Cairo", ui-sans-serif, sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Manrope", ui-monospace, monospace;
+  --font-display: "Sora", "Cairo", ui-sans-serif, sans-serif;
+  --font-arabic: "Cairo", "IBM Plex Sans Arabic", ui-sans-serif, sans-serif;
   --color-navy: var(--navy);
   --color-navy-foreground: var(--navy-foreground);
   --color-signal: var(--signal);
@@ -36,28 +37,29 @@
 
 :root {
   color-scheme: light;
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Ocean / ink theme — distinct from TEKNOFEST festival red */
+  --background: #f3f7f9;
+  --foreground: #0b1c24;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #ee2a35;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #ee2a35;
-  --accent-foreground: #ffffff;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #ee2a35;
-  --radius: 0.5rem;
-  --navy: #0f172a;
-  --navy-foreground: #f8fafc;
-  --signal: #ee2a35;
-  --signal-foreground: #ffffff;
-  --line: #e2e8f0;
+  --card-foreground: #0b1c24;
+  --primary: #0e7490;
+  --primary-foreground: #f0fdfa;
+  --secondary: #e6eef2;
+  --secondary-foreground: #0b1c24;
+  --muted: #e8eef2;
+  --muted-foreground: #4b6672;
+  --accent: #155e75;
+  --accent-foreground: #ecfeff;
+  --destructive: oklch(0.55 0.2 25);
+  --border: #d5e2e8;
+  --input: #d5e2e8;
+  --ring: #0e7490;
+  --radius: 0.35rem;
+  --navy: #0b1c24;
+  --navy-foreground: #f3f7f9;
+  --signal: #0e7490;
+  --signal-foreground: #f0fdfa;
+  --line: #d5e2e8;
 }
 
 @layer base {
@@ -69,6 +71,10 @@
   }
   body {
     @apply bg-background font-sans text-foreground antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 100% -10%, rgb(14 116 144 / 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 0% 100%, rgb(21 94 117 / 0.06), transparent);
+    background-attachment: fixed;
   }
   h1,
   h2,
@@ -80,18 +86,21 @@
   }
   html.font-arabic,
   html.font-arabic body {
-    font-family: "Cairo", "IBM Plex Sans Arabic", "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-family: "Cairo", "IBM Plex Sans Arabic", "Manrope", ui-sans-serif, system-ui, sans-serif;
   }
   html.font-arabic .font-display,
   html.font-arabic h1,
   html.font-arabic h2,
   html.font-arabic h3,
   html.font-arabic h4 {
-    font-family: "Cairo", "Noto Kufi Arabic", "Chakra Petch", ui-sans-serif, sans-serif;
+    font-family: "Cairo", "Noto Kufi Arabic", "Sora", ui-sans-serif, sans-serif;
     letter-spacing: 0.01em;
     text-transform: none;
   }
   html.font-arabic .font-mono {
-    font-family: "Cairo", "Chakra Petch", ui-monospace, monospace;
+    font-family: "Cairo", "IBM Plex Mono", ui-monospace, monospace;
+  }
+  .font-arabic {
+    font-family: var(--font-arabic);
   }
 }
