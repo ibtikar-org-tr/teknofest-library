@@ -368,40 +368,40 @@ export const tr: Dictionary = {
   },
   exhibition: {
     label: 'Sergi',
-    title: 'Canlı bir sergi. Salonu hareketli tutan köşeler.',
-    body: 'Açık sergi birinci gün oturumlarıyla birlikte yürür: proje stantları ve koridordaki İbtikar saha masaları.',
+    title: 'Oturumlarla birlikte yürüyen bir sergi. Salonu hareketlendiren köşeler.',
+    body: 'Açık havada, birinci günle paralel: iş göstermek ve tanışmak için proje alanları; her molayı sohbete çeviren İbtikar saha stantları koridorda.',
     items: [
       {
         title: 'Girişim köşesi',
-        body: 'Girişimlerin ürününü gösterip salondakilerle tanıştığı alan.',
+        body: 'Girişimlerin ürününü gösterip katılımcılar ve olası partnerlerle tanıştığı alan.',
       },
       {
         title: 'Öğrenci takımları',
-        body: 'İşini gösteren, ekip arkadaşı arayan üniversite takımları.',
+        body: 'İşini gösteren, ekip arkadaşı ve sonraki işbirliğini arayan üniversite takımları.',
       },
       {
         title: 'İbtikar köşesi',
-        body: 'Topluluğun, projelerinin ve yollarının standı.',
+        body: 'Topluluğun standı: projeler, yollar ve nasıl katılınır.',
       },
       {
         title: 'Önceki TEKNOFEST projeleri',
-        body: 'Geçmiş edisyonlarda yarışmış takımların işleri.',
+        body: 'Daha önce yarışmış takımların işleri — çıtayı görmek ve ilham almak için.',
       },
     ],
     cornersLabel: 'Saha stantları',
-    cornersTitle: 'Üyelik, gönüllülük, bir not ve bir fotoğraf.',
+    cornersTitle: 'Koridorda dört durak: üyelik, gönüllülük, bir not ve bir fotoğraf.',
     corners: [
       {
         title: 'Üyelik standı',
-        body: 'İki gönüllü, tanıtım broşürleri, bir fon ve İbtikar filminin oynadığı ekran — ardından gönüllülük standına yönlendirme.',
+        body: 'İki gönüllü, broşürler, bir fon ve İbtikar filmi — ardından gönüllülük standına yönlendirme.',
       },
       {
         title: 'Gönüllülük standı',
-        body: 'İki gönüllü İbtikar’ın gönüllü bölümlerini, faydasını ve adımlarını anlatır, formu doldurtur; masada koşulların yazılı olduğu sabit bir A2 panosu durur.',
+        body: 'Bölümler, fayda ve adımlar; form yardımı; koşulların yazılı olduğu A2 panosu.',
       },
       {
         title: 'İbtikar’a not bırak',
-        body: 'Topluluğun defteri, masa süslemeleri ve konuklarla katılımcılardan kısa röportajlar çeken bir fotoğrafçı.',
+        body: 'Topluluğun defteri, masa hediyeleri ve konuklarla kısa röportajlar.',
       },
       {
         title: 'Fotoğraf köşesi',

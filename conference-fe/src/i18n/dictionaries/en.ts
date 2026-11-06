@@ -368,40 +368,40 @@ export const en: Dictionary = {
   },
   exhibition: {
     label: 'Exhibition',
-    title: 'A live exhibition. Corners that keep the hall moving.',
-    body: 'The outdoor exhibition runs with day-one sessions: project stands plus Ibtikar’s field desks in the corridor.',
+    title: 'An exhibition that runs with the sessions. Corners that move the hall.',
+    body: 'Outdoors, in parallel with day one: project bays for showing work and meeting people, plus Ibtikar field stands in the corridor that turn every break into a conversation.',
     items: [
       {
         title: 'Startup corner',
-        body: 'Space for startups to show products and meet the room.',
+        body: 'Space for startups to show products and meet attendees and potential partners.',
       },
       {
         title: 'Student-team corner',
-        body: 'University teams showing work and looking for teammates.',
+        body: 'University teams showing work and looking for teammates and the next collaboration.',
       },
       {
         title: 'Ibtikar corner',
-        body: 'A stand for the assembly, its projects, and its paths.',
+        body: 'The assembly’s stand: projects, paths, and how to join a community that builds.',
       },
       {
         title: 'Past TEKNOFEST projects',
-        body: 'Work from teams that competed in previous editions.',
+        body: 'Work from teams that competed before — to borrow ambition and measure the bar.',
       },
     ],
     cornersLabel: 'Field stands',
-    cornersTitle: 'Membership, volunteering, a message, and a photo.',
+    cornersTitle: 'Four stops in the corridor: membership, volunteering, a note, and a photo.',
     corners: [
       {
         title: 'Membership stand',
-        body: 'Two volunteers, intro brochures, a backdrop, and a screen playing Ibtikar’s film — then a path to the volunteering stand.',
+        body: 'Two volunteers, intro brochures, a backdrop, and a screen playing Ibtikar’s film — then a path to volunteering.',
       },
       {
         title: 'Volunteering stand',
-        body: 'Two volunteers explain Ibtikar’s volunteer sections, benefits, and steps, help with the form, and keep an A2 board of the conditions.',
+        body: 'Sections, benefits, and steps explained; help with the form; an A2 board of the conditions.',
       },
       {
         title: 'Leave a message',
-        body: 'A guest book for Ibtikar, table gifts, and a photographer capturing short interviews with guests and attendees.',
+        body: 'A guest book for Ibtikar, table gifts, and short interviews with guests and attendees.',
       },
       {
         title: 'Photo corner',
