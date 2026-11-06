@@ -3,6 +3,7 @@ import { BrandLockup } from '@/components/logomark'
 import { LinkedInIcon, TelegramIcon } from '@/components/social-icons'
 import { useLocale } from '@/i18n/locale-provider'
 import { LINKS } from '@/lib/links'
+import { buildPageHref, isArchivePage, navigateToPage } from '@/lib/page-url'
 
 const CONNECT_HREFS = [
   { href: LINKS.instagram, key: 'instagram' as const, icon: Share2 },
@@ -76,14 +77,20 @@ const PARTNERS: Partner[] = [
 ]
 
 export function SiteFooter() {
-  const { t } = useLocale()
+  const { t, page, archive } = useLocale()
+  const isArchive = isArchivePage(page)
+  const homeHref = buildPageHref('home')
 
   return (
     <footer id="contact" className="mt-12 border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-8">
         <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-1">
-            <a href="#top" className="mb-6 inline-block">
+            <a
+              href={isArchive ? homeHref : '#top'}
+              className="mb-6 inline-block"
+              onClick={isArchive ? (e) => navigateToPage(e, 'home') : undefined}
+            >
               <BrandLockup compact />
             </a>
             <p className="mb-6 text-sm leading-relaxed text-muted-foreground">{t.footer.blurb}</p>
@@ -118,6 +125,38 @@ export function SiteFooter() {
                   </a>
                 </li>
               ))}
+            </ul>
+            <h4 className="mb-4 mt-8 font-display text-lg font-bold">{t.footer.pastEditions}</h4>
+            <ul className="space-y-3">
+              <li>
+                <a
+                  href={buildPageHref('tac-2024')}
+                  onClick={(e) => navigateToPage(e, 'tac-2024')}
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  {t.nav.tac2024}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={buildPageHref('tac-2023')}
+                  onClick={(e) => navigateToPage(e, 'tac-2023')}
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  {t.nav.tac2023}
+                </a>
+              </li>
+              {isArchive ? (
+                <li>
+                  <a
+                    href={homeHref}
+                    onClick={(e) => navigateToPage(e, 'home')}
+                    className="text-sm text-primary transition-colors hover:text-primary/80"
+                  >
+                    {archive?.nav.backTo2026 ?? 'TAC 2026'}
+                  </a>
+                </li>
+              ) : null}
             </ul>
           </div>
 
@@ -156,7 +195,9 @@ export function SiteFooter() {
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-center text-xs text-muted-foreground md:text-left">{t.footer.rights}</p>
-          <p className="text-xs text-muted-foreground">{t.footer.location}</p>
+          <p className="text-xs text-muted-foreground">
+            {isArchive && archive ? archive.footer.dates : t.footer.location}
+          </p>
         </div>
       </div>
     </footer>

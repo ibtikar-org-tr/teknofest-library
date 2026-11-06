@@ -68,6 +68,9 @@ export type Dictionary = {
     agenda: string
     exhibition: string
     kitchen: string
+    pastEditions: string
+    tac2023: string
+    tac2024: string
     registerNow: string
     homeAria: string
     primaryNav: string
@@ -102,6 +105,19 @@ export type Dictionary = {
     visionBody: string
     mission: string
     missionBody: string
+  }
+  pastEditions: {
+    label: string
+    title: string
+    body: string
+    tac2023Title: string
+    tac2023Body: string
+    tac2023Link: string
+    tac2024Title: string
+    tac2024Body: string
+    tac2024Link: string
+    cancelled2025Label: string
+    cancelled2025Body: string
   }
   facts: {
     label: string
@@ -154,6 +170,7 @@ export type Dictionary = {
     getInTouch: string
     connect: string
     partners: string
+    pastEditions: string
     rights: string
     location: string
     instagram: string

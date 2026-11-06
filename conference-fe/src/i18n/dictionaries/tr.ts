@@ -15,6 +15,9 @@ export const tr: Dictionary = {
     agenda: 'Akış',
     exhibition: 'Sergi',
     kitchen: 'Mutfak',
+    pastEditions: 'Önceki sürümler',
+    tac2023: 'TAC 2023',
+    tac2024: 'TAC 2024',
     registerNow: 'Şimdi kaydol',
     homeAria: 'Arapça TEKNOFEST ana sayfa',
     primaryNav: 'Ana menü',
@@ -56,6 +59,20 @@ export const tr: Dictionary = {
     mission: 'İKİ GÜN',
     missionBody:
       'Birinci gün: Yıldız Sahnesi, sergi, paneller ve takım kurulumu. İkinci gün: TEKNOFEST Mutfağı, ilk rapordan final sunumuna ve adaylığa.',
+  },
+  pastEditions: {
+    label: 'Önceki sürümler',
+    title: 'Arapça TEKNOFEST arşivi',
+    body: 'İstanbul’daki önceki konferans sürümlerini inceleyin — program öne çıkanları ve etkinlik fotoğrafları.',
+    tac2023Title: 'TAC 2023 — 1. sürüm',
+    tac2023Body:
+      '4 Kasım 2023 · Sabahattin Zaim Üniversitesi — tanıtım, Yıldızlar ve Mutfak ile ilk sürüm.',
+    tac2023Link: 'TAC 2023’ü gör',
+    tac2024Title: 'TAC 2024 — 2. sürüm',
+    tac2024Body: '3 Kasım 2024 · İstanbul Gelişim Üniversitesi — bugün yaratıcılık, yarın başarı.',
+    tac2024Link: 'TAC 2024’ü gör',
+    cancelled2025Label: 'TAC 2025 — 3. sürüm',
+    cancelled2025Body: 'Bu sürüm iptal edildi. 2026’da 4. sürümle dönüyoruz.',
   },
   facts: {
     label: 'Künye',
@@ -451,6 +468,7 @@ export const tr: Dictionary = {
     getInTouch: 'Bize yazın',
     connect: 'Bağlantı',
     partners: 'Paydaşlar',
+    pastEditions: 'Önceki sürümler',
     rights: '© 2026 İbtikar Gönüllü Topluluğu. Tüm hakları saklıdır.',
     location: 'İstanbul, Türkiye — 21–22 Kasım 2026',
     instagram: 'Instagram',

@@ -4,14 +4,16 @@ import { LanguageSwitcher } from '@/components/language-switcher'
 import { BrandLockup } from '@/components/logomark'
 import { useLocale } from '@/i18n/locale-provider'
 import { LINKS } from '@/lib/links'
+import { buildPageHref, isArchivePage, navigateToPage } from '@/lib/page-url'
 import { cn } from '@/lib/utils'
 
 export function SiteHeader() {
-  const { t } = useLocale()
+  const { t, page, archive } = useLocale()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const isArchive = isArchivePage(page)
 
-  const navLinks = [
+  const homeNavLinks = [
     { href: '#about', label: t.nav.about },
     { href: '#facts', label: t.nav.facts },
     { href: '#program', label: t.nav.program },
@@ -19,6 +21,19 @@ export function SiteHeader() {
     { href: '#exhibition', label: t.nav.exhibition },
     { href: '#kitchen', label: t.nav.kitchen },
   ]
+
+  const archiveNavLinks = archive
+    ? [
+        { href: '#about', label: archive.nav.about },
+        { href: '#highlights', label: archive.nav.highlights },
+        { href: '#gallery', label: archive.nav.gallery },
+      ]
+    : []
+
+  const navLinks = isArchive ? archiveNavLinks : homeNavLinks
+  const homeHref = buildPageHref('home')
+  const brandHref = isArchive ? homeHref : '#top'
+  const brandLabel = isArchive ? (archive?.nav.edition ?? 'TAC') : t.nav.homeAria
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)
@@ -37,7 +52,12 @@ export function SiteHeader() {
       )}
     >
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
-        <a href="#top" aria-label={t.nav.homeAria} className="min-w-0">
+        <a
+          href={brandHref}
+          aria-label={brandLabel}
+          className="min-w-0"
+          onClick={isArchive ? (e) => navigateToPage(e, 'home') : undefined}
+        >
           <BrandLockup compact />
         </a>
 
@@ -52,16 +72,45 @@ export function SiteHeader() {
             </a>
           ))}
 
+          {isArchive && archive ? (
+            <a
+              href={homeHref}
+              onClick={(e) => navigateToPage(e, 'home')}
+              className="relative text-sm font-medium uppercase tracking-wide text-primary transition-colors hover:text-primary/80"
+            >
+              {archive.nav.backTo2026}
+            </a>
+          ) : (
+            <>
+              <a
+                href={buildPageHref('tac-2024')}
+                onClick={(e) => navigateToPage(e, 'tac-2024')}
+                className="relative text-sm font-medium uppercase tracking-wide text-foreground/80 transition-colors hover:text-primary"
+              >
+                {t.nav.tac2024}
+              </a>
+              <a
+                href={buildPageHref('tac-2023')}
+                onClick={(e) => navigateToPage(e, 'tac-2023')}
+                className="relative text-sm font-medium uppercase tracking-wide text-foreground/80 transition-colors hover:text-primary"
+              >
+                {t.nav.tac2023}
+              </a>
+            </>
+          )}
+
           <span className="mx-1 h-6 w-px bg-border" />
           <LanguageSwitcher />
-          <a
-            href={LINKS.register}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wide text-white transition-transform hover:scale-105 hover:bg-primary/90"
-          >
-            {t.nav.registerNow}
-          </a>
+          {!isArchive ? (
+            <a
+              href={LINKS.register}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wide text-white transition-transform hover:scale-105 hover:bg-primary/90"
+            >
+              {t.nav.registerNow}
+            </a>
+          ) : null}
         </nav>
 
         <div className="flex items-center gap-2 xl:hidden">
@@ -95,39 +144,81 @@ export function SiteHeader() {
                 </a>
               </li>
             ))}
-            <li className="pt-2">
-              <a
-                href={LINKS.register}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setOpen(false)}
-                className="inline-flex w-full items-center justify-center bg-primary px-4 py-3 text-sm font-bold uppercase tracking-wide text-white"
-              >
-                {t.nav.registerNow}
-              </a>
-            </li>
-            <li>
-              <a
-                href={LINKS.registerStudentStartups}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setOpen(false)}
-                className="block py-2 text-base font-medium text-foreground transition-colors hover:text-primary"
-              >
-                {t.registerPaths.studentStartups}
-              </a>
-            </li>
-            <li>
-              <a
-                href={LINKS.registerTeknofestTeams}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setOpen(false)}
-                className="block py-2 text-base font-medium text-foreground transition-colors hover:text-primary"
-              >
-                {t.registerPaths.teknofestTeams}
-              </a>
-            </li>
+
+            {isArchive && archive ? (
+              <li>
+                <a
+                  href={homeHref}
+                  onClick={(e) => {
+                    setOpen(false)
+                    navigateToPage(e, 'home')
+                  }}
+                  className="block py-2 text-lg font-medium text-primary transition-colors hover:text-primary/80"
+                >
+                  {archive.nav.backTo2026}
+                </a>
+              </li>
+            ) : (
+              <>
+                <li>
+                  <a
+                    href={buildPageHref('tac-2024')}
+                    onClick={(e) => {
+                      setOpen(false)
+                      navigateToPage(e, 'tac-2024')
+                    }}
+                    className="block py-2 text-lg font-medium text-foreground transition-colors hover:text-primary"
+                  >
+                    {t.nav.tac2024}
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={buildPageHref('tac-2023')}
+                    onClick={(e) => {
+                      setOpen(false)
+                      navigateToPage(e, 'tac-2023')
+                    }}
+                    className="block py-2 text-lg font-medium text-foreground transition-colors hover:text-primary"
+                  >
+                    {t.nav.tac2023}
+                  </a>
+                </li>
+                <li className="pt-2">
+                  <a
+                    href={LINKS.register}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex w-full items-center justify-center bg-primary px-4 py-3 text-sm font-bold uppercase tracking-wide text-white"
+                  >
+                    {t.nav.registerNow}
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={LINKS.registerStudentStartups}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setOpen(false)}
+                    className="block py-2 text-base font-medium text-foreground transition-colors hover:text-primary"
+                  >
+                    {t.registerPaths.studentStartups}
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={LINKS.registerTeknofestTeams}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setOpen(false)}
+                    className="block py-2 text-base font-medium text-foreground transition-colors hover:text-primary"
+                  >
+                    {t.registerPaths.teknofestTeams}
+                  </a>
+                </li>
+              </>
+            )}
           </ul>
         </nav>
       ) : null}

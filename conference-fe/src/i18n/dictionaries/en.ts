@@ -15,6 +15,9 @@ export const en: Dictionary = {
     agenda: 'Agenda',
     exhibition: 'Exhibition',
     kitchen: 'Kitchen',
+    pastEditions: 'Past editions',
+    tac2023: 'TAC 2023',
+    tac2024: 'TAC 2024',
     registerNow: 'Register now',
     homeAria: 'TEKNOFEST in Arabic home',
     primaryNav: 'Primary',
@@ -56,6 +59,20 @@ export const en: Dictionary = {
     mission: 'TWO DAYS',
     missionBody:
       'Day one: Star Stage, exhibition, panels, and team formation. Day two: TEKNOFEST Kitchen, from the first report to the final pitch and nomination.',
+  },
+  pastEditions: {
+    label: 'Past editions',
+    title: 'TEKNOFEST in Arabic archive',
+    body: 'Browse previous conference editions in Istanbul — program highlights and photos from the event.',
+    tac2023Title: 'TAC 2023 — 1st edition',
+    tac2023Body:
+      '4 November 2023 · Sabahattin Zaim University — launch edition with orientation, Stars, and Kitchen.',
+    tac2023Link: 'View TAC 2023',
+    tac2024Title: 'TAC 2024 — 2nd edition',
+    tac2024Body: '3 November 2024 · Istanbul Gelişim University — creativity today, achievement tomorrow.',
+    tac2024Link: 'View TAC 2024',
+    cancelled2025Label: 'TAC 2025 — 3rd edition',
+    cancelled2025Body: 'This edition was cancelled. We return in 2026 for the 4th edition.',
   },
   facts: {
     label: 'Event details',
@@ -451,6 +468,7 @@ export const en: Dictionary = {
     getInTouch: 'Get in touch',
     connect: 'Connect',
     partners: 'Partners',
+    pastEditions: 'Past editions',
     rights: '© 2026 Ibtikar Volunteer Assembly. All rights reserved.',
     location: 'Istanbul, Türkiye — 21–22 November 2026',
     instagram: 'Instagram',
