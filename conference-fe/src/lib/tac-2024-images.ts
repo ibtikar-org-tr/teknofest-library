@@ -1,10 +1,9 @@
-/** CDN base — upload curated JPGs here (same pattern as ETC). */
-const BASE = 'https://files.ibtikar.tr/events/tac/tac-2024'
-
 /**
- * Placeholder filenames until curated photos are uploaded to the CDN.
- * Replace this list with the real uploaded filenames.
+ * Same key prefix as files.ibtikar.tr / R2.
+ * Served by the Worker from the FILES R2 binding (local Wrangler + production).
  */
+const BASE = '/events/tac/tac-2024'
+
 export const TAC_2024_IMAGES = [
   'hero.jpg',
   'gallery-01.jpg',
