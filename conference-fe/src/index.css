@@ -36,30 +36,30 @@
 }
 
 :root {
-  color-scheme: light;
-  /* Ocean / ink theme — distinct from TEKNOFEST festival red */
-  --background: #f3f7f9;
-  --foreground: #0b1c24;
-  --card: #ffffff;
-  --card-foreground: #0b1c24;
-  --primary: #0e7490;
-  --primary-foreground: #f0fdfa;
-  --secondary: #e6eef2;
-  --secondary-foreground: #0b1c24;
-  --muted: #e8eef2;
-  --muted-foreground: #4b6672;
-  --accent: #155e75;
-  --accent-foreground: #ecfeff;
-  --destructive: oklch(0.55 0.2 25);
-  --border: #d5e2e8;
-  --input: #d5e2e8;
-  --ring: #0e7490;
+  color-scheme: dark;
+  /* Cosmic poster palette — deep space, nebula cyan, rocket crimson */
+  --background: #050a18;
+  --foreground: #f5f7fa;
+  --card: #0c1224;
+  --card-foreground: #f5f7fa;
+  --primary: #e23b45;
+  --primary-foreground: #ffffff;
+  --secondary: #121a2e;
+  --secondary-foreground: #e8ecf4;
+  --muted: #121a2e;
+  --muted-foreground: #9aa6bd;
+  --accent: #00b4d8;
+  --accent-foreground: #050a18;
+  --destructive: oklch(0.62 0.22 25);
+  --border: #1e2a42;
+  --input: #1e2a42;
+  --ring: #00b4d8;
   --radius: 0.35rem;
-  --navy: #0b1c24;
-  --navy-foreground: #f3f7f9;
-  --signal: #0e7490;
-  --signal-foreground: #f0fdfa;
-  --line: #d5e2e8;
+  --navy: #080f22;
+  --navy-foreground: #f5f7fa;
+  --signal: #e23b45;
+  --signal-foreground: #ffffff;
+  --line: #1e2a42;
 }
 
 @layer base {
@@ -72,8 +72,9 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
     background-image:
-      radial-gradient(ellipse 80% 50% at 100% -10%, rgb(14 116 144 / 0.08), transparent),
-      radial-gradient(ellipse 60% 40% at 0% 100%, rgb(21 94 117 / 0.06), transparent);
+      radial-gradient(ellipse 70% 55% at 0% 20%, rgb(0 180 216 / 0.16), transparent 55%),
+      radial-gradient(ellipse 65% 50% at 100% 30%, rgb(226 59 69 / 0.18), transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 100%, rgb(93 16 33 / 0.22), transparent 60%);
     background-attachment: fixed;
   }
   h1,
