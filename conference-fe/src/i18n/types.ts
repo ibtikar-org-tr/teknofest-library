@@ -58,6 +58,10 @@ export type Dictionary = {
   dir: Dir
   locale: string
   brand: string
+  /** Latin site mark shown in the lockup (TAC). */
+  siteName: string
+  /** Arabic site name shown next to TAC. */
+  siteNameAr: string
   techLogoAlt: string
   documentTitle: string
   metaDescription: string

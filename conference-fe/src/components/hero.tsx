@@ -40,8 +40,13 @@ export function Hero() {
             {t.hero.titleLine2Before ? ` ${t.hero.titleLine2Before}` : ''}{' '}
             {t.hero.titleLine2Accent}
             <br />
-            <span className="inline-block bg-linear-to-r from-primary to-red-600 bg-clip-text text-transparent">
-              {t.hero.brandTitle}
+            <span className="inline-flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="inline-block bg-linear-to-r from-primary to-red-600 bg-clip-text text-transparent">
+                {t.hero.brandTitle}
+              </span>
+              <span className="font-arabic text-[0.45em] font-semibold tracking-normal text-primary/80 md:text-[0.4em]">
+                {t.siteNameAr}
+              </span>
             </span>
           </h1>
 

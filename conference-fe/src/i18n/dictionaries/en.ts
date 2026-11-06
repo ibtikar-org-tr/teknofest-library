@@ -4,10 +4,12 @@ export const en: Dictionary = {
   dir: 'ltr',
   locale: 'en-US',
   brand: 'IBTIKAR',
+  siteName: 'TAC',
+  siteNameAr: 'مؤتمر تكنوفست بالعربي',
   techLogoAlt: 'Ibtikar Tech program',
-  documentTitle: 'TEKNOFEST in Arabic 2026 — Ibtikar Tech',
+  documentTitle: 'TAC 2026 — TEKNOFEST in Arabic Conference',
   metaDescription:
-    'TEKNOFEST in Arabic 2026 is a two-day conference by Ibtikar Volunteer Assembly in Istanbul on 21–22 November. Star Stage talks, discussion panels, an outdoor exhibition, and the TEKNOFEST Kitchen to form teams and nominate talent for Ibtikar’s TEKNOFEST squads.',
+    'TAC 2026 (TEKNOFEST in Arabic Conference / مؤتمر تكنوفست بالعربي) is a two-day conference by Ibtikar Volunteer Assembly in Istanbul on 21–22 November. Star Stage talks, discussion panels, an outdoor exhibition, and the TEKNOFEST Kitchen to form teams and nominate talent for Ibtikar’s TEKNOFEST squads.',
   nav: {
     about: 'About',
     facts: 'Details',
@@ -19,7 +21,7 @@ export const en: Dictionary = {
     tac2023: 'TAC 2023',
     tac2024: 'TAC 2024',
     registerNow: 'Register now',
-    homeAria: 'TEKNOFEST in Arabic home',
+    homeAria: 'TAC — TEKNOFEST in Arabic Conference home',
     primaryNav: 'Primary',
     mobileNav: 'Mobile',
     openMenu: 'Open menu',
@@ -27,7 +29,7 @@ export const en: Dictionary = {
   },
   hero: {
     eyebrow: 'Ibtikar Tech — Ibtikar Volunteer Assembly — Istanbul',
-    brandTitle: 'TEKNOFEST',
+    brandTitle: 'TAC',
     titleLine1: 'A generation',
     titleLine2Before: 'that',
     titleLine2Accent: 'innovates',
@@ -62,7 +64,7 @@ export const en: Dictionary = {
   },
   pastEditions: {
     label: 'Past editions',
-    title: 'TEKNOFEST in Arabic archive',
+    title: 'TAC archive',
     body: 'Browse previous conference editions in Istanbul — program highlights and photos from the event.',
     tac2023Title: 'TAC 2023 — 1st edition',
     tac2023Body:
@@ -464,7 +466,7 @@ export const en: Dictionary = {
   },
   footer: {
     blurb:
-      'TEKNOFEST in Arabic 2026 is organized by Ibtikar Volunteer Assembly through the Ibtikar Tech program. We meet in Istanbul to introduce students to TEKNOFEST and cook ideas together.',
+      'TAC 2026 — TEKNOFEST in Arabic Conference (مؤتمر تكنوفست بالعربي) is organized by Ibtikar Volunteer Assembly through the Ibtikar Tech program. We meet in Istanbul to introduce students to TEKNOFEST and cook ideas together.',
     getInTouch: 'Get in touch',
     connect: 'Connect',
     partners: 'Partners',
