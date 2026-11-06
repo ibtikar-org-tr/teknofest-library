@@ -1,7 +1,11 @@
 import { filesUrl } from '@/lib/files-base'
 
-/** Keys match `files/media/events/tac/tac-2024/` (R2 sync source). */
-const PREFIX = '/events/tac/tac-2024'
+/**
+ * R2/CDN prefix for TAC 2024 media (matches uploaded bucket layout).
+ * Local mirror: files/media/events/tac/tac-2024/{file}
+ * Remote:       https://files.ibtikar.tr/events/2024/2403/TAC2024/media/{file}
+ */
+export const TAC_2024_MEDIA_PREFIX = '/events/2024/2403/TAC2024/media'
 
 export const TAC_2024_IMAGES = [
   'hero.jpg',
@@ -18,7 +22,7 @@ export const TAC_2024_IMAGES = [
 ] as const
 
 export function tac2024ImageUrl(filename: string) {
-  return filesUrl(`${PREFIX}/${filename}`)
+  return filesUrl(`${TAC_2024_MEDIA_PREFIX}/${filename}`)
 }
 
 export const TAC_2024_HERO_IMAGE = tac2024ImageUrl('hero.jpg')
