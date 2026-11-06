@@ -1,8 +1,7 @@
-/**
- * Same key prefix as files.ibtikar.tr / R2.
- * Served by the Worker from the FILES R2 binding (local Wrangler + production).
- */
-const BASE = '/events/tac/tac-2024'
+import { filesUrl } from '@/lib/files-base'
+
+/** Keys match `files/media/events/tac/tac-2024/` (R2 sync source). */
+const PREFIX = '/events/tac/tac-2024'
 
 export const TAC_2024_IMAGES = [
   'hero.jpg',
@@ -19,7 +18,7 @@ export const TAC_2024_IMAGES = [
 ] as const
 
 export function tac2024ImageUrl(filename: string) {
-  return `${BASE}/${filename}`
+  return filesUrl(`${PREFIX}/${filename}`)
 }
 
 export const TAC_2024_HERO_IMAGE = tac2024ImageUrl('hero.jpg')
