@@ -55,7 +55,8 @@ export default defineConfig({
   server: {
     port: 5925,
     fs: {
-      allow: [mediaRoot],
+      // Explicit allow replaces Vite defaults — keep project root + media
+      allow: [fileURLToPath(new URL('.', import.meta.url)), mediaRoot],
     },
   },
   preview: {
