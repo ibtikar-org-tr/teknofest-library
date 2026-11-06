@@ -25,7 +25,9 @@ export function SiteHeader() {
   const archiveNavLinks = archive
     ? [
         { href: '#about', label: archive.nav.about },
+        { href: '#program', label: archive.nav.program },
         { href: '#highlights', label: archive.nav.highlights },
+        { href: '#speakers', label: archive.nav.speakers },
         { href: '#gallery', label: archive.nav.gallery },
       ]
     : []

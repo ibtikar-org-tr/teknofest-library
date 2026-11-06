@@ -6,12 +6,27 @@ export type ArchiveTrack = {
   tags?: string[]
 }
 
+export type ArchiveProgramItem = {
+  time: string
+  title: string
+  body?: string
+}
+
+export type ArchiveSpeaker = {
+  name: string
+  role: string
+  org?: string
+  tags?: string[]
+}
+
 export type ArchiveDict = {
   documentTitle: string
   metaDescription: string
   nav: {
     about: string
+    program: string
     highlights: string
+    speakers: string
     gallery: string
     backTo2026: string
     edition: string
@@ -23,6 +38,7 @@ export type ArchiveDict = {
     titleBottom: string
     subtitle: string
     viewHighlights: string
+    viewProgram: string
     viewGallery: string
     city: string
     cityValue: string
@@ -39,11 +55,23 @@ export type ArchiveDict = {
     body: string
     stats: { value: string; label: string }[]
   }
+  program: {
+    label: string
+    title: string
+    subtitle: string
+    items: ArchiveProgramItem[]
+  }
   highlights: {
     label: string
     title: string
     subtitle: string
     items: ArchiveTrack[]
+  }
+  speakers: {
+    label: string
+    title: string
+    subtitle: string
+    items: ArchiveSpeaker[]
   }
   gallery: {
     label: string

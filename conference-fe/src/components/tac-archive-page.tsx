@@ -71,11 +71,17 @@ export function TacArchivePage({ year }: TacArchivePageProps) {
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a
-                  href="#highlights"
+                  href="#program"
                   className="inline-flex min-h-11 items-center justify-center gap-2 bg-primary px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                 >
-                  {h.viewHighlights}
+                  {h.viewProgram}
                   <ArrowLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
+                </a>
+                <a
+                  href="#speakers"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 border border-border bg-card/50 px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-card"
+                >
+                  {t.nav.speakers}
                 </a>
                 <a
                   href="#gallery"
@@ -151,7 +157,36 @@ export function TacArchivePage({ year }: TacArchivePageProps) {
         </div>
       </section>
 
-      <section id="highlights" className="bg-card/30 py-20 md:py-28">
+      <section id="program" className="bg-card/30 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="max-w-2xl">
+            <p className="font-mono text-xs uppercase tracking-widest text-primary">{t.program.label}</p>
+            <h2 className="mt-4 font-display text-3xl font-bold leading-tight md:text-4xl">
+              {t.program.title}
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg">{t.program.subtitle}</p>
+          </div>
+
+          <ol className="mt-12 space-y-3">
+            {t.program.items.map((item) => (
+              <li
+                key={`${item.time}-${item.title}`}
+                className="grid gap-2 border border-border bg-card p-4 sm:grid-cols-[8.5rem_1fr] sm:gap-6 sm:p-5"
+              >
+                <span className="font-mono text-sm font-semibold text-primary">{item.time}</span>
+                <div>
+                  <h3 className="font-display text-base font-bold text-balance sm:text-lg">{item.title}</h3>
+                  {item.body ? (
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section id="highlights" className="bg-background py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <div className="max-w-2xl">
             <p className="font-mono text-xs uppercase tracking-widest text-primary">
@@ -190,6 +225,46 @@ export function TacArchivePage({ year }: TacArchivePageProps) {
                   ))}
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="speakers" className="bg-card/30 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="max-w-2xl">
+            <p className="font-mono text-xs uppercase tracking-widest text-primary">{t.speakers.label}</p>
+            <h2 className="mt-4 font-display text-3xl font-bold leading-tight md:text-4xl">
+              {t.speakers.title}
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg">{t.speakers.subtitle}</p>
+          </div>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {t.speakers.items.map((speaker) => (
+              <article
+                key={`${speaker.name}-${speaker.role}`}
+                className="border border-border bg-card p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="mb-4 grid size-12 place-items-center bg-primary/10 text-primary">
+                  <Users className="size-5" />
+                </div>
+                <h3 className="font-display text-base font-bold leading-snug text-balance">{speaker.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{speaker.role}</p>
+                {speaker.org ? (
+                  <p className="mt-1 font-mono text-xs text-primary">{speaker.org}</p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {speaker.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-secondary px-2 py-0.5 font-mono text-[11px] text-muted-foreground"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </article>
             ))}
           </div>
         </div>
