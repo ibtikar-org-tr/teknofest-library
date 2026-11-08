@@ -16,15 +16,15 @@ export function AboutSection() {
 
         <div className="mt-8 grid gap-12 md:grid-cols-12 md:gap-8">
           <div className="md:col-span-6">
-            <h2 className="text-balance font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
+            <h2 className="anim-title text-balance font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
               {t.about.title}
             </h2>
-            <p className="mt-6 max-w-xl text-pretty leading-relaxed text-muted-foreground">{t.about.body}</p>
+            <p className="anim-text mt-6 max-w-xl text-pretty leading-relaxed text-muted-foreground">{t.about.body}</p>
           </div>
 
           <div className="grid gap-4 md:col-span-6">
             {panels.map((panel) => (
-              <div key={panel.tag} className="rounded-xl border border-border/50 bg-card p-8 shadow-sm">
+              <div key={panel.tag} className="anim-card rounded-xl border border-border/50 bg-card p-8 shadow-sm">
                 <span className="text-xs font-bold uppercase tracking-widest text-primary">{panel.tag}</span>
                 <p className="mt-4 text-pretty leading-relaxed text-foreground/85">&ldquo;{panel.body}&rdquo;</p>
               </div>

@@ -18,7 +18,7 @@ export function AimsSection() {
             return (
               <div
                 key={aim.title}
-                className="rounded-xl border border-border/50 bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
+                className="anim-card rounded-xl border border-border/50 bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
               >
                 <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
                   <Icon className="size-5 text-primary" strokeWidth={1.75} aria-hidden="true" />

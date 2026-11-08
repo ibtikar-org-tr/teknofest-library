@@ -13,7 +13,7 @@ export function AgendaSection() {
     <section id="agenda" className="bg-background py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <SectionLabel title={t.agenda.label} />
-        <h2 className="mt-6 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
+        <h2 className="anim-title mt-6 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
           {t.agenda.title}
         </h2>
 
@@ -28,7 +28,7 @@ export function AgendaSection() {
                 aria-selected={selected}
                 onClick={() => setActiveDay(item.id)}
                 className={cn(
-                  'rounded-xl border p-5 text-start transition-all',
+                  'anim-card rounded-xl border p-5 text-start transition-all',
                   selected
                     ? 'border-primary bg-primary text-white shadow-lg'
                     : 'border-border/50 bg-card hover:-translate-y-0.5 hover:border-primary/40',
@@ -51,12 +51,12 @@ export function AgendaSection() {
           })}
         </div>
 
-        <ol className="mt-8 overflow-hidden rounded-xl border border-border/50 bg-card">
+        <ol className="anim-panel mt-8 overflow-hidden rounded-xl border border-border/50 bg-card">
           {day.items.map((item, index) => (
             <li
               key={`${day.id}-${item.time}-${item.title}`}
               className={cn(
-                'grid gap-4 px-5 py-6 md:grid-cols-12 md:gap-8 md:px-8',
+                'anim-row grid gap-4 px-5 py-6 md:grid-cols-12 md:gap-8 md:px-8',
                 index !== 0 && 'border-t border-border/50',
               )}
             >

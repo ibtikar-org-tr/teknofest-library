@@ -39,10 +39,10 @@ export function PastEditionsSection() {
     <section id="past-editions" className="bg-card/30 py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <SectionLabel title={p.label} />
-        <h2 className="mt-8 max-w-3xl text-balance font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
+        <h2 className="anim-title mt-8 max-w-3xl text-balance font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
           {p.title}
         </h2>
-        <p className="mt-4 max-w-2xl text-pretty leading-relaxed text-muted-foreground">{p.body}</p>
+        <p className="anim-text mt-4 max-w-2xl text-pretty leading-relaxed text-muted-foreground">{p.body}</p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
           {editions.map((edition) => (
@@ -50,13 +50,13 @@ export function PastEditionsSection() {
               key={edition.page}
               href={edition.href}
               onClick={(e) => navigateToPage(e, edition.page)}
-              className="group block transition-colors"
+              className="anim-card group block transition-colors"
             >
               <div className="flex h-full items-center gap-4 overflow-hidden border border-border bg-card p-4 transition-colors group-hover:border-primary/40 sm:p-5">
                 <img
                   src={edition.image}
                   alt=""
-                  className="size-16 shrink-0 bg-secondary object-cover sm:size-20"
+                  className="anim-parallax size-16 shrink-0 bg-secondary object-cover sm:size-20"
                   loading="lazy"
                 />
                 <div className="min-w-0 flex-1">
@@ -74,7 +74,7 @@ export function PastEditionsSection() {
           ))}
         </div>
 
-        <div className="mt-4 border border-dashed border-border bg-background/60 px-5 py-4">
+        <div className="anim-panel mt-4 border border-dashed border-border bg-background/60 px-5 py-4">
           <p className="text-sm font-semibold text-foreground">{p.cancelled2025Label}</p>
           <p className="mt-1 text-sm text-muted-foreground">{p.cancelled2025Body}</p>
         </div>

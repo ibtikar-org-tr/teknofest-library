@@ -13,7 +13,7 @@ export function PrinciplesSection() {
           {t.values.items.map((item, index) => (
             <div
               key={item.title}
-              className="flex flex-col justify-between gap-6 rounded-xl border border-border/50 bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
+              className="anim-card flex flex-col justify-between gap-6 rounded-xl border border-border/50 bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
             >
               <span className="font-display text-sm font-bold text-primary">
                 {String(index + 1).padStart(2, '0')}

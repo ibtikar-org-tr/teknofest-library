@@ -35,16 +35,16 @@ export function ExhibitionSection() {
         <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-7">
             <SectionLabel title={t.exhibition.label} />
-            <h2 className="mt-6 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-5xl">
+            <h2 className="anim-title mt-6 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-5xl">
               {t.exhibition.title}
             </h2>
           </div>
-          <p className="max-w-xl text-pretty leading-relaxed text-muted-foreground lg:col-span-5 lg:pb-1">
+          <p className="anim-text max-w-xl text-pretty leading-relaxed text-muted-foreground lg:col-span-5 lg:pb-1">
             {t.exhibition.body}
           </p>
         </div>
 
-        <div className="mt-12 border-y border-border/70 bg-background/70 backdrop-blur-sm">
+        <div className="anim-panel mt-12 border-y border-border/70 bg-background/70 backdrop-blur-sm">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4">
             {t.exhibition.items.map((item, index) => {
               const Icon = ITEM_ICONS[index] ?? Rocket
@@ -52,7 +52,7 @@ export function ExhibitionSection() {
                 <article
                   key={item.title}
                   className={cn(
-                    'group relative flex flex-col gap-4 p-6 transition-colors duration-300 hover:bg-primary/[0.04] md:p-7',
+                    'anim-card group relative flex flex-col gap-4 p-6 transition-colors duration-300 hover:bg-primary/[0.04] md:p-7',
                     index < t.exhibition.items.length - 1 && 'border-border/70 sm:border-e',
                     index < 2 && 'border-b border-border/70 lg:border-b-0',
                   )}
@@ -92,7 +92,7 @@ export function ExhibitionSection() {
 
         <div className="mt-16 md:mt-20">
           <SectionLabel title={t.exhibition.cornersLabel} />
-          <h3 className="mt-6 max-w-2xl font-display text-2xl font-bold leading-tight text-foreground md:text-3xl">
+          <h3 className="anim-title mt-6 max-w-2xl font-display text-2xl font-bold leading-tight text-foreground md:text-3xl">
             {t.exhibition.cornersTitle}
           </h3>
 
@@ -107,7 +107,7 @@ export function ExhibitionSection() {
                 <li
                   key={item.title}
                   className={cn(
-                    'relative flex flex-col gap-4 border-border/60 py-6 md:border-0 md:px-4 md:py-0',
+                    'anim-card relative flex flex-col gap-4 border-border/60 py-6 md:border-0 md:px-4 md:py-0',
                     index < t.exhibition.corners.length - 1 && 'border-b md:border-b-0',
                   )}
                 >

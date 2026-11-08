@@ -12,7 +12,7 @@ export function SectionLabel({
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1',
+        'anim-label inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1',
         className,
       )}
     >

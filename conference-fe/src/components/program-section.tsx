@@ -17,7 +17,7 @@ export function ProgramSection() {
     <section id="program" className="bg-secondary py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <SectionLabel title={t.program.label} />
-        <h2 className="mt-6 max-w-xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
+        <h2 className="anim-title mt-6 max-w-xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
           {t.program.title}
         </h2>
 
@@ -27,7 +27,7 @@ export function ProgramSection() {
             return (
               <article
                 key={item.id}
-                className="flex flex-col rounded-xl border border-border/50 bg-card p-7 shadow-sm transition-transform hover:-translate-y-1 md:p-8"
+                className="anim-card flex flex-col rounded-xl border border-border/50 bg-card p-7 shadow-sm transition-transform hover:-translate-y-1 md:p-8"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex size-10 items-center justify-center rounded-lg bg-primary">

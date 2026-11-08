@@ -11,15 +11,15 @@ export function KitchenSection() {
     <section id="kitchen" className="bg-background py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <SectionLabel title={t.kitchen.label} />
-        <p className="mt-6 text-xs font-bold uppercase tracking-widest text-primary">{t.kitchen.kicker}</p>
-        <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
+        <p className="anim-label mt-6 text-xs font-bold uppercase tracking-widest text-primary">{t.kitchen.kicker}</p>
+        <h2 className="anim-title mt-3 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
           {t.kitchen.title}
         </h2>
-        <p className="mt-6 max-w-2xl text-pretty leading-relaxed text-muted-foreground">{t.kitchen.body}</p>
+        <p className="anim-text mt-6 max-w-2xl text-pretty leading-relaxed text-muted-foreground">{t.kitchen.body}</p>
 
         <dl className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {t.kitchen.stats.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-border/50 bg-card px-5 py-6 shadow-sm">
+            <div key={stat.label} className="anim-card rounded-xl border border-border/50 bg-card px-5 py-6 shadow-sm">
               <dt className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</dt>
               <dd dir="ltr" className="mt-2 font-display text-3xl font-bold text-foreground">
                 {stat.value}
@@ -31,7 +31,7 @@ export function KitchenSection() {
         <h3 className="mt-16 font-display text-xl font-bold text-foreground">{t.kitchen.stepsLabel}</h3>
         <ol className="mt-6 grid gap-6 md:grid-cols-2">
           {t.kitchen.steps.map((step, index) => (
-            <li key={step.title} className="rounded-xl border border-border/50 bg-card p-7 shadow-sm">
+            <li key={step.title} className="anim-card rounded-xl border border-border/50 bg-card p-7 shadow-sm">
               <span className="text-xs font-bold text-primary">{String(index + 1).padStart(2, '0')}</span>
               <h4 className="mt-3 font-display text-lg font-bold text-foreground">{step.title}</h4>
               <p className="mt-3 text-pretty text-sm leading-relaxed text-muted-foreground">{step.body}</p>
@@ -39,7 +39,7 @@ export function KitchenSection() {
           ))}
         </ol>
 
-        <div className="mt-10 grid overflow-hidden rounded-2xl border border-border/50 md:grid-cols-12">
+        <div className="anim-panel mt-10 grid overflow-hidden rounded-2xl border border-border/50 md:grid-cols-12">
           <div className="bg-card p-8 md:col-span-7">
             <h3 className="font-display text-xl font-bold text-foreground">{t.kitchen.mentorsTitle}</h3>
             <p className="mt-4 text-pretty leading-relaxed text-muted-foreground">{t.kitchen.mentorsBody}</p>
@@ -50,7 +50,7 @@ export function KitchenSection() {
               href={LINKS.registerTeknofestTeams}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-12 items-center justify-center self-start bg-primary px-6 font-bold text-white skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105"
+              className="anim-cta inline-flex h-12 items-center justify-center self-start bg-primary px-6 font-bold text-white skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105"
             >
               <span className="flex items-center gap-2 skew-x-[10deg] rtl:skew-x-[-10deg]">
                 {t.kitchen.registerCta}

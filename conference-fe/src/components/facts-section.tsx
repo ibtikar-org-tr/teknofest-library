@@ -7,9 +7,9 @@ export function FactsSection() {
   return (
     <section id="facts" className="relative bg-background pb-8 pt-10 md:pb-12 md:pt-14">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-lg backdrop-blur-xl md:p-8">
+        <div className="anim-panel anim-scale-in rounded-2xl border border-border/60 bg-card/80 p-6 shadow-lg backdrop-blur-xl md:p-8">
           <SectionLabel title={t.facts.label} />
-          <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
+          <h2 className="anim-title mt-4 max-w-2xl font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">
             {t.facts.title}
           </h2>
 
@@ -17,7 +17,7 @@ export function FactsSection() {
             {t.facts.items.map((item) => (
               <article
                 key={item.label}
-                className="rounded-xl border border-border/50 bg-card p-6 transition-transform hover:-translate-y-1"
+                className="anim-card rounded-xl border border-border/50 bg-card p-6 transition-transform hover:-translate-y-1"
               >
                 <span className="text-xs font-bold uppercase tracking-widest text-primary">{item.label}</span>
                 <p dir="ltr" className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground">

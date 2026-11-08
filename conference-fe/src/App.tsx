@@ -1,4 +1,5 @@
 import { SiteHeader } from '@/components/site-header'
+import { SiteAnimations } from '@/components/site-animations'
 import { Hero } from '@/components/hero'
 import { RegisterPathsSection } from '@/components/register-paths-section'
 import { AboutSection } from '@/components/about-section'
@@ -17,7 +18,7 @@ import { archiveYearForPage, isArchivePage } from '@/lib/page-url'
 
 function HomePage() {
   return (
-    <>
+    <SiteAnimations>
       <Hero />
       <RegisterPathsSection />
       <FactsSection />
@@ -29,7 +30,7 @@ function HomePage() {
       <ExhibitionSection />
       <KitchenSection />
       <PastEditionsSection />
-    </>
+    </SiteAnimations>
   )
 }
 
