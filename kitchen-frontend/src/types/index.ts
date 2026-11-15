@@ -105,7 +105,7 @@ export interface Individual {
   phone: string
   technical_skills: string
   interests: string
-  experience_level: string
+  experience_level?: string | null
   preferred_field: ProjectField
   project_idea?: string
   assigned_team_id?: number

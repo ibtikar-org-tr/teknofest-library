@@ -9,17 +9,9 @@ import { getSession } from '../lib/auth-session'
 import { getVmsProfileUrl } from '../lib/vms-sso'
 
 interface IndividualFormData {
-  experience_level: string
   preferred_field: string
   project_idea?: string
 }
-
-const experienceLevels = [
-  { value: 'beginner', label: 'مبتدئ' },
-  { value: 'intermediate', label: 'متوسط' },
-  { value: 'advanced', label: 'متقدم' },
-  { value: 'expert', label: 'خبير' },
-]
 
 type VmsSkillsSnapshot = {
   technical_skills: string
@@ -94,7 +86,6 @@ export default function IndividualRegistration() {
         event_id: eventId,
         registration_type: registrationType,
         preferred_field: data.preferred_field as Individual['preferred_field'],
-        experience_level: data.experience_level,
         project_idea: hasIdea ? data.project_idea : undefined,
         technical_skills: vmsProfile?.technical_skills || '',
         interests: vmsProfile?.interests || '',
@@ -248,24 +239,6 @@ export default function IndividualRegistration() {
                 </div>
 
                 <div>
-                  <label className="block text-white font-medium mb-2">مستوى الخبرة في مجالك *</label>
-                  <select
-                    {...register('experience_level', { required: 'يرجى اختيار مستوى الخبرة' })}
-                    className="input-field"
-                  >
-                    <option value="">اختر مستوى خبرتك</option>
-                    {experienceLevels.map((level) => (
-                      <option key={level.value} value={level.value}>
-                        {level.label}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.experience_level && (
-                    <p className="text-red-400 text-sm mt-1">{errors.experience_level.message}</p>
-                  )}
-                </div>
-
-                <div>
                   <label className="block text-white font-medium mb-2">المجال المفضل *</label>
                   <select
                     {...register('preferred_field', { required: 'يرجى اختيار المجال المفضل' })}
@@ -316,10 +289,7 @@ export default function IndividualRegistration() {
                   type="submit"
                   disabled={isSubmitting || profileLoading}
                   onClick={async (e) => {
-                    const fields: Array<keyof IndividualFormData> = [
-                      'experience_level',
-                      'preferred_field',
-                    ]
+                    const fields: Array<keyof IndividualFormData> = ['preferred_field']
                     if (hasIdea) fields.push('project_idea')
                     const ok = await trigger(fields)
                     if (!ok) e.preventDefault()

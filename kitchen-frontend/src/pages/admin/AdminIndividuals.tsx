@@ -359,7 +359,7 @@ export default function AdminIndividuals() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold">{individual.full_name} - {GENDER_LABELS[individual.gender]}</h3>
-                    <p className="text-gray-400 text-sm">{individual.experience_level}</p>
+                    <p className="text-gray-400 text-sm">{individual.preferred_field}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -456,7 +456,7 @@ export default function AdminIndividuals() {
                   <h3 className="text-xl text-white font-bold">
                     {selectedIndividualDetail.full_name}
                   </h3>
-                  <p className="text-gray-400">{selectedIndividualDetail.experience_level}</p>
+                  <p className="text-gray-400">{selectedIndividualDetail.preferred_field}</p>
                   {selectedIndividualDetail.is_assigned && (
                     <span className="inline-flex items-center gap-1 mt-1 px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">
                       <UserCheck className="w-3 h-3" />
