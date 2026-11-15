@@ -13,9 +13,9 @@ import {
 } from 'lucide-react'
 import { PROJECT_FIELDS, type ProjectField } from '../types'
 import { projectsService } from '../services/api'
+import { getSession } from '../lib/auth-session'
 
 interface ProjectFormData {
-  member_email: string
   title: string
   problem_statement: string
   technical_description: string
@@ -59,11 +59,15 @@ export default function ProjectSubmission() {
       return
     }
 
+    if (!getSession()?.user.email) {
+      toast.error('تعذر قراءة البريد من جلسة VMS — أعد تسجيل الدخول')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const project = await projectsService.submit({
         event_id: eventId,
-        member_email: data.member_email,
         title: data.title,
         problem_statement: data.problem_statement,
         technical_description: data.technical_description,
@@ -111,30 +115,6 @@ export default function ProjectSubmission() {
             </h2>
 
             <div className="space-y-6">
-              {/* Member Email */}
-              <div>
-                <label className="block text-white font-medium mb-2">البريد الإلكتروني *</label>
-                <p className="text-gray-400 text-sm mb-2">
-                  أدخل البريد الإلكتروني المستخدم عند التسجيل 
-                </p>
-                <input
-                  {...register('member_email', {
-                    required: 'البريد الإلكتروني مطلوب',
-                    pattern: {
-                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: 'بريد إلكتروني غير صالح',
-                    },
-                  })}
-                  type="email"
-                  className="input-field"
-                  placeholder="example@email.com"
-                  dir="ltr"
-                />
-                {errors.member_email && (
-                  <p className="text-red-400 text-sm mt-1">{errors.member_email.message}</p>
-                )}
-              </div>
-
               {/* Project Title */}
               <div>
                 <label className="block text-white font-medium mb-2">عنوان المشروع *</label>

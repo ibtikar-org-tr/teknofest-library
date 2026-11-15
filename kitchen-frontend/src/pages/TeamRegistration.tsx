@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { PROJECT_FIELDS, type TeamMember, type RegistrationType, type Gender} from '../types'
 import { iForgotService, teamsService } from '../services/api'
+import { getSession } from '../lib/auth-session'
 
 interface TeamFormData {
   team_name: string
@@ -93,19 +94,42 @@ export default function TeamRegistration() {
       return
     }
 
+    const session = getSession()
+    const sessionEmail = session?.user.email?.trim()
+    const sessionMembership = session?.user.membershipNumber?.trim()
+    if (!sessionEmail) {
+      toast.error('تعذر قراءة البريد من جلسة VMS — أعد تسجيل الدخول')
+      return
+    }
+
     setIsSubmitting(true)
     try {
-      // Transform members to ensure is_leader is properly set
-      const membersWithLeader = data.members.map((member, index) => ({
-        membership_number: member.membership_number,
-        full_name: member.full_name,
-        email: member.email,
-        phone: member.phone,
-        is_leader: index === leaderIndex,
-      }))
+      const membersWithLeader = data.members.map((member, index) => {
+        const membershipNumber = member.membership_number?.trim() || ''
+        const isSubmitter = Boolean(sessionMembership) && membershipNumber === sessionMembership
+        const email =
+          (isSubmitter ? sessionEmail : undefined) ||
+          memberData[index]?.email ||
+          member.email ||
+          ''
+        return {
+          membership_number: membershipNumber,
+          full_name: member.full_name,
+          email,
+          phone: member.phone,
+          is_leader: index === leaderIndex,
+        }
+      })
+
+      if (membersWithLeader.some((m) => !m.email)) {
+        toast.error('تحقق من أرقام عضوية الأعضاء لتعبئة البريد تلقائياً')
+        setIsSubmitting(false)
+        return
+      }
 
       if (!eventId) {
         toast.error('معرف الفعالية مفقود')
+        setIsSubmitting(false)
         return
       }
 
@@ -656,28 +680,6 @@ export default function TeamRegistration() {
                         {errors.members?.[index]?.full_name && (
                           <p className="text-red-400 text-xs mt-1">
                             {errors.members[index]?.full_name?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <input
-                          {...register(`members.${index}.email`, {
-                            required: 'البريد الإلكتروني مطلوب',
-                            pattern: {
-                              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                              message: 'بريد إلكتروني غير صالح',
-                            },
-                          })}
-                          type="email"
-                          className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          placeholder="البريد الإلكتروني"
-                          dir="ltr"
-                          disabled={!!(memberData[index]?.email)}
-                        />
-                        {errors.members?.[index]?.email && (
-                          <p className="text-red-400 text-xs mt-1">
-                            {errors.members[index]?.email?.message}
                           </p>
                         )}
                       </div>

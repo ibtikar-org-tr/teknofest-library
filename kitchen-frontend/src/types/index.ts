@@ -114,11 +114,11 @@ export interface Individual {
   gender: Gender
 }
 
-// Project Submission Create (using email to find team)
+// Project Submission Create (team resolved from authenticated VMS session)
 export interface ProjectSubmissionCreate {
   event_id?: string
   team_id?: number
-  member_email: string
+  member_email?: string
   title: string
   problem_statement: string
   technical_description: string

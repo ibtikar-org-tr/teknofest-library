@@ -5,11 +5,11 @@ import toast from 'react-hot-toast'
 import { User, Lightbulb, Users, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PROJECT_FIELDS, type Individual, type RegistrationType, type Gender } from '../types'
 import { individualsService, iForgotService } from '../services/api'
+import { getSession } from '../lib/auth-session'
 
 interface IndividualFormData {
   membership_number: string
   full_name: string
-  email: string
   phone: string
   technical_skills: string
   interests: string
@@ -61,7 +61,6 @@ export default function IndividualRegistration() {
 
       if (wasAutofilled) {
         setValue('full_name', '')
-        setValue('email', '')
         setValue('phone', '')
       }
       return
@@ -75,7 +74,6 @@ export default function IndividualRegistration() {
 
       if (wasAutofilled) {
         setValue('full_name', '')
-        setValue('email', '')
         setValue('phone', '')
       }
       return
@@ -103,7 +101,6 @@ export default function IndividualRegistration() {
         setMemberData(data)
 
         setValue('full_name', data.full_name)
-        setValue('email', data.email)
         setValue('phone', data.phone)
 
         // set gender from API (male/female)
@@ -112,7 +109,6 @@ export default function IndividualRegistration() {
         setMembershipStatus('invalid')
         setMemberData(null)
         setValue('full_name', '')
-        setValue('email', '')
         setValue('phone', '')
       }
     } catch {
@@ -120,7 +116,6 @@ export default function IndividualRegistration() {
       setMembershipStatus('invalid')
       setMemberData(null)
       setValue('full_name', '')
-      setValue('email', '')
       setValue('phone', '')
     } finally {
       if (membershipRequestId.current === requestId) setVerifyingMembership(false)
@@ -157,6 +152,13 @@ export default function IndividualRegistration() {
       return
     }
 
+    const session = getSession()
+    const sessionEmail = session?.user.email?.trim()
+    if (!sessionEmail) {
+      toast.error('تعذر قراءة البريد من جلسة VMS — أعد تسجيل الدخول')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const registrationType: RegistrationType = hasIdea
@@ -166,10 +168,11 @@ export default function IndividualRegistration() {
       const individualData: Omit<Individual, 'id'> & { event_id: string } = {
         ...data,
         event_id: eventId,
+        email: sessionEmail,
         registration_type: registrationType,
         preferred_field: data.preferred_field as any,
         gender: data.gender,
-        membership_number: data.membership_number
+        membership_number: data.membership_number || session.user.membershipNumber,
       }
 
       await individualsService.create(individualData)
@@ -329,28 +332,6 @@ export default function IndividualRegistration() {
                   )}
                 </div>
 
-                {/* Email */}
-                <div>
-                  <label className="block text-white font-medium mb-2">البريد الإلكتروني *</label>
-                  <input
-                    {...register('email', {
-                      required: 'البريد الإلكتروني مطلوب',
-                      pattern: {
-                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: 'بريد إلكتروني غير صالح',
-                      },
-                    })}
-                    type="email"
-                    placeholder="example@email.com"
-                    disabled={!!memberData?.full_name}
-                    className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    dir="ltr"
-                  />
-                  {errors.email && (
-                    <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
-                  )}
-                </div>
-
                 {/* Phone */}
                 <div>
                   <label className="block text-white font-medium mb-2">رقم الهاتف *</label>
@@ -419,7 +400,7 @@ export default function IndividualRegistration() {
                 <button
                   type="button"
                   onClick={async () => {
-                    const fieldsToValidate: any = ['full_name', 'email', 'phone', 'experience_level']
+                    const fieldsToValidate: any = ['full_name', 'phone', 'experience_level']
                     if (membershipStatus !== 'valid') fieldsToValidate.push('gender')
 
                     const isValid = await trigger(fieldsToValidate)

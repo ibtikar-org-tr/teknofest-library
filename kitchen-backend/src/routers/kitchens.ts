@@ -86,14 +86,57 @@ kitchensRouter.get('/:eventId/fields', ...withEventAccess, (c) => c.json(PROJECT
 kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const body = await c.req.json()
-  const team = await createTeam(c.env, { ...body, event_id: eventId })
+  const member = c.get('member')
+  const sessionEmail = member?.email?.trim().toLowerCase()
+  const sessionMembership = member?.membership_number?.trim()
+
+  const members = Array.isArray(body.members)
+    ? body.members.map(
+        (m: {
+          full_name?: string
+          email?: string
+          phone?: string
+          is_leader?: boolean
+          membership_number?: string | null
+        }) => {
+          const membershipNumber = m.membership_number?.trim() || null
+          const isSubmitter =
+            Boolean(sessionMembership) && membershipNumber === sessionMembership
+          return {
+            ...m,
+            membership_number: membershipNumber,
+            email: isSubmitter && sessionEmail ? sessionEmail : String(m.email ?? '').trim(),
+          }
+        },
+      )
+    : body.members
+
+  for (const m of members ?? []) {
+    if (!m.email) {
+      return c.json(
+        { message: 'Each team member needs a verified membership email (session or lookup)' },
+        400,
+      )
+    }
+  }
+
+  const team = await createTeam(c.env, { ...body, members, event_id: eventId })
   return c.json(team, 201)
 })
 
 kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const body = await c.req.json()
-  const individual = await createIndividual(c.env, { ...body, event_id: eventId })
+  const member = c.get('member')
+  if (!member?.email) {
+    return c.json({ message: 'Authenticated email required' }, 401)
+  }
+  const individual = await createIndividual(c.env, {
+    ...body,
+    event_id: eventId,
+    email: member.email,
+    membership_number: body.membership_number || member.membership_number,
+  })
   return c.json(individual, 201)
 })
 
@@ -128,24 +171,30 @@ kitchensRouter.get('/:eventId/teams-with-space', ...withEventAccess, async (c) =
 kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const body = await c.req.json()
+  const member = c.get('member')
 
   let teamId = Number(body.team_id)
   if (!Number.isFinite(teamId) || teamId <= 0) {
-    const email = String(body.member_email ?? '').trim().toLowerCase()
-    if (!email) {
-      return c.json({ message: 'team_id or member_email is required' }, 400)
+    const email = member?.email?.trim().toLowerCase()
+    const membershipNumber = member?.membership_number?.trim()
+    if (!email && !membershipNumber) {
+      return c.json({ message: 'Authenticated member required to resolve team' }, 401)
     }
     const row = await c.env.D1_DB.prepare(
       `SELECT t.id AS team_id
        FROM teams t
        JOIN team_members tm ON tm.team_id = t.id
-       WHERE t.event_id = ? AND lower(tm.email) = ?
+       WHERE t.event_id = ?
+         AND (
+           (? IS NOT NULL AND lower(tm.email) = ?)
+           OR (? IS NOT NULL AND tm.membership_number = ?)
+         )
        LIMIT 1`,
     )
-      .bind(eventId, email)
+      .bind(eventId, email ?? null, email ?? '', membershipNumber ?? null, membershipNumber ?? '')
       .first<{ team_id: number }>()
     if (!row) {
-      return c.json({ message: 'No team found for this member email in this event' }, 404)
+      return c.json({ message: 'No team found for your VMS account in this event' }, 404)
     }
     teamId = Number(row.team_id)
   }

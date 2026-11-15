@@ -14,11 +14,42 @@ const projectsRouter = new Hono<AppBindings>()
 projectsRouter.post('/submit', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
   if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
-  const team = await getTeam(c.env, Number(body.team_id))
+  const member = c.get('member')
+
+  let teamId = Number(body.team_id)
+  if (!Number.isFinite(teamId) || teamId <= 0) {
+    const email = member?.email?.trim().toLowerCase()
+    const membershipNumber = member?.membership_number?.trim()
+    const row = await c.env.D1_DB.prepare(
+      `SELECT t.id AS team_id
+       FROM teams t
+       JOIN team_members tm ON tm.team_id = t.id
+       WHERE t.event_id = ?
+         AND (
+           (? IS NOT NULL AND lower(tm.email) = ?)
+           OR (? IS NOT NULL AND tm.membership_number = ?)
+         )
+       LIMIT 1`,
+    )
+      .bind(
+        body.event_id,
+        email ?? null,
+        email ?? '',
+        membershipNumber ?? null,
+        membershipNumber ?? '',
+      )
+      .first<{ team_id: number }>()
+    if (!row) {
+      return c.json({ message: 'No team found for your VMS account in this event' }, 404)
+    }
+    teamId = Number(row.team_id)
+  }
+
+  const team = await getTeam(c.env, teamId)
   if (!team || team.event_id !== body.event_id) {
     return c.json({ message: 'Team not found in this event kitchen' }, 404)
   }
-  const project = await createProject(c.env, body)
+  const project = await createProject(c.env, { ...body, team_id: teamId })
   return c.json(project, 201)
 })
 

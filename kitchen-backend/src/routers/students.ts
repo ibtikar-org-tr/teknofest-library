@@ -18,14 +18,40 @@ const studentsRouter = new Hono<AppBindings>()
 studentsRouter.post('/team', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
   if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
-  const team = await createTeam(c.env, body)
+  const member = c.get('member')
+  const sessionEmail = member?.email?.trim().toLowerCase()
+  const sessionMembership = member?.membership_number?.trim()
+  const members = Array.isArray(body.members)
+    ? body.members.map(
+        (m: {
+          email?: string
+          membership_number?: string | null
+        }) => {
+          const membershipNumber = m.membership_number?.trim() || null
+          const isSubmitter =
+            Boolean(sessionMembership) && membershipNumber === sessionMembership
+          return {
+            ...m,
+            membership_number: membershipNumber,
+            email: isSubmitter && sessionEmail ? sessionEmail : String(m.email ?? '').trim(),
+          }
+        },
+      )
+    : body.members
+  const team = await createTeam(c.env, { ...body, members })
   return c.json(team, 201)
 })
 
 studentsRouter.post('/individual', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
   if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
-  const individual = await createIndividual(c.env, body)
+  const member = c.get('member')
+  if (!member?.email) return c.json({ message: 'Authenticated email required' }, 401)
+  const individual = await createIndividual(c.env, {
+    ...body,
+    email: member.email,
+    membership_number: body.membership_number || member.membership_number,
+  })
   return c.json(individual, 201)
 })
 
