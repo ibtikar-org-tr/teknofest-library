@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Menu, X, Home, Users, User, FileText, Trophy, LogIn, LogOut, Shield } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession, isLoggedIn, isStaffSession, getSession } from '../lib/auth-session'
+import { kitchensService } from '../services/api'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [hasTeam, setHasTeam] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { eventId } = useParams()
@@ -13,12 +15,33 @@ export default function Navbar() {
   const staff = isStaffSession()
   const session = getSession()
 
+  useEffect(() => {
+    if (!eventId || !loggedIn) {
+      setHasTeam(false)
+      return
+    }
+    let cancelled = false
+    kitchensService
+      .getMyTeam(eventId)
+      .then((team) => {
+        if (!cancelled) setHasTeam(Boolean(team))
+      })
+      .catch(() => {
+        if (!cancelled) setHasTeam(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [eventId, loggedIn, location.pathname])
+
   const navLinks = eventId
     ? [
         { to: `/events/${eventId}`, label: 'المطبخ', icon: Home },
-        { to: `/events/${eventId}/register/team`, label: 'تسجيل فريق', icon: Users },
-        { to: `/events/${eventId}/register/individual`, label: 'تسجيل فردي', icon: User },
-        { to: `/events/${eventId}/project/submit`, label: 'تقديم مشروع', icon: FileText },
+        { to: `/events/${eventId}/register/team`, label: 'التقديم كفريق', icon: Users },
+        { to: `/events/${eventId}/register/individual`, label: 'التقديم كفرد', icon: User },
+        ...(hasTeam
+          ? [{ to: `/events/${eventId}/project/submit`, label: 'تقديم مشروع', icon: FileText }]
+          : []),
         { to: `/events/${eventId}/top-teams`, label: 'أفضل الفرق', icon: Trophy },
       ]
     : [{ to: '/', label: 'الرئيسية', icon: Home }]

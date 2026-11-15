@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowRight, FileText, Loader2, Trophy, User, Users } from 'lucide-react'
 import { kitchensService } from '../services/api'
-import type { KitchenEvent } from '../types'
+import type { KitchenEvent, Team } from '../types'
+
+type Action = {
+  to: string
+  title: string
+  description: string
+  icon: typeof Users
+}
 
 export default function EventKitchen() {
   const { eventId = '' } = useParams()
   const [event, setEvent] = useState<KitchenEvent | null>(null)
+  const [myTeam, setMyTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,10 +22,11 @@ export default function EventKitchen() {
     if (!eventId) return
     let cancelled = false
     setLoading(true)
-    kitchensService
-      .get(eventId)
-      .then((data) => {
-        if (!cancelled) setEvent(data)
+    Promise.all([kitchensService.get(eventId), kitchensService.getMyTeam(eventId)])
+      .then(([eventData, team]) => {
+        if (cancelled) return
+        setEvent(eventData)
+        setMyTeam(team)
       })
       .catch((err) => {
         if (!cancelled) {
@@ -51,32 +60,36 @@ export default function EventKitchen() {
     )
   }
 
-  const actions = [
+  const actions: Action[] = [
     {
       to: `/events/${eventId}/register/team`,
-      title: 'تسجيل كفريق',
+      title: 'التقديم كفريق',
       description: 'أنشئ فريقاً ضمن هذه الفعالية',
       icon: Users,
     },
     {
       to: `/events/${eventId}/register/individual`,
-      title: 'انضم / تسجيل فردي',
-      description: 'سجّل فردياً للانضمام لفريق',
+      title: 'التقديم كفرد',
+      description: 'لديك فكرة أو تبحث عن فريق — الواجهة المعتادة',
       icon: User,
     },
-    {
+  ]
+
+  if (myTeam) {
+    actions.push({
       to: `/events/${eventId}/project/submit`,
       title: 'تقديم مشروع',
-      description: 'قدّم مشروع فريقك لهذه الفعالية',
+      description: `قدّم مشروع فريق «${myTeam.team_name}» لهذه الفعالية`,
       icon: FileText,
-    },
-    {
-      to: `/events/${eventId}/top-teams`,
-      title: 'أفضل الفرق',
-      description: 'ترتيب الفرق في هذه الفعالية',
-      icon: Trophy,
-    },
-  ]
+    })
+  }
+
+  actions.push({
+    to: `/events/${eventId}/top-teams`,
+    title: 'أفضل الفرق',
+    description: 'ترتيب الفرق في هذه الفعالية',
+    icon: Trophy,
+  })
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -91,6 +104,15 @@ export default function EventKitchen() {
         {event.description ? (
           <p className="text-gray-400 max-w-2xl">{event.description}</p>
         ) : null}
+        {myTeam ? (
+          <p className="text-sm text-teknofest-orange mt-3">
+            أنت عضو في فريق: {myTeam.team_name}
+          </p>
+        ) : (
+          <p className="text-sm text-gray-500 mt-3">
+            تقديم المشروع متاح للفرق فقط — سجّل كفريق أو انضم لفريق أولاً.
+          </p>
+        )}
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5">

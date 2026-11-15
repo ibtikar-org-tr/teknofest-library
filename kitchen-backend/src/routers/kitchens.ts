@@ -4,6 +4,7 @@ import { requireEventKitchenAccess } from '../middleware/event-access'
 import { createIndividual, listIndividuals } from '../repositories/individuals'
 import { createProject, listProjects } from '../repositories/projects'
 import { getEventKitchen, listEventKitchens } from '../repositories/event-kitchens'
+import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import { createTeam, getTeam, listTeams } from '../repositories/teams'
 import {
   getVmsEvent,
@@ -168,47 +169,67 @@ kitchensRouter.get('/:eventId/teams-with-space', ...withEventAccess, async (c) =
   return c.json(withSpace)
 })
 
+/** Current member's team in this event kitchen (for gating project apply). */
+kitchensRouter.get('/:eventId/my-team', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  const team = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    member?.membership_number,
+    member?.email,
+  )
+  if (!team) {
+    return c.json({ message: 'You are not on a team in this event kitchen' }, 404)
+  }
+  return c.json(team)
+})
+
 kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const body = await c.req.json()
   const member = c.get('member')
-
-  let teamId = Number(body.team_id)
-  if (!Number.isFinite(teamId) || teamId <= 0) {
-    const email = member?.email?.trim().toLowerCase()
-    const membershipNumber = member?.membership_number?.trim()
-    if (!email && !membershipNumber) {
-      return c.json({ message: 'Authenticated member required to resolve team' }, 401)
-    }
-    const row = await c.env.D1_DB.prepare(
-      `SELECT t.id AS team_id
-       FROM teams t
-       JOIN team_members tm ON tm.team_id = t.id
-       WHERE t.event_id = ?
-         AND (
-           (? IS NOT NULL AND lower(tm.email) = ?)
-           OR (? IS NOT NULL AND tm.membership_number = ?)
-         )
-       LIMIT 1`,
-    )
-      .bind(eventId, email ?? null, email ?? '', membershipNumber ?? null, membershipNumber ?? '')
-      .first<{ team_id: number }>()
-    if (!row) {
-      return c.json({ message: 'No team found for your VMS account in this event' }, 404)
-    }
-    teamId = Number(row.team_id)
+  if (!member) {
+    return c.json({ message: 'Authenticated member required' }, 401)
   }
 
-  const team = await getTeam(c.env, teamId)
-  if (!team || team.event_id !== eventId) {
-    return c.json({ message: 'Team not found in this event kitchen' }, 404)
+  // Projects are team-only: resolve or validate the caller's team membership.
+  let team = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    member.membership_number,
+    member.email,
+  )
+  if (!team) {
+    return c.json(
+      { message: 'Only teams can submit projects. Join or create a team first.' },
+      403,
+    )
+  }
+
+  const requestedTeamId = Number(body.team_id)
+  if (Number.isFinite(requestedTeamId) && requestedTeamId > 0 && requestedTeamId !== team.id) {
+    const onRequested = await isMemberOfTeam(
+      c.env,
+      requestedTeamId,
+      member.membership_number,
+      member.email,
+    )
+    if (!onRequested) {
+      return c.json({ message: 'You can only submit a project for your own team' }, 403)
+    }
+    const requested = await getTeam(c.env, requestedTeamId)
+    if (!requested || requested.event_id !== eventId) {
+      return c.json({ message: 'Team not found in this event kitchen' }, 404)
+    }
+    team = requested
   }
 
   const programVersionId = Number(body.program_version_id) || 1
   const project = await createProject(c.env, {
     ...body,
     event_id: eventId,
-    team_id: teamId,
+    team_id: team.id,
     program_version_id: programVersionId,
   })
   return c.json(project, 201)

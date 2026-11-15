@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
@@ -10,9 +10,10 @@ import {
   PenTool,
   Check,
   AlertCircle,
+  Loader2,
 } from 'lucide-react'
-import { PROJECT_FIELDS, type ProjectField } from '../types'
-import { projectsService } from '../services/api'
+import { PROJECT_FIELDS, type ProjectField, type Team } from '../types'
+import { kitchensService, projectsService } from '../services/api'
 import { getSession } from '../lib/auth-session'
 
 interface ProjectFormData {
@@ -27,6 +28,8 @@ export default function ProjectSubmission() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [checkingTeam, setCheckingTeam] = useState(true)
+  const [myTeam, setMyTeam] = useState<Team | null>(null)
   const [attachments, setAttachments] = useState<{
     image: File | null
     diagram: File | null
@@ -44,6 +47,29 @@ export default function ProjectSubmission() {
   const charCount = technicalDescription?.length || 0
   const minChars = 1000
 
+  useEffect(() => {
+    if (!eventId) {
+      setCheckingTeam(false)
+      return
+    }
+    let cancelled = false
+    setCheckingTeam(true)
+    kitchensService
+      .getMyTeam(eventId)
+      .then((team) => {
+        if (!cancelled) setMyTeam(team)
+      })
+      .catch(() => {
+        if (!cancelled) setMyTeam(null)
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingTeam(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [eventId])
+
   const handleFileChange = (type: 'image' | 'diagram' | 'design', file: File | null) => {
     setAttachments((prev) => ({ ...prev, [type]: file }))
   }
@@ -59,6 +85,11 @@ export default function ProjectSubmission() {
       return
     }
 
+    if (!myTeam?.id) {
+      toast.error('تقديم المشروع متاح للفرق فقط')
+      return
+    }
+
     if (!getSession()?.user.email) {
       toast.error('تعذر قراءة البريد من جلسة VMS — أعد تسجيل الدخول')
       return
@@ -68,6 +99,7 @@ export default function ProjectSubmission() {
     try {
       const project = await projectsService.submit({
         event_id: eventId,
+        team_id: myTeam.id,
         title: data.title,
         problem_statement: data.problem_statement,
         technical_description: data.technical_description,
@@ -94,6 +126,45 @@ export default function ProjectSubmission() {
     }
   }
 
+  if (checkingTeam) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="w-8 h-8 text-teknofest-orange animate-spin" />
+      </div>
+    )
+  }
+
+  if (!myTeam) {
+    return (
+      <div className="min-h-screen py-12 px-4">
+        <div className="max-w-xl mx-auto text-center card space-y-4">
+          <AlertCircle className="w-10 h-10 text-teknofest-orange mx-auto" />
+          <h1 className="text-2xl font-bold text-white">تقديم المشروع للفرق فقط</h1>
+          <p className="text-gray-400">
+            يجب أن تكون عضواً في فريق ضمن هذه الفعالية قبل تقديم مشروع.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Link
+              to={`/events/${eventId}/register/team`}
+              className="btn-primary inline-flex justify-center"
+            >
+              التقديم كفريق
+            </Link>
+            <Link
+              to={`/events/${eventId}/register/individual`}
+              className="btn-secondary inline-flex justify-center"
+            >
+              التقديم كفرد
+            </Link>
+          </div>
+          <Link to={`/events/${eventId}`} className="block text-teknofest-cyan hover:underline text-sm">
+            العودة للمطبخ
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -103,7 +174,10 @@ export default function ProjectSubmission() {
             <FileText className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">تقديم المشروع</h1>
-          <p className="text-gray-400">قدّم مشروع الفريق مع الوصف التقني الكامل</p>
+          <p className="text-gray-400">
+            قدّم مشروع فريق <span className="text-teknofest-orange">{myTeam.team_name}</span> مع
+            الوصف التقني الكامل
+          </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">

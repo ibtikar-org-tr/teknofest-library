@@ -7,6 +7,7 @@ import {
   listProjects,
   listProjectsByTeam,
 } from '../repositories/projects'
+import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import { getTeam } from '../repositories/teams'
 
 const projectsRouter = new Hono<AppBindings>()
@@ -15,41 +16,44 @@ projectsRouter.post('/submit', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
   if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
   const member = c.get('member')
+  if (!member) return c.json({ message: 'Authenticated member required' }, 401)
 
-  let teamId = Number(body.team_id)
-  if (!Number.isFinite(teamId) || teamId <= 0) {
-    const email = member?.email?.trim().toLowerCase()
-    const membershipNumber = member?.membership_number?.trim()
-    const row = await c.env.D1_DB.prepare(
-      `SELECT t.id AS team_id
-       FROM teams t
-       JOIN team_members tm ON tm.team_id = t.id
-       WHERE t.event_id = ?
-         AND (
-           (? IS NOT NULL AND lower(tm.email) = ?)
-           OR (? IS NOT NULL AND tm.membership_number = ?)
-         )
-       LIMIT 1`,
+  let team = await findTeamForMemberInEvent(
+    c.env,
+    body.event_id,
+    member.membership_number,
+    member.email,
+  )
+  if (!team) {
+    return c.json(
+      { message: 'Only teams can submit projects. Join or create a team first.' },
+      403,
     )
-      .bind(
-        body.event_id,
-        email ?? null,
-        email ?? '',
-        membershipNumber ?? null,
-        membershipNumber ?? '',
-      )
-      .first<{ team_id: number }>()
-    if (!row) {
-      return c.json({ message: 'No team found for your VMS account in this event' }, 404)
-    }
-    teamId = Number(row.team_id)
   }
 
-  const team = await getTeam(c.env, teamId)
-  if (!team || team.event_id !== body.event_id) {
-    return c.json({ message: 'Team not found in this event kitchen' }, 404)
+  const requestedTeamId = Number(body.team_id)
+  if (Number.isFinite(requestedTeamId) && requestedTeamId > 0 && requestedTeamId !== team.id) {
+    const onRequested = await isMemberOfTeam(
+      c.env,
+      requestedTeamId,
+      member.membership_number,
+      member.email,
+    )
+    if (!onRequested) {
+      return c.json({ message: 'You can only submit a project for your own team' }, 403)
+    }
+    const requested = await getTeam(c.env, requestedTeamId)
+    if (!requested || requested.event_id !== body.event_id) {
+      return c.json({ message: 'Team not found in this event kitchen' }, 404)
+    }
+    team = requested
   }
-  const project = await createProject(c.env, { ...body, team_id: teamId })
+
+  const project = await createProject(c.env, {
+    ...body,
+    team_id: team.id,
+    program_version_id: Number(body.program_version_id) || 1,
+  })
   return c.json(project, 201)
 })
 

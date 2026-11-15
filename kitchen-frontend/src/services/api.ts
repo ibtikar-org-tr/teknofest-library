@@ -90,6 +90,16 @@ export const kitchensService = {
     return response.data
   },
 
+  getMyTeam: async (eventId: string): Promise<Team | null> => {
+    try {
+      const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/my-team`)
+      return response.data
+    } catch (error: any) {
+      if (error.response?.status === 404) return null
+      throw error
+    }
+  },
+
   createTeam: async (eventId: string, team: Omit<Team, 'id'>): Promise<Team> => {
     const response = await api.post(`/kitchens/${encodeURIComponent(eventId)}/teams`, team)
     return response.data
