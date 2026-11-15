@@ -98,3 +98,33 @@ export const createTeam = async (
 
   return team
 }
+
+export const addMemberToTeam = async (
+  env: Environment,
+  teamId: number,
+  member: {
+    full_name: string
+    email: string
+    phone: string
+    membership_number?: string | null
+    is_leader?: boolean
+  },
+): Promise<TeamMember> => {
+  const created = await env.D1_DB.prepare(
+    `INSERT INTO team_members (
+      team_id, full_name, email, phone, is_leader, membership_number
+    ) VALUES (?, ?, ?, ?, ?, ?)
+    RETURNING *`,
+  )
+    .bind(
+      teamId,
+      member.full_name,
+      member.email,
+      member.phone,
+      boolToInt(member.is_leader ?? false),
+      member.membership_number ?? null,
+    )
+    .first()
+
+  return mapTeamMember(created as Record<string, unknown>)
+}

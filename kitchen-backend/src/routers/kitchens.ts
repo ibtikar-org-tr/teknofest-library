@@ -5,7 +5,7 @@ import { createIndividual, listIndividuals } from '../repositories/individuals'
 import { createProject, listProjects } from '../repositories/projects'
 import { getEventKitchen, listEventKitchens } from '../repositories/event-kitchens'
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
-import { createTeam, getTeam, listTeams } from '../repositories/teams'
+import { addMemberToTeam, createTeam, getTeam, listTeams } from '../repositories/teams'
 import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
 import {
   getVmsEvent,
@@ -209,6 +209,72 @@ kitchensRouter.get('/:eventId/teams-with-space', ...withEventAccess, async (c) =
     })
   }
   return c.json(withSpace)
+})
+
+/** Member self-join into an existing team that still has space. */
+kitchensRouter.post('/:eventId/teams/:teamId/join', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const teamId = Number(c.req.param('teamId'))
+  const member = c.get('member')
+  if (!member?.membership_number || !member.email) {
+    return c.json({ message: 'Authenticated VMS member required' }, 401)
+  }
+  if (!Number.isFinite(teamId) || teamId <= 0) {
+    return c.json({ message: 'Invalid team id' }, 400)
+  }
+
+  const existing = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    member.membership_number,
+    member.email,
+  )
+  if (existing) {
+    return c.json(
+      { message: 'You are already on a team in this event kitchen', team_id: existing.id },
+      409,
+    )
+  }
+
+  const team = await getTeam(c.env, teamId)
+  if (!team || team.event_id !== eventId || !team.is_active) {
+    return c.json({ message: 'Team not found in this event kitchen' }, 404)
+  }
+
+  const memberCount = team.members?.length ?? 0
+  if (memberCount >= 6) {
+    return c.json({ message: 'This team is full' }, 409)
+  }
+
+  const profile = await fetchVmsMemberProfile(
+    c.env,
+    member.membership_number,
+    c.req.header('Authorization'),
+  )
+  if (!profile) {
+    return c.json(
+      { message: 'Could not load your VMS profile — re-login and try again' },
+      502,
+    )
+  }
+
+  if (team.gender && profile.gender && team.gender !== profile.gender) {
+    return c.json(
+      { message: 'Your gender does not match this team' },
+      400,
+    )
+  }
+
+  await addMemberToTeam(c.env, teamId, {
+    full_name: profile.full_name,
+    email: member.email || profile.email,
+    phone: profile.phone,
+    membership_number: member.membership_number,
+    is_leader: false,
+  })
+
+  const updated = await getTeam(c.env, teamId)
+  return c.json(updated, 201)
 })
 
 /** Current member's team in this event kitchen (for gating project apply). */

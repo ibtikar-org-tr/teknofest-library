@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, FileText, Loader2, Trophy, User, Users } from 'lucide-react'
+import { ArrowRight, FileText, Loader2, UserPlus, Users } from 'lucide-react'
 import { kitchensService } from '../services/api'
 import type { KitchenEvent, Team } from '../types'
 
@@ -60,36 +60,29 @@ export default function EventKitchen() {
     )
   }
 
-  const actions: Action[] = [
-    {
-      to: `/events/${eventId}/register/team`,
-      title: 'التقديم كفريق',
-      description: 'أنشئ فريقاً ضمن هذه الفعالية',
-      icon: Users,
-    },
-    {
-      to: `/events/${eventId}/register/individual`,
-      title: 'التقديم كفرد',
-      description: 'لديك فكرة أو تبحث عن فريق — الواجهة المعتادة',
-      icon: User,
-    },
-  ]
-
-  if (myTeam) {
-    actions.push({
-      to: `/events/${eventId}/project/submit`,
-      title: 'تقديم مشروع',
-      description: `قدّم مشروع فريق «${myTeam.team_name}» لهذه الفعالية`,
-      icon: FileText,
-    })
-  }
-
-  actions.push({
-    to: `/events/${eventId}/top-teams`,
-    title: 'أفضل الفرق',
-    description: 'ترتيب الفرق في هذه الفعالية',
-    icon: Trophy,
-  })
+  const actions: Action[] = myTeam
+    ? [
+        {
+          to: `/events/${eventId}/project/submit`,
+          title: 'التقديم مع الفريق',
+          description: `قدّم مشروع فريق «${myTeam.team_name}» لهذه الفعالية`,
+          icon: FileText,
+        },
+      ]
+    : [
+        {
+          to: `/events/${eventId}/register/team`,
+          title: 'إنشاء فريق',
+          description: 'أسّس فريقاً جديداً ضمن هذه الفعالية',
+          icon: Users,
+        },
+        {
+          to: `/events/${eventId}/join-team`,
+          title: 'الانضمام لفريق',
+          description: 'انضم لفريق موجود ما زال فيه أماكن شاغرة',
+          icon: UserPlus,
+        },
+      ]
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -110,12 +103,12 @@ export default function EventKitchen() {
           </p>
         ) : (
           <p className="text-sm text-gray-500 mt-3">
-            تقديم المشروع متاح للفرق فقط — سجّل كفريق أو انضم لفريق أولاً.
+            أنشئ فريقاً أو انضم لفريق أولاً — بعدها يمكنك التقديم بالمشروع.
           </p>
         )}
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-5">
+      <div className={`grid gap-5 ${actions.length > 1 ? 'sm:grid-cols-2' : 'max-w-md'}`}>
         {actions.map((action) => {
           const Icon = action.icon
           return (

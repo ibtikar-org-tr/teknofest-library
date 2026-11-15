@@ -146,6 +146,13 @@ export const kitchensService = {
     return response.data
   },
 
+  joinTeam: async (eventId: string, teamId: number): Promise<Team> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/teams/${teamId}/join`,
+    )
+    return response.data
+  },
+
   getTeams: async (eventId: string): Promise<Team[]> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/teams`)
     return response.data

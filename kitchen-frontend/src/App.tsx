@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import EventKitchen from './pages/EventKitchen'
 import TeamRegistration from './pages/TeamRegistration'
 import IndividualRegistration from './pages/IndividualRegistration'
+import JoinTeam from './pages/JoinTeam'
 import ProjectSubmission from './pages/ProjectSubmission'
 import Login from './pages/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -34,6 +35,7 @@ function App() {
           <Route element={<MemberRoute />}>
             <Route path="events/:eventId" element={<EventKitchen />} />
             <Route path="events/:eventId/register/team" element={<TeamRegistration />} />
+            <Route path="events/:eventId/join-team" element={<JoinTeam />} />
             <Route path="events/:eventId/register/individual" element={<IndividualRegistration />} />
             <Route path="events/:eventId/project/submit" element={<ProjectSubmission />} />
             <Route path="events/:eventId/top-teams" element={<TopTeams />} />
