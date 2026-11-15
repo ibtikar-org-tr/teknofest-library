@@ -5,7 +5,7 @@ import { boolToInt, toJsonText } from '../utils/sql'
 
 export const listEvaluationsByProject = async (
   env: Environment,
-  projectId: number
+  projectId: number,
 ): Promise<Evaluation[]> => {
   const { results } = await env.D1_DB
     .prepare('SELECT * FROM evaluations WHERE project_id = ? ORDER BY id DESC')
@@ -18,26 +18,28 @@ export const createEvaluation = async (
   env: Environment,
   payload: {
     project_id: number
+    evaluator_membership_number?: string | null
     admin_id?: number | null
     is_ai_evaluation?: boolean
     score: number
     notes?: string | null
     detailed_scores?: Record<string, number> | null
-  }
+  },
 ): Promise<Evaluation> => {
   const row = await env.D1_DB.prepare(
     `INSERT INTO evaluations (
-      project_id, admin_id, is_ai_evaluation, score, notes, detailed_scores
-    ) VALUES (?, ?, ?, ?, ?, ?)
-    RETURNING *`
+      project_id, admin_id, evaluator_membership_number, is_ai_evaluation, score, notes, detailed_scores
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    RETURNING *`,
   )
     .bind(
       payload.project_id,
       payload.admin_id ?? null,
+      payload.evaluator_membership_number ?? null,
       boolToInt(payload.is_ai_evaluation ?? false),
       payload.score,
       payload.notes ?? null,
-      toJsonText(payload.detailed_scores ?? null)
+      toJsonText(payload.detailed_scores ?? null),
     )
     .first()
 

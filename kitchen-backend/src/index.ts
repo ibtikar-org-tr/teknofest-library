@@ -6,6 +6,8 @@ import projectsRouter from './routers/projects'
 import adminRouter from './routers/admin'
 import evaluationRouter from './routers/evaluation'
 import emailRouter from './routers/email'
+import authRouter from './routers/auth'
+import { staffAuthMiddleware } from './middleware/staff-auth'
 
 const app = new Hono<AppBindings>()
 
@@ -16,32 +18,39 @@ app.use(
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-  })
+  }),
 )
 
 app.get('/', (c) =>
   c.json({
     message: 'مرحباً بك في منصة مسابقات تكنوفيست! 🏆',
-    version: '2.0.0',
+    version: '2.1.0',
     runtime: 'Cloudflare Workers + Hono + D1',
     endpoints: {
+      auth: '/api/auth',
       students: '/api/students',
       projects: '/api/projects',
       admin: '/api/admin',
       evaluation: '/api/evaluation',
       email: '/api/email',
     },
-  })
+  }),
 )
 
 app.get('/health', (c) =>
-  c.json({ status: 'healthy', message: 'التطبيق يعمل بشكل سليم', app: c.env.APP_NAME })
+  c.json({ status: 'healthy', message: 'التطبيق يعمل بشكل سليم', app: c.env.APP_NAME }),
 )
 
+app.route('/api/auth', authRouter)
 app.route('/api/students', studentsRouter)
 app.route('/api/projects', projectsRouter)
 app.route('/api/admin', adminRouter)
 app.route('/api/evaluation', evaluationRouter)
-app.route('/api/email', emailRouter)
+
+// Protect email mutations with staff auth
+const securedEmail = new Hono<AppBindings>()
+securedEmail.use('*', staffAuthMiddleware)
+securedEmail.route('/', emailRouter)
+app.route('/api/email', securedEmail)
 
 export default app

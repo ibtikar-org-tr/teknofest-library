@@ -140,30 +140,16 @@ export interface Evaluation {
   created_at?: string
 }
 
-// Admin
+// Admin (kitchen_staff via VMS membership)
 export interface Admin {
-  id?: number
-  username: string
+  membership_number: string
+  username?: string
   email: string
   full_name: string
   evaluation_weight: number
   is_active?: boolean
   is_superadmin?: boolean
   created_at?: string
-}
-
-// Auth
-export interface LoginCredentials {
-  username: string
-  password: string
-}
-
-export interface RegisterCredentials {
-  username: string
-  email: string
-  password: string
-  full_name: string
-  registration_code: string
 }
 
 export interface AuthToken {

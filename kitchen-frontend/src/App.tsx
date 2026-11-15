@@ -11,6 +11,7 @@ import AdminIndividuals from './pages/admin/AdminIndividuals'
 import AdminProjects from './pages/admin/AdminProjects'
 import AdminEvaluations from './pages/admin/AdminEvaluations'
 import AdminManagement from './pages/admin/AdminManagement'
+import AuthCallback from './pages/AuthCallback'
 import TopTeams from './pages/TopTeams'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -28,7 +29,8 @@ function App() {
           <Route path="top-teams" element={<TopTeams />} />
         </Route>
 
-        {/* Admin Routes */}
+        {/* Admin / SSO */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<ProtectedRoute />}>
           <Route index element={<AdminDashboard />} />

@@ -462,6 +462,7 @@ export const tr: Dictionary = {
     mentorsBody:
       'Her danışman bir takım alır. Genç erkek ve genç kadın takımlarının danışman isimleri ikinci günden önce duyurulur.',
     registerCta: 'TEKNOFEST takımları için kayıt',
+    staffLoginCta: 'Mutfak ekibi girişi',
   },
   footer: {
     blurb:

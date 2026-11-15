@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { SectionLabel } from '@/components/section-label'
 import { useLocale } from '@/i18n/locale-provider'
-import { LINKS } from '@/lib/links'
+import { LINKS, buildKitchenVmsSsoUrl } from '@/lib/links'
 import { cn } from '@/lib/utils'
 
 export function KitchenSection() {
@@ -46,17 +46,25 @@ export function KitchenSection() {
           </div>
           <aside className="flex flex-col justify-between gap-6 bg-navy p-8 text-navy-foreground md:col-span-5">
             <p className="text-pretty leading-relaxed text-navy-foreground/80">{t.footer.blurb}</p>
-            <a
-              href={LINKS.registerTeknofestTeams}
-              target="_blank"
-              rel="noreferrer"
-              className="anim-cta inline-flex h-12 items-center justify-center self-start bg-primary px-6 font-bold text-white skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105"
-            >
-              <span className="flex items-center gap-2 skew-x-[10deg] rtl:skew-x-[-10deg]">
-                {t.kitchen.registerCta}
-                <ArrowRight className={cn('size-4', dir === 'rtl' && 'rotate-180')} />
-              </span>
-            </a>
+            <div className="flex flex-col items-start gap-3">
+              <a
+                href={LINKS.registerTeknofestTeams}
+                target="_blank"
+                rel="noreferrer"
+                className="anim-cta inline-flex h-12 items-center justify-center self-start bg-primary px-6 font-bold text-white skew-x-[-10deg] rtl:skew-x-[10deg] transition-transform hover:scale-105"
+              >
+                <span className="flex items-center gap-2 skew-x-[10deg] rtl:skew-x-[-10deg]">
+                  {t.kitchen.registerCta}
+                  <ArrowRight className={cn('size-4', dir === 'rtl' && 'rotate-180')} />
+                </span>
+              </a>
+              <a
+                href={buildKitchenVmsSsoUrl()}
+                className="text-sm font-semibold text-navy-foreground/80 underline-offset-4 hover:text-white hover:underline"
+              >
+                {t.kitchen.staffLoginCta}
+              </a>
+            </div>
           </aside>
         </div>
       </div>

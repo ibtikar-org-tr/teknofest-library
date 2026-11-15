@@ -14,8 +14,8 @@ import type { Admin } from '../../types'
 export default function AdminManagement() {
   const [admins, setAdmins] = useState<Admin[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState<number | null>(null)
-  const [weights, setWeights] = useState<Record<number, number>>({})
+  const [saving, setSaving] = useState<string | null>(null)
+  const [weights, setWeights] = useState<Record<string, number>>({})
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   useEffect(() => {
@@ -23,16 +23,15 @@ export default function AdminManagement() {
       try {
         const [adminsData, superAdminCheck] = await Promise.all([
           adminService.getAll(),
-          adminService.checkSuperAdmin()
+          adminService.checkSuperAdmin(),
         ])
         setAdmins(adminsData)
         setIsSuperAdmin(superAdminCheck.is_super_admin)
 
-        // Initialize weights
-        const initialWeights: Record<number, number> = {}
-        adminsData.forEach(admin => {
-          if (admin.id) {
-            initialWeights[admin.id] = admin.evaluation_weight
+        const initialWeights: Record<string, number> = {}
+        adminsData.forEach((admin) => {
+          if (admin.membership_number) {
+            initialWeights[admin.membership_number] = admin.evaluation_weight
           }
         })
         setWeights(initialWeights)
@@ -46,39 +45,44 @@ export default function AdminManagement() {
     fetchData()
   }, [])
 
-  const handleWeightChange = (adminId: number, value: number) => {
-    setWeights(prev => ({
+  const handleWeightChange = (membershipNumber: string, value: number) => {
+    setWeights((prev) => ({
       ...prev,
-      [adminId]: value
+      [membershipNumber]: value,
     }))
   }
 
-  const handleSaveWeight = async (adminId: number) => {
-    const weight = weights[adminId]
+  const handleSaveWeight = async (membershipNumber: string) => {
+    const weight = weights[membershipNumber]
     if (weight < 0 || weight > 100) {
       toast.error('الوزن يجب أن يكون بين 0 و 100')
       return
     }
 
-    setSaving(adminId)
+    setSaving(membershipNumber)
     try {
-      await adminService.updateWeight(adminId, weight)
+      await adminService.updateWeight(membershipNumber, weight)
       toast.success('تم تحديث الوزن بنجاح')
 
-      // Update local state
-      setAdmins(prev => prev.map(admin =>
-        admin.id === adminId ? { ...admin, evaluation_weight: weight } : admin
-      ))
+      setAdmins((prev) =>
+        prev.map((admin) =>
+          admin.membership_number === membershipNumber
+            ? { ...admin, evaluation_weight: weight }
+            : admin,
+        ),
+      )
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'حدث خطأ في تحديث الوزن')
+      toast.error(error.response?.data?.message || 'حدث خطأ في تحديث الوزن')
     } finally {
       setSaving(null)
     }
   }
 
-  // Calculate total weight and percentages (only non-super admins)
-  const nonSuperAdmins = admins.filter(a => !a.is_superadmin)
-  const totalWeight = nonSuperAdmins.reduce((sum, admin) => sum + (weights[admin.id!] || 0), 0)
+  const nonSuperAdmins = admins.filter((a) => !a.is_superadmin)
+  const totalWeight = nonSuperAdmins.reduce(
+    (sum, admin) => sum + (weights[admin.membership_number] || 0),
+    0,
+  )
 
   if (loading) {
     return (
@@ -100,11 +104,10 @@ export default function AdminManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">إدارة الإداريين</h1>
-          <p className="text-gray-400">تعديل أوزان تقييمات الإداريين</p>
+          <p className="text-gray-400">تعديل أوزان تقييمات الإداريين (عضوية VMS)</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg">
           <Shield className="w-5 h-5" />
@@ -112,30 +115,34 @@ export default function AdminManagement() {
         </div>
       </div>
 
-      {/* Info Box */}
       <div className="card bg-teknofest-dark-blue/50 border border-teknofest-light-blue/20">
         <div className="flex items-start gap-3">
           <Scale className="w-5 h-5 text-teknofest-cyan mt-1" />
           <div className="text-sm">
             <p className="text-white font-medium mb-1">نظام الأوزان</p>
             <ul className="text-gray-400 space-y-1">
-              <li>• تقييمات جميع الإداريين تشكل مجتمعة <span className="text-teknofest-orange font-bold">75%</span> من التقييم النهائي</li>
-              <li>• كل إداري يقيّم من <span className="text-green-400 font-bold">75 نقطة</span></li>
+              <li>
+                • تقييمات جميع الإداريين تشكل مجتمعة{' '}
+                <span className="text-teknofest-orange font-bold">75%</span> من التقييم النهائي
+              </li>
+              <li>
+                • كل إداري يقيّم من <span className="text-green-400 font-bold">75 نقطة</span>
+              </li>
               <li>• الأوزان تحدد نسبة مساهمة كل إداري في المتوسط المرجح</li>
-              <li>• مثال: إذا كان وزن إداري 25% وآخر 75%، فتقييم الثاني يؤثر أكثر</li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Weight Summary */}
       <div className="card bg-yellow-500/10 border border-yellow-500/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-yellow-400" />
             <span className="text-white font-medium">مجموع الأوزان:</span>
           </div>
-          <span className={`text-2xl font-bold ${totalWeight === 100 ? 'text-green-400' : 'text-red-400'}`}>
+          <span
+            className={`text-2xl font-bold ${totalWeight === 100 ? 'text-green-400' : 'text-red-400'}`}
+          >
             {totalWeight}%
           </span>
         </div>
@@ -146,7 +153,6 @@ export default function AdminManagement() {
         )}
       </div>
 
-      {/* Admins List */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Users className="w-5 h-5" />
@@ -161,7 +167,7 @@ export default function AdminManagement() {
         ) : (
           <div className="grid gap-4">
             {nonSuperAdmins.map((admin) => (
-              <div key={admin.id} className="card">
+              <div key={admin.membership_number} className="card">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-teknofest-medium-blue rounded-xl flex items-center justify-center">
@@ -169,17 +175,18 @@ export default function AdminManagement() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white">{admin.full_name}</h3>
-                      <p className="text-gray-400 text-sm">{admin.username} • {admin.email}</p>
+                      <p className="text-gray-400 text-sm">
+                        {admin.membership_number} • {admin.email}
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
-                    {/* Weight Slider */}
                     <div className="flex-1 lg:w-64">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-400">وزن التقييم</span>
                         <span className="text-xl font-bold text-teknofest-orange">
-                          {weights[admin.id!]}%
+                          {weights[admin.membership_number]}%
                         </span>
                       </div>
                       <input
@@ -187,24 +194,23 @@ export default function AdminManagement() {
                         min="0"
                         max="100"
                         step="5"
-                        value={weights[admin.id!] || 0}
-                        onChange={(e) => handleWeightChange(admin.id!, Number(e.target.value))}
+                        value={weights[admin.membership_number] || 0}
+                        onChange={(e) =>
+                          handleWeightChange(admin.membership_number, Number(e.target.value))
+                        }
                         className="w-full h-2 bg-teknofest-medium-blue rounded-lg appearance-none cursor-pointer accent-teknofest-orange"
                       />
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>0%</span>
-                        <span>50%</span>
-                        <span>100%</span>
-                      </div>
                     </div>
 
-                    {/* Save Button */}
                     <button
-                      onClick={() => handleSaveWeight(admin.id!)}
-                      disabled={saving === admin.id || weights[admin.id!] === admin.evaluation_weight}
+                      onClick={() => handleSaveWeight(admin.membership_number)}
+                      disabled={
+                        saving === admin.membership_number ||
+                        weights[admin.membership_number] === admin.evaluation_weight
+                      }
                       className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {saving === admin.id ? (
+                      {saving === admin.membership_number ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <Save className="w-5 h-5" />
@@ -213,47 +219,10 @@ export default function AdminManagement() {
                     </button>
                   </div>
                 </div>
-
-                {/* Current vs New Weight */}
-                {weights[admin.id!] !== admin.evaluation_weight && (
-                  <div className="mt-4 pt-4 border-t border-teknofest-light-blue/20">
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-gray-400">
-                        الوزن الحالي: <span className="text-white">{admin.evaluation_weight}%</span>
-                      </span>
-                      <span className="text-teknofest-orange">→</span>
-                      <span className="text-gray-400">
-                        الوزن الجديد: <span className="text-teknofest-orange font-bold">{weights[admin.id!]}%</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Example Calculation */}
-      <div className="card bg-teknofest-dark-blue/50">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Scale className="w-5 h-5" />
-          مثال على حساب التقييم
-        </h3>
-        <div className="text-sm text-gray-300 space-y-2">
-          <p>
-            إذا كان لدينا إداريان: <span className="text-teknofest-orange">أحمد (وزن 25%)</span> و <span className="text-teknofest-cyan">محمد (وزن 75%)</span>
-          </p>
-          <p>
-            وقيّم أحمد مشروعاً بـ <span className="text-green-400">60/75</span> ومحمد قيّمه بـ <span className="text-green-400">70/75</span>
-          </p>
-          <p className="text-white font-medium">
-            المتوسط المرجح = (60 × 25% + 70 × 75%) = <span className="text-teknofest-orange">67.5/75</span>
-          </p>
-          <p className="text-gray-400">
-            ثم يُضاف إليه تقييم AI (من 25 نقطة) للحصول على النتيجة النهائية من 100
-          </p>
-        </div>
       </div>
     </div>
   )

@@ -1,107 +1,82 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
-import {
-  createAdmin,
-  createProgramVersion,
-  getAdminByUsername,
-  listAdmins,
-  listProgramVersions,
-} from '../repositories/admins'
+import { requireSuperAdmin, staffAuthMiddleware } from '../middleware/staff-auth'
 import { listUnassignedIndividuals } from '../repositories/individuals'
+import {
+  createProgramVersion,
+  listProgramVersions,
+  listStaff,
+  updateStaffWeight,
+  upsertStaff,
+} from '../repositories/staff'
+import { staffToAdminView } from '../utils/mappers'
 
 const adminRouter = new Hono<AppBindings>()
 
-adminRouter.post('/register', async (c) => {
-  const body = await c.req.json<{
-    username: string
-    email: string
-    password: string
-    full_name?: string
-    registration_code?: string
-  }>()
+adminRouter.use('*', staffAuthMiddleware)
 
-  const expectedCode = c.env.ADMIN_REGISTRATION_CODE
-  if (expectedCode && body.registration_code !== expectedCode) {
-    return c.json({ message: 'Invalid registration code' }, 403)
-  }
-
-  // Placeholder hash until auth service is ported (Web Crypto / bcrypt wasm)
-  const hashed_password = `sha256:${body.password}`
-  const admin = await createAdmin(c.env, {
-    username: body.username,
-    email: body.email,
-    hashed_password,
-    full_name: body.full_name,
-  })
-  return c.json(admin, 201)
-})
-
-adminRouter.post('/login', async (c) => {
-  // Frontend uses OAuth2 form-urlencoded; also accept JSON for tooling
-  const contentType = c.req.header('content-type') || ''
-  let username = ''
-  let password = ''
-  if (contentType.includes('application/x-www-form-urlencoded')) {
-    const form = await c.req.parseBody()
-    username = String(form.username ?? '')
-    password = String(form.password ?? '')
-  } else {
-    const body = await c.req.json<{ username: string; password: string }>()
-    username = body.username
-    password = body.password
-  }
-
-  const admin = await getAdminByUsername(c.env, username)
-  if (!admin || admin.hashed_password !== `sha256:${password}`) {
-    return c.json({ message: 'Invalid credentials' }, 401)
-  }
-
-  const { hashed_password: _, ...safeAdmin } = admin
-  return c.json({
-    access_token: `dev-token:${admin.id}`,
-    token_type: 'bearer',
-    admin: safeAdmin,
-  })
-})
 adminRouter.get('/me', async (c) => {
-  const auth = c.req.header('Authorization') || ''
-  const match = auth.match(/^Bearer\s+dev-token:(\d+)$/i)
-  if (!match) return c.json({ message: 'Unauthorized' }, 401)
-
-  const admins = await listAdmins(c.env)
-  const admin = admins.find((a) => a.id === Number(match[1]))
-  if (!admin) return c.json({ message: 'Unauthorized' }, 401)
-  return c.json(admin)
+  return c.json(staffToAdminView(c.get('staff')))
 })
 
 adminRouter.get('/is-super-admin', async (c) => {
-  const auth = c.req.header('Authorization') || ''
-  const match = auth.match(/^Bearer\s+dev-token:(\d+)$/i)
-  if (!match) return c.json({ is_super_admin: false })
-
-  const admins = await listAdmins(c.env)
-  const admin = admins.find((a) => a.id === Number(match[1]))
-  return c.json({ is_super_admin: Boolean(admin?.is_superadmin) })
+  return c.json({ is_super_admin: Boolean(c.get('staff').is_superadmin) })
 })
 
 adminRouter.get('/stats', async (c) => {
-  const [teams, individuals, projects, admins] = await Promise.all([
+  const [teams, individuals, projects, staff] = await Promise.all([
     c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM teams').first<{ count: number }>(),
     c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM individuals').first<{ count: number }>(),
     c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM project_submissions').first<{ count: number }>(),
-    c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM admins').first<{ count: number }>(),
+    c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM kitchen_staff').first<{ count: number }>(),
   ])
   return c.json({
     teams: Number(teams?.count ?? 0),
     individuals: Number(individuals?.count ?? 0),
     projects: Number(projects?.count ?? 0),
-    admins: Number(admins?.count ?? 0),
+    admins: Number(staff?.count ?? 0),
   })
 })
 
 adminRouter.get('/admins', async (c) => {
-  const admins = await listAdmins(c.env)
-  return c.json(admins)
+  const staff = await listStaff(c.env)
+  return c.json(staff.map(staffToAdminView))
+})
+
+adminRouter.put('/admins/:membership_number/weight', requireSuperAdmin, async (c) => {
+  const membershipNumber = c.req.param('membership_number')
+  const body = await c.req.json<{ evaluation_weight: number }>()
+  const weight = Number(body.evaluation_weight)
+  if (!Number.isFinite(weight) || weight < 0 || weight > 100) {
+    return c.json({ message: 'evaluation_weight must be between 0 and 100' }, 400)
+  }
+
+  const updated = await updateStaffWeight(c.env, membershipNumber, weight)
+  if (!updated) return c.json({ message: 'Staff not found' }, 404)
+  return c.json(staffToAdminView(updated))
+})
+
+adminRouter.post('/staff', requireSuperAdmin, async (c) => {
+  const body = await c.req.json<{
+    membership_number: string
+    email: string
+    full_name?: string
+    evaluation_weight?: number
+    is_superadmin?: boolean
+  }>()
+
+  if (!body.membership_number?.trim() || !body.email?.trim()) {
+    return c.json({ message: 'membership_number and email are required' }, 400)
+  }
+
+  const staff = await upsertStaff(c.env, {
+    membership_number: body.membership_number.trim(),
+    email: body.email.trim(),
+    full_name: body.full_name,
+    evaluation_weight: body.evaluation_weight,
+    is_superadmin: body.is_superadmin,
+  })
+  return c.json(staffToAdminView(staff), 201)
 })
 
 adminRouter.get('/unassigned-individuals', async (c) => {

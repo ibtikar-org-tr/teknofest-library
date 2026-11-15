@@ -462,6 +462,7 @@ export const en: Dictionary = {
     mentorsBody:
       'Each mentor takes one team. Names of mentors for young men’s teams and young women’s teams will be announced before day two.',
     registerCta: 'Register TEKNOFEST teams',
+    staffLoginCta: 'Kitchen staff login',
   },
   footer: {
     blurb:

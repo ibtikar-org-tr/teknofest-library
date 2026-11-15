@@ -14,9 +14,21 @@ export interface ProgramVersion {
   created_at: string
 }
 
+/** @deprecated Prefer KitchenStaff — kept for transitional FE fields */
 export interface Admin {
-  id: number
-  username: string
+  id?: number
+  username?: string
+  membership_number?: string
+  email: string
+  full_name: string | null
+  evaluation_weight: number
+  is_active: boolean
+  is_superadmin: boolean
+  created_at: string
+}
+
+export interface KitchenStaff {
+  membership_number: string
   email: string
   full_name: string | null
   evaluation_weight: number
@@ -96,6 +108,7 @@ export interface Evaluation {
   id: number
   project_id: number
   admin_id: number | null
+  evaluator_membership_number: string | null
   is_ai_evaluation: boolean
   score: number
   notes: string | null

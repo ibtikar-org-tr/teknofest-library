@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { BrandLockup } from '@/components/logomark'
 import { useLocale } from '@/i18n/locale-provider'
-import { LINKS } from '@/lib/links'
+import { LINKS, buildKitchenVmsSsoUrl } from '@/lib/links'
 import { buildPageHref, isArchivePage, navigateToPage } from '@/lib/page-url'
 import { cn } from '@/lib/utils'
 
@@ -103,14 +103,22 @@ export function SiteHeader() {
           <span className="mx-1 h-6 w-px bg-border" />
           <LanguageSwitcher />
           {!isArchive ? (
-            <a
-              href={LINKS.register}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wide text-white transition-transform hover:scale-105 hover:bg-primary/90"
-            >
-              {t.nav.registerNow}
-            </a>
+            <>
+              <a
+                href={buildKitchenVmsSsoUrl()}
+                className="relative text-sm font-medium uppercase tracking-wide text-foreground/80 transition-colors hover:text-primary"
+              >
+                {t.kitchen.staffLoginCta}
+              </a>
+              <a
+                href={LINKS.register}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wide text-white transition-transform hover:scale-105 hover:bg-primary/90"
+              >
+                {t.nav.registerNow}
+              </a>
+            </>
           ) : null}
         </nav>
 
@@ -186,6 +194,15 @@ export function SiteHeader() {
                   </a>
                 </li>
                 <li className="pt-2">
+                  <a
+                    href={buildKitchenVmsSsoUrl()}
+                    onClick={() => setOpen(false)}
+                    className="block py-2 text-lg font-medium text-foreground transition-colors hover:text-primary"
+                  >
+                    {t.kitchen.staffLoginCta}
+                  </a>
+                </li>
+                <li>
                   <a
                     href={LINKS.register}
                     target="_blank"

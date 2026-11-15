@@ -5,8 +5,6 @@ import type {
   ProjectSubmission,
   ProjectSubmissionCreate,
   Evaluation,
-  LoginCredentials,
-  RegisterCredentials,
   AuthToken,
   TopTeam,
   Admin,
@@ -32,11 +30,13 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Handle auth errors
+// Handle auth errors (skip SSO exchange — it uses its own error UI)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const url = String(error.config?.url ?? '')
+    const isExchange = url.includes('/auth/vms/exchange')
+    if (error.response?.status === 401 && !isExchange) {
       localStorage.removeItem('admin_token')
       window.location.href = '/admin/login'
     }
@@ -47,19 +47,8 @@ api.interceptors.response.use(
 // ==================== Auth ====================
 
 export const authService = {
-  login: async (credentials: LoginCredentials): Promise<AuthToken> => {
-    const formData = new URLSearchParams()
-    formData.append('username', credentials.username)
-    formData.append('password', credentials.password)
-
-    const response = await api.post('/admin/login', formData, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    })
-    return response.data
-  },
-
-  register: async (credentials: RegisterCredentials): Promise<Admin> => {
-    const response = await api.post('/admin/register', credentials)
+  exchangeVmsCode: async (code: string): Promise<AuthToken & { admin?: Admin }> => {
+    const response = await api.post('/auth/vms/exchange', { code })
     return response.data
   },
 
@@ -257,8 +246,13 @@ export const adminService = {
     return response.data
   },
 
-  updateWeight: async (adminId: number, weight: number): Promise<{ message: string }> => {
-    const response = await api.put(`/admin/admins/${adminId}/weight?weight=${weight}`)
+  updateWeight: async (
+    membershipNumber: string,
+    weight: number,
+  ): Promise<Admin> => {
+    const response = await api.put(`/admin/admins/${encodeURIComponent(membershipNumber)}/weight`, {
+      evaluation_weight: weight,
+    })
     return response.data
   },
 

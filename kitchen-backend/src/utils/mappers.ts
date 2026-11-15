@@ -1,8 +1,8 @@
 import { asBool } from './sql'
 import type {
-  Admin,
   Evaluation,
   Individual,
+  KitchenStaff,
   ProgramVersion,
   ProjectSubmission,
   Team,
@@ -17,15 +17,26 @@ export const mapProgramVersion = (row: Record<string, unknown>): ProgramVersion 
   created_at: String(row.created_at),
 })
 
-export const mapAdmin = (row: Record<string, unknown>): Admin => ({
-  id: Number(row.id),
-  username: String(row.username),
+export const mapKitchenStaff = (row: Record<string, unknown>): KitchenStaff => ({
+  membership_number: String(row.membership_number),
   email: String(row.email),
   full_name: (row.full_name as string) ?? null,
   evaluation_weight: Number(row.evaluation_weight),
   is_active: asBool(row.is_active),
   is_superadmin: asBool(row.is_superadmin),
   created_at: String(row.created_at),
+})
+
+/** FE-compatible admin shape derived from kitchen_staff */
+export const staffToAdminView = (staff: KitchenStaff) => ({
+  membership_number: staff.membership_number,
+  username: staff.membership_number,
+  email: staff.email,
+  full_name: staff.full_name ?? '',
+  evaluation_weight: staff.evaluation_weight,
+  is_active: staff.is_active,
+  is_superadmin: staff.is_superadmin,
+  created_at: staff.created_at,
 })
 
 export const mapTeamMember = (row: Record<string, unknown>): TeamMember => ({
@@ -107,6 +118,8 @@ export const mapEvaluation = (row: Record<string, unknown>): Evaluation => {
     id: Number(row.id),
     project_id: Number(row.project_id),
     admin_id: row.admin_id == null ? null : Number(row.admin_id),
+    evaluator_membership_number:
+      row.evaluator_membership_number == null ? null : String(row.evaluator_membership_number),
     is_ai_evaluation: asBool(row.is_ai_evaluation),
     score: Number(row.score),
     notes: (row.notes as string) ?? null,

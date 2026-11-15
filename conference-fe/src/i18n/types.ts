@@ -166,6 +166,7 @@ export type Dictionary = {
     mentorsTitle: string
     mentorsBody: string
     registerCta: string
+    staffLoginCta: string
   }
   footer: {
     blurb: string

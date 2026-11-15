@@ -1,1 +1,5 @@
 kitchen-backend/uploads/
+
+# Local-only seed / env for offline VMS + Kitchen SSO testing
+kitchen-backend/scripts/seed-staff.sql
+conference-fe/.env.local
