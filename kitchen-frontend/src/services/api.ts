@@ -100,6 +100,21 @@ export const kitchensService = {
     }
   },
 
+  getMyVmsProfile: async (
+    eventId: string,
+  ): Promise<{
+    membership_number: string
+    email: string
+    full_name: string
+    phone: string
+    gender: 'male' | 'female'
+    technical_skills: string
+    interests: string
+  }> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/my-vms-profile`)
+    return response.data
+  },
+
   createTeam: async (eventId: string, team: Omit<Team, 'id'>): Promise<Team> => {
     const response = await api.post(`/kitchens/${encodeURIComponent(eventId)}/teams`, team)
     return response.data

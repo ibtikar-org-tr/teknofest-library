@@ -85,6 +85,28 @@ kitchensRouter.get('/', memberAuthMiddleware, async (c) => {
 
 kitchensRouter.get('/:eventId/fields', ...withEventAccess, (c) => c.json(PROJECT_FIELDS))
 
+/** Snapshot of the caller's VMS identity + skills/interests (read-only; edit on VMS /profile). */
+kitchensRouter.get('/:eventId/my-vms-profile', ...withEventAccess, async (c) => {
+  const member = c.get('member')
+  if (!member?.membership_number) {
+    return c.json({ message: 'Authenticated VMS member required' }, 401)
+  }
+
+  const profile = await fetchVmsMemberProfile(
+    c.env,
+    member.membership_number,
+    c.req.header('Authorization'),
+  )
+  if (!profile) {
+    return c.json(
+      { message: 'Could not load your VMS profile — re-login and try again' },
+      502,
+    )
+  }
+
+  return c.json(profile)
+})
+
 kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const body = await c.req.json()
@@ -154,6 +176,9 @@ kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
     full_name: profile.full_name,
     phone: profile.phone,
     gender: profile.gender,
+    // Skills/interests always from VMS — Kitchen never writes members DB.
+    technical_skills: profile.technical_skills || null,
+    interests: profile.interests || null,
   })
   return c.json(individual, 201)
 })

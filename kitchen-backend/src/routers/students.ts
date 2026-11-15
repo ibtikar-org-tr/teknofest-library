@@ -70,6 +70,8 @@ studentsRouter.post('/individual', memberAuthMiddleware, async (c) => {
     full_name: profile.full_name,
     phone: profile.phone,
     gender: profile.gender,
+    technical_skills: profile.technical_skills || null,
+    interests: profile.interests || null,
   })
   return c.json(individual, 201)
 })

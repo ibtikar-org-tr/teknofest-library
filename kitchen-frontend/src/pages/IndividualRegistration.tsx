@@ -1,15 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { User, Lightbulb, Users, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Lightbulb, Users, Check, ChevronRight, ExternalLink } from 'lucide-react'
 import { PROJECT_FIELDS, type Individual, type RegistrationType } from '../types'
-import { individualsService } from '../services/api'
+import { individualsService, kitchensService } from '../services/api'
 import { getSession } from '../lib/auth-session'
+import { getVmsProfileUrl } from '../lib/vms-sso'
 
 interface IndividualFormData {
-  technical_skills: string
-  interests: string
   experience_level: string
   preferred_field: string
   project_idea?: string
@@ -22,12 +21,20 @@ const experienceLevels = [
   { value: 'expert', label: 'خبير' },
 ]
 
+type VmsSkillsSnapshot = {
+  technical_skills: string
+  interests: string
+  full_name: string
+}
+
 export default function IndividualRegistration() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [vmsProfile, setVmsProfile] = useState<VmsSkillsSnapshot | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
 
   const {
     register,
@@ -35,6 +42,34 @@ export default function IndividualRegistration() {
     trigger,
     formState: { errors },
   } = useForm<IndividualFormData>()
+
+  useEffect(() => {
+    if (!eventId) return
+    let cancelled = false
+    ;(async () => {
+      setProfileLoading(true)
+      try {
+        const profile = await kitchensService.getMyVmsProfile(eventId)
+        if (!cancelled) {
+          setVmsProfile({
+            technical_skills: profile.technical_skills,
+            interests: profile.interests,
+            full_name: profile.full_name,
+          })
+        }
+      } catch {
+        if (!cancelled) {
+          setVmsProfile(null)
+          toast.error('تعذر تحميل ملفك من VMS')
+        }
+      } finally {
+        if (!cancelled) setProfileLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [eventId])
 
   const onSubmit = async (data: IndividualFormData) => {
     if (!eventId) {
@@ -54,16 +89,15 @@ export default function IndividualRegistration() {
         ? 'individual_with_idea'
         : 'individual_no_idea'
 
-      // Identity fields (name, phone, gender, email, membership) come from VMS on the backend.
+      // Identity + skills/interests come from VMS on the backend.
       const individualData = {
         event_id: eventId,
         registration_type: registrationType,
         preferred_field: data.preferred_field as Individual['preferred_field'],
-        technical_skills: data.technical_skills,
-        interests: data.interests,
         experience_level: data.experience_level,
         project_idea: hasIdea ? data.project_idea : undefined,
-        // Placeholders overwritten by kitchen-backend from VMS profile:
+        technical_skills: vmsProfile?.technical_skills || '',
+        interests: vmsProfile?.interests || '',
         membership_number: session.user.membershipNumber,
         email: session.user.email,
         full_name: session.user.membershipNumber,
@@ -83,6 +117,9 @@ export default function IndividualRegistration() {
     }
   }
 
+  const skillsText = vmsProfile?.technical_skills?.trim() || ''
+  const interestsText = vmsProfile?.interests?.trim() || ''
+
   return (
     <div className="min-h-screen py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -92,7 +129,7 @@ export default function IndividualRegistration() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">تسجيل فردي</h1>
           <p className="text-gray-400">
-            بياناتك الشخصية من VMS — هنا فقط مهاراتك واهتماماتك
+            بياناتك ومهاراتك من VMS — عدّلها من ملفك الشخصي هناك
           </p>
         </div>
 
@@ -168,9 +205,48 @@ export default function IndividualRegistration() {
 
           {step === 2 && (
             <div className="card fade-in">
-              <h2 className="text-2xl font-bold text-white mb-6">المهارات والاهتمامات</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">تفاصيل التسجيل</h2>
 
               <div className="space-y-6">
+                <div className="rounded-xl border border-teknofest-light-blue/30 bg-teknofest-medium-blue/40 p-4 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-white font-medium">المهارات والاهتمامات (من VMS)</p>
+                      <p className="text-gray-400 text-sm">
+                        للقراءة فقط — عدّلها من ملفك الشخصي في VMS
+                      </p>
+                    </div>
+                    <a
+                      href={getVmsProfileUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm text-teknofest-orange hover:underline"
+                    >
+                      تعديل في VMS
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+
+                  {profileLoading ? (
+                    <p className="text-gray-400 text-sm">جاري التحميل...</p>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-gray-400 text-sm mb-1">المهارات التقنية</p>
+                        <p className="text-gray-200 whitespace-pre-wrap">
+                          {skillsText || 'لا توجد مهارات مسجّلة في ملفك على VMS'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm mb-1">الاهتمامات</p>
+                        <p className="text-gray-200 whitespace-pre-wrap">
+                          {interestsText || 'لا توجد اهتمامات مسجّلة في ملفك على VMS'}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-white font-medium mb-2">مستوى الخبرة في مجالك *</label>
                   <select
@@ -207,36 +283,6 @@ export default function IndividualRegistration() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-white font-medium mb-2">المهارات التقنية *</label>
-                  <textarea
-                    {...register('technical_skills', {
-                      required: 'يرجى ذكر مهاراتك التقنية',
-                      minLength: { value: 10, message: 'يرجى كتابة المزيد عن مهاراتك' },
-                    })}
-                    className="input-field min-h-[100px]"
-                    placeholder="مثال: Python, JavaScript, تعلم الآلة, تطوير تطبيقات الجوال..."
-                  />
-                  {errors.technical_skills && (
-                    <p className="text-red-400 text-sm mt-1">{errors.technical_skills.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-white font-medium mb-2">الاهتمامات *</label>
-                  <textarea
-                    {...register('interests', {
-                      required: 'يرجى ذكر اهتماماتك',
-                      minLength: { value: 10, message: 'يرجى كتابة المزيد عن اهتماماتك' },
-                    })}
-                    className="input-field min-h-[100px]"
-                    placeholder="مثال: الذكاء الاصطناعي، الروبوتات، الطاقة المتجددة..."
-                  />
-                  {errors.interests && (
-                    <p className="text-red-400 text-sm mt-1">{errors.interests.message}</p>
-                  )}
-                </div>
-
                 {hasIdea && (
                   <div>
                     <label className="block text-white font-medium mb-2">فكرة المشروع *</label>
@@ -268,13 +314,11 @@ export default function IndividualRegistration() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || profileLoading}
                   onClick={async (e) => {
                     const fields: Array<keyof IndividualFormData> = [
                       'experience_level',
                       'preferred_field',
-                      'technical_skills',
-                      'interests',
                     ]
                     if (hasIdea) fields.push('project_idea')
                     const ok = await trigger(fields)

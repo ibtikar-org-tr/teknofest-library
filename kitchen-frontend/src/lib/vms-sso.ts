@@ -4,6 +4,15 @@ export function getVmsLoginUrl(): string {
   return (import.meta.env.VITE_VMS_LOGIN_URL as string | undefined)?.trim() || DEFAULT_VMS_LOGIN
 }
 
+/** VMS member profile page — edit skills/interests there, not in Kitchen. */
+export function getVmsProfileUrl(): string {
+  const login = new URL(getVmsLoginUrl())
+  login.pathname = '/profile'
+  login.search = ''
+  login.hash = ''
+  return login.toString()
+}
+
 export function getKitchenAuthCallbackUrl(nextPath?: string): string {
   if (typeof window === 'undefined') {
     return '/auth/callback'

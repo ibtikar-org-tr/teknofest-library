@@ -6,6 +6,10 @@ export type VmsMemberProfile = {
   full_name: string
   phone: string
   gender: 'male' | 'female'
+  /** Comma-separated skill names from VMS user_skills */
+  technical_skills: string
+  /** Comma-separated interest names from VMS user_skills */
+  interests: string
 }
 
 type VmsProfileJson = {
@@ -16,6 +20,8 @@ type VmsProfileJson = {
     enName?: string | null
     phoneNumber?: string | null
     sex?: string | null
+    skills?: string | null
+    interests?: string | null
   }
 }
 
@@ -61,6 +67,8 @@ export async function fetchVmsMemberProfile(
       full_name: fullName,
       phone: phone || 'n/a',
       gender: sex,
+      technical_skills: profile.skills?.trim() || '',
+      interests: profile.interests?.trim() || '',
     }
   } catch (error) {
     console.error('VMS profile request failed', error)
