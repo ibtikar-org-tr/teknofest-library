@@ -10,43 +10,29 @@ import { createTeam, getTeam, listTeams } from '../repositories/teams'
 
 const studentsRouter = new Hono<AppBindings>()
 
-const PROJECT_FIELDS = [
-  'مسابقة التنقل الذكي',
-  'مسابقة ابتكار التكنولوجيا الحيوية',
-  'مسابقة تقنيات البيئة والطاقة',
-  'مسابقة تقنيات التعليم',
-  'مسابقة تقنيات المعيشة الخالية من العوائق',
-  'مسابقة أفكار التكنولوجيا المالية',
-  'مسابقة التكنولوجيا لصالح البشرية',
-  'مسابقة تطبيقات التكنولوجيا في علم النفس',
-  'مسابقة الذكاء الاصطناعي في الصحة',
-  'مسابقة التقنيات الصناعية',
-  'مسابقة التكنولوجيا الزراعية',
-  'مسابقة هاكاثون السفر',
-  'مسابقة تقنيات السياحة',
-  'مسابقة معالجة اللغة التركية',
-  'مسابقة الذكاء الاصطناعي في النقل',
-  'مسابقة تطبيقات نماذج اللغة الضخمة',
-  'مسابقة تقنيات أنظمة الدفاع الجويّة',
-]
+/**
+ * Legacy global routes — prefer /api/kitchens/:eventId/*.
+ * Kept for transitional admin tooling; create requires event_id.
+ */
 
-// Member form flows
 studentsRouter.post('/team', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
+  if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
   const team = await createTeam(c.env, body)
   return c.json(team, 201)
 })
 
 studentsRouter.post('/individual', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
+  if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
   const individual = await createIndividual(c.env, body)
   return c.json(individual, 201)
 })
 
-studentsRouter.get('/fields', memberAuthMiddleware, (c) => c.json(PROJECT_FIELDS))
-
 studentsRouter.get('/teams-with-space', memberAuthMiddleware, async (c) => {
-  const teams = await listTeams(c.env)
+  const eventId = c.req.query('event_id')
+  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+  const teams = await listTeams(c.env, eventId)
   const withSpace = []
   for (const team of teams) {
     if (!team.is_active) continue
@@ -58,6 +44,7 @@ studentsRouter.get('/teams-with-space', memberAuthMiddleware, async (c) => {
       team_name: team.team_name,
       gender: team.gender,
       field: team.field,
+      event_id: team.event_id,
       member_count: memberCount,
       available_slots: 6 - memberCount,
       members: (full?.members ?? []).map((m) => ({
@@ -79,10 +66,10 @@ studentsRouter.get('/verify-membership-number/:membership_number', memberAuthMid
   })
 })
 
-// Admin listings
 studentsRouter.get('/teams', staffAuthMiddleware, async (c) => {
-  const teams = await listTeams(c.env)
-  return c.json(teams)
+  const eventId = c.req.query('event_id')
+  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+  return c.json(await listTeams(c.env, eventId))
 })
 
 studentsRouter.get('/team/:team_id', staffAuthMiddleware, async (c) => {
@@ -93,11 +80,11 @@ studentsRouter.get('/team/:team_id', staffAuthMiddleware, async (c) => {
 })
 
 studentsRouter.get('/individuals', staffAuthMiddleware, async (c) => {
+  const eventId = c.req.query('event_id')
+  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
   const unassignedOnly = c.req.query('unassigned_only') === 'true'
-  const individuals = unassignedOnly
-    ? (await listIndividuals(c.env)).filter((i) => !i.is_assigned)
-    : await listIndividuals(c.env)
-  return c.json(individuals)
+  const individuals = await listIndividuals(c.env, eventId)
+  return c.json(unassignedOnly ? individuals.filter((i) => !i.is_assigned) : individuals)
 })
 
 studentsRouter.get('/individual/:individual_id', staffAuthMiddleware, async (c) => {
@@ -108,8 +95,10 @@ studentsRouter.get('/individual/:individual_id', staffAuthMiddleware, async (c) 
 })
 
 studentsRouter.get('/stats', staffAuthMiddleware, async (c) => {
-  const teams = await listTeams(c.env)
-  const individuals = await listIndividuals(c.env)
+  const eventId = c.req.query('event_id')
+  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+  const teams = await listTeams(c.env, eventId)
+  const individuals = await listIndividuals(c.env, eventId)
   return c.json({
     teams_count: teams.length,
     individuals_count: individuals.length,

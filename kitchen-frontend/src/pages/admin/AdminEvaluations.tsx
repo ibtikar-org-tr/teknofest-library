@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   Star,
@@ -22,6 +23,7 @@ interface EvaluationForm {
 }
 
 export default function AdminEvaluations() {
+  const { eventId = '' } = useParams()
   const [projects, setProjects] = useState<ProjectSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -36,9 +38,10 @@ export default function AdminEvaluations() {
   const [confirmAdminProject, setConfirmAdminProject] = useState<ProjectSubmission | null>(null)
 
   useEffect(() => {
+    if (!eventId) return
     const fetchProjects = async () => {
       try {
-        const data = await projectsService.getAll()
+        const data = await projectsService.getAll(eventId)
         setProjects(data)
       } catch {
         toast.error('حدث خطأ في تحميل المشاريع')
@@ -47,8 +50,8 @@ export default function AdminEvaluations() {
       }
     }
 
-    fetchProjects()
-  }, [])
+    void fetchProjects()
+  }, [eventId])
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -101,8 +104,7 @@ export default function AdminEvaluations() {
       })
       toast.success(isUpdating ? 'تم تحديث التقييم بنجاح' : 'تم حفظ التقييم بنجاح')
 
-      // Refresh projects
-      const data = await projectsService.getAll()
+      const data = await projectsService.getAll(eventId)
       setProjects(data)
 
       setSelectedProject(null)
@@ -121,8 +123,7 @@ export default function AdminEvaluations() {
       await evaluationsService.requestAIEvaluation(projectId)
       toast.success('تم طلب تقييم الذكاء الاصطناعي')
 
-      // Refresh projects
-      const data = await projectsService.getAll()
+      const data = await projectsService.getAll(eventId)
       setProjects(data)
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'حدث خطأ في طلب التقييم')

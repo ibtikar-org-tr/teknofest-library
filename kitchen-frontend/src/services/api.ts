@@ -9,6 +9,7 @@ import type {
   TopTeam,
   Admin,
   TeamWithSpace,
+  KitchenEvent,
 } from '../types'
 import { clearSession, getAccessToken } from '../lib/auth-session'
 
@@ -76,16 +77,83 @@ export const authService = {
   },
 }
 
-// ==================== Teams ====================
+// ==================== Event kitchens ====================
 
-export const teamsService = {
-  create: async (team: Omit<Team, 'id'>): Promise<Team> => {
-    const response = await api.post('/students/team', team)
+export const kitchensService = {
+  list: async (): Promise<KitchenEvent[]> => {
+    const response = await api.get('/kitchens')
     return response.data
   },
 
-  getAll: async (): Promise<Team[]> => {
-    const response = await api.get('/students/teams')
+  get: async (eventId: string): Promise<KitchenEvent> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}`)
+    return response.data
+  },
+
+  createTeam: async (eventId: string, team: Omit<Team, 'id'>): Promise<Team> => {
+    const response = await api.post(`/kitchens/${encodeURIComponent(eventId)}/teams`, team)
+    return response.data
+  },
+
+  createIndividual: async (
+    eventId: string,
+    individual: Omit<Individual, 'id'>,
+  ): Promise<Individual> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/individuals`,
+      individual,
+    )
+    return response.data
+  },
+
+  submitProject: async (
+    eventId: string,
+    project: ProjectSubmissionCreate,
+  ): Promise<ProjectSubmission> => {
+    const response = await api.post(`/kitchens/${encodeURIComponent(eventId)}/projects`, project)
+    return response.data
+  },
+
+  getTeamsWithSpace: async (eventId: string): Promise<TeamWithSpace[]> => {
+    const response = await api.get(
+      `/kitchens/${encodeURIComponent(eventId)}/teams-with-space`,
+    )
+    return response.data
+  },
+
+  getTeams: async (eventId: string): Promise<Team[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/teams`)
+    return response.data
+  },
+
+  getIndividuals: async (eventId: string, unassignedOnly = false): Promise<Individual[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/individuals`, {
+      params: unassignedOnly ? { unassigned_only: true } : undefined,
+    })
+    return response.data
+  },
+
+  getProjects: async (eventId: string): Promise<ProjectSubmission[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/projects`)
+    return response.data
+  },
+
+  getStats: async (eventId: string) => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/stats`)
+    return response.data
+  },
+}
+
+// ==================== Teams ====================
+
+export const teamsService = {
+  create: async (team: Omit<Team, 'id'> & { event_id: string }): Promise<Team> => {
+    const response = await api.post(`/kitchens/${encodeURIComponent(team.event_id)}/teams`, team)
+    return response.data
+  },
+
+  getAll: async (eventId: string): Promise<Team[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/teams`)
     return response.data
   },
 
@@ -111,13 +179,16 @@ export const teamsService = {
 // ==================== Individuals ====================
 
 export const individualsService = {
-  create: async (individual: Omit<Individual, 'id'>): Promise<Individual> => {
-    const response = await api.post('/students/individual', individual)
+  create: async (individual: Omit<Individual, 'id'> & { event_id: string }): Promise<Individual> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(individual.event_id)}/individuals`,
+      individual,
+    )
     return response.data
   },
 
-  getAll: async (): Promise<Individual[]> => {
-    const response = await api.get('/students/individuals')
+  getAll: async (eventId: string): Promise<Individual[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/individuals`)
     return response.data
   },
 
@@ -126,8 +197,10 @@ export const individualsService = {
     return response.data
   },
 
-  getUnassigned: async (): Promise<Individual[]> => {
-    const response = await api.get('/students/individuals?unassigned_only=true')
+  getUnassigned: async (eventId: string): Promise<Individual[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/individuals`, {
+      params: { unassigned_only: true },
+    })
     return response.data
   },
 
@@ -145,8 +218,10 @@ export const individualsService = {
     return response.data
   },
 
-  getTeamsWithSpace: async (): Promise<TeamWithSpace[]> => {
-    const response = await api.get('/students/teams-with-space')
+  getTeamsWithSpace: async (eventId: string): Promise<TeamWithSpace[]> => {
+    const response = await api.get(
+      `/kitchens/${encodeURIComponent(eventId)}/teams-with-space`,
+    )
     return response.data
   },
 
@@ -159,8 +234,11 @@ export const individualsService = {
 // ==================== Projects ====================
 
 export const projectsService = {
-  submit: async (project: ProjectSubmissionCreate): Promise<ProjectSubmission> => {
-    const response = await api.post('/projects/submit', project)
+  submit: async (project: ProjectSubmissionCreate & { event_id: string }): Promise<ProjectSubmission> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(project.event_id)}/projects`,
+      project,
+    )
     return response.data
   },
 
@@ -171,8 +249,8 @@ export const projectsService = {
     return response.data
   },
 
-  getAll: async (): Promise<ProjectSubmission[]> => {
-    const response = await api.get('/projects')
+  getAll: async (eventId: string): Promise<ProjectSubmission[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/projects`)
     return response.data
   },
 
@@ -276,6 +354,21 @@ export const adminService = {
 
   checkSuperAdmin: async (): Promise<{ is_super_admin: boolean }> => {
     const response = await api.get('/admin/is-super-admin')
+    return response.data
+  },
+
+  listVmsEvents: async (): Promise<KitchenEvent[]> => {
+    const response = await api.get('/admin/vms-events')
+    return response.data
+  },
+
+  enableKitchen: async (eventId: string): Promise<KitchenEvent> => {
+    const response = await api.post('/admin/kitchens', { event_id: eventId })
+    return response.data
+  },
+
+  disableKitchen: async (eventId: string) => {
+    const response = await api.delete(`/admin/kitchens/${encodeURIComponent(eventId)}`)
     return response.data
   },
 }

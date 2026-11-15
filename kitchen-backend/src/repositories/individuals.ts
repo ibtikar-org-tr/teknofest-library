@@ -2,16 +2,25 @@ import type { Environment } from '../types/env'
 import type { Individual } from '../types/models'
 import { mapIndividual } from '../utils/mappers'
 
-export const listIndividuals = async (env: Environment): Promise<Individual[]> => {
-  const { results } = await env.D1_DB
-    .prepare('SELECT * FROM individuals ORDER BY id DESC')
-    .all()
+export const listIndividuals = async (
+  env: Environment,
+  eventId?: string,
+): Promise<Individual[]> => {
+  if (eventId) {
+    const { results } = await env.D1_DB.prepare(
+      'SELECT * FROM individuals WHERE event_id = ? ORDER BY id DESC',
+    )
+      .bind(eventId)
+      .all()
+    return (results ?? []).map((row) => mapIndividual(row as Record<string, unknown>))
+  }
+  const { results } = await env.D1_DB.prepare('SELECT * FROM individuals ORDER BY id DESC').all()
   return (results ?? []).map((row) => mapIndividual(row as Record<string, unknown>))
 }
 
 export const getIndividual = async (
   env: Environment,
-  id: number
+  id: number,
 ): Promise<Individual | null> => {
   const row = await env.D1_DB.prepare('SELECT * FROM individuals WHERE id = ?').bind(id).first()
   return row ? mapIndividual(row as Record<string, unknown>) : null
@@ -20,6 +29,7 @@ export const getIndividual = async (
 export const createIndividual = async (
   env: Environment,
   payload: {
+    event_id: string
     registration_type: string
     full_name: string
     membership_number?: string | null
@@ -32,17 +42,18 @@ export const createIndividual = async (
     preferred_field: string
     project_idea?: string | null
     program_version_id?: number | null
-  }
+  },
 ): Promise<Individual> => {
   const row = await env.D1_DB.prepare(
     `INSERT INTO individuals (
-      registration_type, full_name, membership_number, email, phone, gender,
+      event_id, registration_type, full_name, membership_number, email, phone, gender,
       technical_skills, interests, experience_level, preferred_field,
       project_idea, program_version_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    RETURNING *`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    RETURNING *`,
   )
     .bind(
+      payload.event_id,
       payload.registration_type,
       payload.full_name,
       payload.membership_number ?? null,
@@ -54,16 +65,27 @@ export const createIndividual = async (
       payload.experience_level ?? null,
       payload.preferred_field,
       payload.project_idea ?? null,
-      payload.program_version_id ?? null
+      payload.program_version_id ?? null,
     )
     .first()
 
   return mapIndividual(row as Record<string, unknown>)
 }
 
-export const listUnassignedIndividuals = async (env: Environment): Promise<Individual[]> => {
-  const { results } = await env.D1_DB
-    .prepare('SELECT * FROM individuals WHERE is_assigned = 0 ORDER BY id DESC')
-    .all()
+export const listUnassignedIndividuals = async (
+  env: Environment,
+  eventId?: string,
+): Promise<Individual[]> => {
+  if (eventId) {
+    const { results } = await env.D1_DB.prepare(
+      'SELECT * FROM individuals WHERE event_id = ? AND is_assigned = 0 ORDER BY id DESC',
+    )
+      .bind(eventId)
+      .all()
+    return (results ?? []).map((row) => mapIndividual(row as Record<string, unknown>))
+  }
+  const { results } = await env.D1_DB.prepare(
+    'SELECT * FROM individuals WHERE is_assigned = 0 ORDER BY id DESC',
+  ).all()
   return (results ?? []).map((row) => mapIndividual(row as Record<string, unknown>))
 }

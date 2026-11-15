@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -11,18 +11,11 @@ import {
   X,
   ChevronLeft,
   Shield,
+  Calendar,
 } from 'lucide-react'
 import Logo from './Logo'
 import { adminService } from '../services/api'
 import { clearSession } from '../lib/auth-session'
-
-const sidebarLinks = [
-  { to: '/admin', label: 'لوحة التحكم', icon: LayoutDashboard },
-  { to: '/admin/teams', label: 'الفرق', icon: Users },
-  { to: '/admin/individuals', label: 'الأفراد', icon: User },
-  { to: '/admin/projects', label: 'المشاريع', icon: FileText },
-  { to: '/admin/evaluations', label: 'التقييمات', icon: Star },
-]
 
 const superAdminLink = { to: '/admin/management', label: 'إدارة الإداريين', icon: Shield }
 
@@ -34,6 +27,7 @@ interface SidebarContentProps {
   sidebarOpen: boolean
   isSuperAdmin: boolean
   pathname: string
+  eventId?: string
   onLogout: () => void
 }
 
@@ -41,13 +35,31 @@ function SidebarContent({
   sidebarOpen,
   isSuperAdmin,
   pathname,
+  eventId,
   onLogout,
 }: SidebarContentProps) {
+  const sidebarLinks = useMemo(() => {
+    const links = [
+      { to: '/admin/kitchens', label: 'المطابخ / الفعاليات', icon: Calendar },
+    ]
+    if (eventId) {
+      const base = `/admin/events/${eventId}`
+      links.push(
+        { to: base, label: 'لوحة التحكم', icon: LayoutDashboard },
+        { to: `${base}/teams`, label: 'الفرق', icon: Users },
+        { to: `${base}/individuals`, label: 'الأفراد', icon: User },
+        { to: `${base}/projects`, label: 'المشاريع', icon: FileText },
+        { to: `${base}/evaluations`, label: 'التقييمات', icon: Star },
+      )
+    }
+    return links
+  }, [eventId])
+
   return (
     <>
       {/* Logo */}
       <div className="p-6 border-b border-teknofest-light-blue/20">
-        <Link to="/admin" className="flex items-center gap-3">
+        <Link to="/admin/kitchens" className="flex items-center gap-3">
           <Logo size="sm" />
           {sidebarOpen && (
             <div>
@@ -80,7 +92,6 @@ function SidebarContent({
               </li>
             )
           })}
-          {/* Super Admin Link */}
           {isSuperAdmin && (
             <li>
               <Link
@@ -126,6 +137,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const eventId = location.pathname.match(/\/admin\/events\/([^/]+)/)?.[1]
 
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -144,9 +156,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     navigate('/login')
   }
 
+  const pageTitle =
+    location.pathname === '/admin/kitchens'
+      ? 'المطابخ / الفعاليات'
+      : location.pathname === superAdminLink.to
+        ? superAdminLink.label
+        : location.pathname.includes('/teams')
+          ? 'الفرق'
+          : location.pathname.includes('/individuals')
+            ? 'الأفراد'
+            : location.pathname.includes('/projects')
+              ? 'المشاريع'
+              : location.pathname.includes('/evaluations')
+                ? 'التقييمات'
+                : eventId
+                  ? 'لوحة التحكم'
+                  : 'لوحة الإدارة'
+
   return (
     <div className="min-h-screen bg-teknofest-dark-blue flex">
-      {/* Desktop Sidebar */}
       <aside
         className={`hidden lg:flex flex-col bg-teknofest-blue border-l border-teknofest-light-blue/20 transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-20'
@@ -156,11 +184,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           sidebarOpen={sidebarOpen}
           isSuperAdmin={isSuperAdmin}
           pathname={location.pathname}
+          eventId={eventId}
           onLogout={handleLogout}
         />
       </aside>
 
-      {/* Mobile Sidebar */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div
@@ -169,18 +197,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           />
           <aside className="absolute right-0 top-0 h-full w-64 bg-teknofest-blue flex flex-col">
             <SidebarContent
-              sidebarOpen={sidebarOpen}
+              sidebarOpen={true}
               isSuperAdmin={isSuperAdmin}
               pathname={location.pathname}
+              eventId={eventId}
               onLogout={handleLogout}
             />
           </aside>
         </div>
       )}
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
         <header className="bg-teknofest-blue/50 backdrop-blur-md border-b border-teknofest-light-blue/20 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -196,18 +223,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <h2 className="text-xl font-bold text-white">
-                {sidebarLinks.find((l) => l.to === location.pathname)?.label ||
-                 (location.pathname === superAdminLink.to ? superAdminLink.label : 'لوحة التحكم')}
-              </h2>
+              <h2 className="text-xl font-bold text-white">{pageTitle}</h2>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-6 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
     </div>
   )

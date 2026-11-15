@@ -18,6 +18,12 @@
       "database_name": "teknofest-kitchen",
       "database_id": "00000000-0000-0000-0000-000000000001",
       "migrations_dir": "migrations"
+    },
+    {
+      "binding": "VMS_DB",
+      "database_name": "vms-database",
+      "database_id": "bbd89415-677e-4991-bb11-ea1be7e2d095",
+      "remote": true
     }
   ]
 }

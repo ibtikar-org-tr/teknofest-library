@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
@@ -24,6 +24,7 @@ interface ProjectFormData {
 }
 
 export default function ProjectSubmission() {
+  const { eventId = '' } = useParams()
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [attachments, setAttachments] = useState<{
@@ -53,19 +54,24 @@ export default function ProjectSubmission() {
       return
     }
 
+    if (!eventId) {
+      toast.error('معرف الفعالية مفقود')
+      return
+    }
+
     setIsSubmitting(true)
     try {
-      // Submit project
       const project = await projectsService.submit({
+        event_id: eventId,
         member_email: data.member_email,
         title: data.title,
         problem_statement: data.problem_statement,
         technical_description: data.technical_description,
         scientific_reference: data.scientific_reference,
         field: data.field,
+        program_version_id: 1,
       })
 
-      // Upload attachments if any
       if (attachments.image || attachments.diagram || attachments.design) {
         const formData = new FormData()
         if (attachments.image) formData.append('image', attachments.image)
@@ -76,9 +82,9 @@ export default function ProjectSubmission() {
       }
 
       toast.success('تم تقديم المشروع بنجاح!')
-      navigate('/')
+      navigate(`/events/${eventId}`)
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'حدث خطأ أثناء تقديم المشروع')
+      toast.error(error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء تقديم المشروع')
     } finally {
       setIsSubmitting(false)
     }

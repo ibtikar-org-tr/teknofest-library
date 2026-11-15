@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   Users,
@@ -13,6 +14,7 @@ import { teamsService, emailService } from '../../services/api'
 import type { Team } from '../../types'
 
 export default function AdminTeams() {
+  const { eventId = '' } = useParams()
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -21,9 +23,10 @@ export default function AdminTeams() {
   const [sendingEmail, setSendingEmail] = useState<number | null>(null)
 
   useEffect(() => {
+    if (!eventId) return
     const fetchTeams = async () => {
       try {
-        const data = await teamsService.getAll()
+        const data = await teamsService.getAll(eventId)
         setTeams(data)
       } catch {
         toast.error('حدث خطأ في تحميل الفرق')
@@ -32,8 +35,8 @@ export default function AdminTeams() {
       }
     }
 
-    fetchTeams()
-  }, [])
+    void fetchTeams()
+  }, [eventId])
 
   const filteredTeams = teams.filter(
     (team) =>
@@ -49,7 +52,7 @@ export default function AdminTeams() {
 
     setSendingEmail(team.id!)
     try {
-      const emails = team.members.map((m) => m.email)
+      const emails = (team.members ?? []).map((m) => m.email)
       await emailService.send(
         emails,
         `رابط مجموعة التلغرام - فريق ${team.team_name}`,
@@ -133,7 +136,7 @@ export default function AdminTeams() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-gray-400 text-sm">
-                    {team.members.length} أعضاء
+                    {team.members?.length ?? 0} أعضاء
                   </span>
                   {team.telegram_group_link && (
                     <MessageCircle className="w-5 h-5 text-green-400" />
@@ -181,7 +184,7 @@ export default function AdminTeams() {
                   <div>
                     <h4 className="text-white font-medium mb-3">أعضاء الفريق</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {team.members.map((member, idx) => (
+                      {(team.members ?? []).map((member, idx) => (
                         <div
                           key={idx}
                           className={`p-3 rounded-xl border ${

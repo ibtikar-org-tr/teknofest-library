@@ -37,8 +37,34 @@ export interface KitchenStaff {
   created_at: string
 }
 
+export interface EventKitchen {
+  event_id: string
+  enabled: boolean
+  created_by: string
+  created_at: string
+  updated_at: string | null
+}
+
+export interface VmsEventSummary {
+  id: string
+  name: string
+  description: string | null
+  start_time: string | null
+  end_time: string | null
+  status: string
+  image_url: string | null
+  project_id: string | null
+}
+
+export interface KitchenEventView extends VmsEventSummary {
+  kitchen_enabled: boolean
+  kitchen?: EventKitchen | null
+  can_access?: boolean
+}
+
 export interface Team {
   id: number
+  event_id: string | null
   team_name: string
   registration_type: RegistrationType
   field: string
@@ -65,6 +91,7 @@ export interface TeamMember {
 
 export interface Individual {
   id: number
+  event_id: string | null
   registration_type: RegistrationType
   full_name: string
   membership_number: string | null
@@ -85,6 +112,7 @@ export interface Individual {
 
 export interface ProjectSubmission {
   id: number
+  event_id: string | null
   team_id: number
   program_version_id: number
   submission_version: number

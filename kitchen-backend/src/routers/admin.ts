@@ -1,6 +1,12 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
 import { requireSuperAdmin, staffAuthMiddleware } from '../middleware/staff-auth'
+import {
+  disableEventKitchen,
+  enableEventKitchen,
+  getEventKitchen,
+  listEventKitchens,
+} from '../repositories/event-kitchens'
 import { listUnassignedIndividuals } from '../repositories/individuals'
 import {
   createProgramVersion,
@@ -9,6 +15,7 @@ import {
   updateStaffWeight,
   upsertStaff,
 } from '../repositories/staff'
+import { getVmsEvent, listVmsEvents } from '../repositories/vms-events'
 import { staffToAdminView } from '../utils/mappers'
 
 const adminRouter = new Hono<AppBindings>()
@@ -25,18 +32,85 @@ adminRouter.get('/is-super-admin', async (c) => {
   return c.json({ is_super_admin: Boolean(c.get('staff')?.is_superadmin) })
 })
 
+/** All VMS events with kitchen enablement status (direct VMS_DB read). */
+adminRouter.get('/vms-events', async (c) => {
+  const [events, kitchens] = await Promise.all([
+    listVmsEvents(c.env),
+    listEventKitchens(c.env),
+  ])
+  const kitchenByEvent = new Map(kitchens.map((k) => [k.event_id, k]))
+  return c.json(
+    events.map((event) => {
+      const kitchen = kitchenByEvent.get(event.id) ?? null
+      return {
+        ...event,
+        kitchen_enabled: Boolean(kitchen?.enabled),
+        kitchen,
+      }
+    }),
+  )
+})
+
+adminRouter.post('/kitchens', async (c) => {
+  const body = await c.req.json<{ event_id?: string }>()
+  const eventId = body.event_id?.trim()
+  if (!eventId) return c.json({ message: 'event_id is required' }, 400)
+
+  const event = await getVmsEvent(c.env, eventId)
+  if (!event) return c.json({ message: 'VMS event not found' }, 404)
+
+  const staff = c.get('staff')!
+  const kitchen = await enableEventKitchen(c.env, eventId, staff.membership_number)
+  return c.json({ ...event, kitchen_enabled: true, kitchen }, 201)
+})
+
+adminRouter.delete('/kitchens/:eventId', async (c) => {
+  const eventId = c.req.param('eventId')
+  const existing = await getEventKitchen(c.env, eventId)
+  if (!existing) return c.json({ message: 'Kitchen not found' }, 404)
+  const kitchen = await disableEventKitchen(c.env, eventId)
+  return c.json({ event_id: eventId, kitchen_enabled: false, kitchen })
+})
+
 adminRouter.get('/stats', async (c) => {
-  const [teams, individuals, projects, staff] = await Promise.all([
+  const eventId = c.req.query('event_id')
+  if (eventId) {
+    const [teams, individuals, projects] = await Promise.all([
+      c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM teams WHERE event_id = ?')
+        .bind(eventId)
+        .first<{ count: number }>(),
+      c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM individuals WHERE event_id = ?')
+        .bind(eventId)
+        .first<{ count: number }>(),
+      c.env.D1_DB.prepare(
+        'SELECT COUNT(*) as count FROM project_submissions WHERE event_id = ?',
+      )
+        .bind(eventId)
+        .first<{ count: number }>(),
+    ])
+    return c.json({
+      event_id: eventId,
+      teams: Number(teams?.count ?? 0),
+      individuals: Number(individuals?.count ?? 0),
+      projects: Number(projects?.count ?? 0),
+    })
+  }
+
+  const [teams, individuals, projects, staff, kitchens] = await Promise.all([
     c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM teams').first<{ count: number }>(),
     c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM individuals').first<{ count: number }>(),
     c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM project_submissions').first<{ count: number }>(),
     c.env.D1_DB.prepare('SELECT COUNT(*) as count FROM kitchen_staff').first<{ count: number }>(),
+    c.env.D1_DB.prepare(
+      'SELECT COUNT(*) as count FROM event_kitchens WHERE enabled = 1',
+    ).first<{ count: number }>(),
   ])
   return c.json({
     teams: Number(teams?.count ?? 0),
     individuals: Number(individuals?.count ?? 0),
     projects: Number(projects?.count ?? 0),
     admins: Number(staff?.count ?? 0),
+    kitchens: Number(kitchens?.count ?? 0),
   })
 })
 

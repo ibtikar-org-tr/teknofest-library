@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Users, User, FileText, Star, TrendingUp, Loader2 } from 'lucide-react'
-import { teamsService, individualsService, projectsService } from '../../services/api'
+import { kitchensService } from '../../services/api'
 
 interface Stats {
   totalTeams: number
@@ -11,6 +11,8 @@ interface Stats {
 }
 
 export default function AdminDashboard() {
+  const { eventId = '' } = useParams()
+  const base = `/admin/events/${eventId}`
   const [stats, setStats] = useState<Stats>({
     totalTeams: 0,
     totalIndividuals: 0,
@@ -20,20 +22,16 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!eventId) return
     const fetchStats = async () => {
       try {
-        const [teams, individuals, projects, unassigned] = await Promise.all([
-          teamsService.getAll(),
-          individualsService.getAll(),
-          projectsService.getAll(),
-          individualsService.getUnassigned(),
-        ])
-
+        const data = await kitchensService.getStats(eventId)
         setStats({
-          totalTeams: teams.length,
-          totalIndividuals: individuals.length,
-          totalProjects: projects.length,
-          unassignedIndividuals: unassigned.length,
+          totalTeams: Number(data.teams_count ?? 0),
+          totalIndividuals: Number(data.individuals_count ?? 0),
+          totalProjects: Number(data.projects_count ?? 0),
+          unassignedIndividuals:
+            Number(data.individuals_count ?? 0) - Number(data.assigned_individuals ?? 0),
         })
       } catch (error) {
         console.error('Error fetching stats:', error)
@@ -42,8 +40,8 @@ export default function AdminDashboard() {
       }
     }
 
-    fetchStats()
-  }, [])
+    void fetchStats()
+  }, [eventId])
 
   const statCards = [
     {
@@ -51,28 +49,28 @@ export default function AdminDashboard() {
       value: stats.totalTeams,
       icon: Users,
       color: 'from-blue-500 to-cyan-400',
-      link: '/admin/teams',
+      link: `${base}/teams`,
     },
     {
       title: 'إجمالي الأفراد',
       value: stats.totalIndividuals,
       icon: User,
       color: 'from-purple-500 to-pink-400',
-      link: '/admin/individuals',
+      link: `${base}/individuals`,
     },
     {
       title: 'المشاريع المقدمة',
       value: stats.totalProjects,
       icon: FileText,
       color: 'from-orange-500 to-red-400',
-      link: '/admin/projects',
+      link: `${base}/projects`,
     },
     {
       title: 'أفراد بدون فريق',
       value: stats.unassignedIndividuals,
       icon: TrendingUp,
       color: 'from-green-500 to-teal-400',
-      link: '/admin/individuals',
+      link: `${base}/individuals`,
     },
   ]
 
@@ -86,15 +84,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Message */}
       <div className="card bg-gradient-to-br from-teknofest-orange/20 to-teknofest-red/10 border-teknofest-orange/30">
-        <h1 className="text-2xl font-bold text-white mb-2">مرحباً بك في لوحة الإدارة</h1>
-        <p className="text-gray-300">
-          يمكنك من هنا إدارة الفرق والأفراد والمشاريع وتقييمها
-        </p>
+        <h1 className="text-2xl font-bold text-white mb-2">لوحة إدارة مطبخ الفعالية</h1>
+        <p className="text-gray-300 font-mono text-sm">{eventId}</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, index) => {
           const Icon = card.icon
@@ -120,34 +114,23 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Teams */}
         <div className="card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-teknofest-orange" />
-              آخر الفرق المسجلة
+              الفرق
             </h2>
             <Link
-              to="/admin/teams"
+              to={`${base}/teams`}
               className="text-teknofest-cyan text-sm hover:text-white transition-colors"
             >
               عرض الكل
             </Link>
           </div>
-          <div className="space-y-3">
-            {stats.totalTeams === 0 ? (
-              <p className="text-gray-400 text-center py-4">لا توجد فرق مسجلة بعد</p>
-            ) : (
-              <p className="text-gray-400 text-center py-4">
-                {stats.totalTeams} فريق مسجل
-              </p>
-            )}
-          </div>
+          <p className="text-gray-400 text-center py-4">{stats.totalTeams} فريق مسجل</p>
         </div>
 
-        {/* Quick Tasks */}
         <div className="card">
           <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
             <Star className="w-5 h-5 text-teknofest-orange" />
@@ -155,7 +138,7 @@ export default function AdminDashboard() {
           </h2>
           <div className="space-y-3">
             <Link
-              to="/admin/individuals"
+              to={`${base}/individuals`}
               className="flex items-center gap-3 p-4 bg-teknofest-dark-blue/50 rounded-xl hover:bg-teknofest-medium-blue/50 transition-colors"
             >
               <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
@@ -169,7 +152,7 @@ export default function AdminDashboard() {
               </div>
             </Link>
             <Link
-              to="/admin/projects"
+              to={`${base}/projects`}
               className="flex items-center gap-3 p-4 bg-teknofest-dark-blue/50 rounded-xl hover:bg-teknofest-medium-blue/50 transition-colors"
             >
               <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
@@ -177,17 +160,15 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-white font-medium">مراجعة المشاريع</p>
-                <p className="text-gray-400 text-sm">
-                  {stats.totalProjects} مشروع للمراجعة
-                </p>
+                <p className="text-gray-400 text-sm">{stats.totalProjects} مشروع للمراجعة</p>
               </div>
             </Link>
             <Link
-              to="/admin/evaluations"
+              to={`${base}/evaluations`}
               className="flex items-center gap-3 p-4 bg-teknofest-dark-blue/50 rounded-xl hover:bg-teknofest-medium-blue/50 transition-colors"
             >
               <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-green-400" />
+                <Star className="w-5 h-5 text-green-300" />
               </div>
               <div>
                 <p className="text-white font-medium">تقييم المشاريع</p>

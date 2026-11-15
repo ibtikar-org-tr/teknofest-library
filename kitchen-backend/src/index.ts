@@ -7,6 +7,7 @@ import adminRouter from './routers/admin'
 import evaluationRouter from './routers/evaluation'
 import emailRouter from './routers/email'
 import authRouter from './routers/auth'
+import kitchensRouter from './routers/kitchens'
 import { staffAuthMiddleware } from './middleware/staff-auth'
 
 const app = new Hono<AppBindings>()
@@ -24,10 +25,11 @@ app.use(
 app.get('/', (c) =>
   c.json({
     message: 'مرحباً بك في منصة مسابقات تكنوفيست! 🏆',
-    version: '2.1.0',
+    version: '2.2.0',
     runtime: 'Cloudflare Workers + Hono + D1',
     endpoints: {
       auth: '/api/auth',
+      kitchens: '/api/kitchens',
       students: '/api/students',
       projects: '/api/projects',
       admin: '/api/admin',
@@ -42,6 +44,7 @@ app.get('/health', (c) =>
 )
 
 app.route('/api/auth', authRouter)
+app.route('/api/kitchens', kitchensRouter)
 app.route('/api/students', studentsRouter)
 app.route('/api/projects', projectsRouter)
 app.route('/api/admin', adminRouter)

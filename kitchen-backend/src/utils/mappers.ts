@@ -52,6 +52,7 @@ export const mapTeamMember = (row: Record<string, unknown>): TeamMember => ({
 
 export const mapTeam = (row: Record<string, unknown>): Team => ({
   id: Number(row.id),
+  event_id: row.event_id == null ? null : String(row.event_id),
   team_name: String(row.team_name),
   registration_type: row.registration_type as Team['registration_type'],
   field: String(row.field),
@@ -66,6 +67,7 @@ export const mapTeam = (row: Record<string, unknown>): Team => ({
 
 export const mapIndividual = (row: Record<string, unknown>): Individual => ({
   id: Number(row.id),
+  event_id: row.event_id == null ? null : String(row.event_id),
   registration_type: row.registration_type as Individual['registration_type'],
   full_name: String(row.full_name),
   membership_number: (row.membership_number as string) ?? null,
@@ -86,6 +88,7 @@ export const mapIndividual = (row: Record<string, unknown>): Individual => ({
 
 export const mapProject = (row: Record<string, unknown>): ProjectSubmission => ({
   id: Number(row.id),
+  event_id: row.event_id == null ? null : String(row.event_id),
   team_id: Number(row.team_id),
   program_version_id: Number(row.program_version_id),
   submission_version: Number(row.submission_version),

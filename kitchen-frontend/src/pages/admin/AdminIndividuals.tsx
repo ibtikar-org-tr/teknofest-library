@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   User,
@@ -27,6 +28,7 @@ const GENDER_LABELS = {
   female: 'أنثى',
 }
 export default function AdminIndividuals() {
+  const { eventId = '' } = useParams()
   const [individuals, setIndividuals] = useState<Individual[]>([])
   const [teamsWithSpace, setTeamsWithSpace] = useState<TeamWithSpace[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,11 +46,12 @@ export default function AdminIndividuals() {
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all')
 
   useEffect(() => {
+    if (!eventId) return
     const fetchData = async () => {
       try {
         const [individualsData, teamsData] = await Promise.all([
-          individualsService.getAll(),
-          individualsService.getTeamsWithSpace(),
+          individualsService.getAll(eventId),
+          individualsService.getTeamsWithSpace(eventId),
         ])
         setIndividuals(individualsData)
         setTeamsWithSpace(teamsData)
@@ -59,8 +62,8 @@ export default function AdminIndividuals() {
       }
     }
 
-    fetchData()
-  }, [])
+    void fetchData()
+  }, [eventId])
   
   useEffect(() => {
     setSelectedIndividuals([])
@@ -144,15 +147,13 @@ export default function AdminIndividuals() {
         )
         toast.success('تم إنشاء الفريق وفرز الأفراد بنجاح')
 
-        // Refresh data
         const [individualsData, teamsData] = await Promise.all([
-          individualsService.getAll(),
-          individualsService.getTeamsWithSpace(),
+          individualsService.getAll(eventId),
+          individualsService.getTeamsWithSpace(eventId),
         ])
         setIndividuals(individualsData)
         setTeamsWithSpace(teamsData)
 
-        // Reset state
         setSelectedIndividuals([])
         setShowAssignModal(false)
         setNewTeamName('')
@@ -185,15 +186,13 @@ export default function AdminIndividuals() {
         await individualsService.addToExistingTeam(selectedExistingTeam, selectedIndividuals)
         toast.success('تم إضافة الأفراد إلى الفريق بنجاح')
 
-        // Refresh data
         const [individualsData, teamsData] = await Promise.all([
-          individualsService.getAll(),
-          individualsService.getTeamsWithSpace(),
+          individualsService.getAll(eventId),
+          individualsService.getTeamsWithSpace(eventId),
         ])
         setIndividuals(individualsData)
         setTeamsWithSpace(teamsData)
 
-        // Reset state
         setSelectedIndividuals([])
         setShowAssignModal(false)
         setSelectedExistingTeam(null)
@@ -216,8 +215,8 @@ export default function AdminIndividuals() {
 
       // Refresh data
       const [individualsData, teamsData] = await Promise.all([
-        individualsService.getAll(),
-        individualsService.getTeamsWithSpace(),
+        individualsService.getAll(eventId),
+        individualsService.getTeamsWithSpace(eventId),
       ])
       setIndividuals(individualsData)
       setTeamsWithSpace(teamsData)

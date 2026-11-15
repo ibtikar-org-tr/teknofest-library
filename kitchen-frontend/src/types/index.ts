@@ -59,9 +59,30 @@ export interface TeamMember {
   membership_number?: string
 }
 
+export interface KitchenEvent {
+  id: string
+  name: string
+  description: string | null
+  start_time: string | null
+  end_time: string | null
+  status: string
+  image_url: string | null
+  project_id: string | null
+  kitchen_enabled: boolean
+  can_access?: boolean
+  kitchen?: {
+    event_id: string
+    enabled: boolean
+    created_by: string
+    created_at: string
+    updated_at: string | null
+  } | null
+}
+
 // Team
 export interface Team {
   id?: number
+  event_id?: string | null
   team_name: string
   registration_type: RegistrationType
   field: ProjectField
@@ -76,6 +97,7 @@ export interface Team {
 // Individual
 export interface Individual {
   id?: number
+  event_id?: string | null
   registration_type: RegistrationType
   membership_number: string
   full_name: string
@@ -94,12 +116,15 @@ export interface Individual {
 
 // Project Submission Create (using email to find team)
 export interface ProjectSubmissionCreate {
+  event_id?: string
+  team_id?: number
   member_email: string
   title: string
   problem_statement: string
   technical_description: string
   scientific_reference: string
   field: ProjectField
+  program_version_id?: number
 }
 
 // Project Submission Response

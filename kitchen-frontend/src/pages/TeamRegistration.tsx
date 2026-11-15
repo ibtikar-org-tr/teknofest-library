@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
@@ -31,6 +31,7 @@ const GENDER_LABELS: Record<Gender, string> = {
 }
 
 export default function TeamRegistration() {
+  const { eventId = '' } = useParams()
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
@@ -103,7 +104,13 @@ export default function TeamRegistration() {
         is_leader: index === leaderIndex,
       }))
 
+      if (!eventId) {
+        toast.error('معرف الفعالية مفقود')
+        return
+      }
+
       const teamData = {
+        event_id: eventId,
         team_name: data.team_name,
         registration_type: hasIdea ? 'team_with_idea' : 'team_no_idea',
         field: data.field,
@@ -114,9 +121,9 @@ export default function TeamRegistration() {
 
       await teamsService.create(teamData as any)
       toast.success('تم تسجيل الفريق بنجاح!')
-      navigate('/')
+      navigate(`/events/${eventId}`)
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'حدث خطأ أثناء التسجيل')
+      toast.error(error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء التسجيل')
     } finally {
       setIsSubmitting(false)
     }

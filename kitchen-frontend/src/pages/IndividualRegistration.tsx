@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { User, Lightbulb, Users, Check, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -32,6 +32,7 @@ const experienceLevels = [
 ]
 
 export default function IndividualRegistration() {
+  const { eventId = '' } = useParams()
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
@@ -151,14 +152,20 @@ export default function IndividualRegistration() {
       return
     }
 
+    if (!eventId) {
+      toast.error('معرف الفعالية مفقود')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const registrationType: RegistrationType = hasIdea
         ? 'individual_with_idea'
         : 'individual_no_idea'
 
-      const individualData: Omit<Individual, 'id'> = {
+      const individualData: Omit<Individual, 'id'> & { event_id: string } = {
         ...data,
+        event_id: eventId,
         registration_type: registrationType,
         preferred_field: data.preferred_field as any,
         gender: data.gender,
@@ -167,9 +174,9 @@ export default function IndividualRegistration() {
 
       await individualsService.create(individualData)
       toast.success('تم التسجيل بنجاح! سيتم التواصل معك قريباً')
-      navigate('/')
+      navigate(`/events/${eventId}`)
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'حدث خطأ أثناء التسجيل')
+      toast.error(error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء التسجيل')
     } finally {
       setIsSubmitting(false)
     }

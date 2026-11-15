@@ -1,5 +1,7 @@
 export interface Environment {
   D1_DB: D1Database
+  /** Shared Cloudflare D1: VMS events + registrations (read-only from Kitchen) */
+  VMS_DB: D1Database
   APP_NAME: string
   /** Shared with VMS — used to verify VMS access JWTs */
   JWT_SECRET?: string

@@ -13,17 +13,25 @@ const projectsRouter = new Hono<AppBindings>()
 
 projectsRouter.post('/submit', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
+  if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
+  const team = await getTeam(c.env, Number(body.team_id))
+  if (!team || team.event_id !== body.event_id) {
+    return c.json({ message: 'Team not found in this event kitchen' }, 404)
+  }
   const project = await createProject(c.env, body)
   return c.json(project, 201)
 })
 
 projectsRouter.get('/', staffAuthMiddleware, async (c) => {
-  const projects = await listProjects(c.env)
-  return c.json(projects)
+  const eventId = c.req.query('event_id')
+  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+  return c.json(await listProjects(c.env, eventId))
 })
 
 projectsRouter.get('/stats/summary', staffAuthMiddleware, async (c) => {
-  const projects = await listProjects(c.env)
+  const eventId = c.req.query('event_id')
+  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+  const projects = await listProjects(c.env, eventId)
   return c.json({
     total: projects.length,
     complete: projects.filter((p) => p.is_complete).length,

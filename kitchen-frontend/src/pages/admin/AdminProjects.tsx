@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   FileText,
@@ -20,6 +21,7 @@ import { projectsService, evaluationsService } from '../../services/api'
 import type { ProjectSubmission } from '../../types'
 
 export default function AdminProjects() {
+  const { eventId = '' } = useParams()
   const [projects, setProjects] = useState<ProjectSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -28,9 +30,10 @@ export default function AdminProjects() {
   const [togglingFeature, setTogglingFeature] = useState<number | null>(null)
 
   useEffect(() => {
+    if (!eventId) return
     const fetchProjects = async () => {
       try {
-        const data = await projectsService.getAll()
+        const data = await projectsService.getAll(eventId)
         setProjects(data)
       } catch {
         toast.error('حدث خطأ في تحميل المشاريع')
@@ -39,8 +42,8 @@ export default function AdminProjects() {
       }
     }
 
-    fetchProjects()
-  }, [])
+    void fetchProjects()
+  }, [eventId])
 
   const handleToggleFeatured = async (projectId: number) => {
     setTogglingFeature(projectId)

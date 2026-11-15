@@ -3,7 +3,18 @@ import type { Team, TeamMember } from '../types/models'
 import { mapTeam, mapTeamMember } from '../utils/mappers'
 import { boolToInt } from '../utils/sql'
 
-export const listTeams = async (env: Environment): Promise<Team[]> => {
+export const listTeams = async (
+  env: Environment,
+  eventId?: string,
+): Promise<Team[]> => {
+  if (eventId) {
+    const { results } = await env.D1_DB.prepare(
+      'SELECT * FROM teams WHERE event_id = ? ORDER BY id DESC',
+    )
+      .bind(eventId)
+      .all()
+    return (results ?? []).map((row) => mapTeam(row as Record<string, unknown>))
+  }
   const { results } = await env.D1_DB.prepare('SELECT * FROM teams ORDER BY id DESC').all()
   return (results ?? []).map((row) => mapTeam(row as Record<string, unknown>))
 }
@@ -24,6 +35,7 @@ export const getTeam = async (env: Environment, id: number): Promise<Team | null
 export const createTeam = async (
   env: Environment,
   payload: {
+    event_id: string
     team_name: string
     registration_type: string
     field: string
@@ -38,23 +50,24 @@ export const createTeam = async (
       is_leader?: boolean
       membership_number?: string | null
     }>
-  }
+  },
 ): Promise<Team> => {
   const result = await env.D1_DB.prepare(
     `INSERT INTO teams (
-      team_name, registration_type, field, gender, initial_idea,
+      event_id, team_name, registration_type, field, gender, initial_idea,
       program_version_id, telegram_group_link
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    RETURNING *`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    RETURNING *`,
   )
     .bind(
+      payload.event_id,
       payload.team_name,
       payload.registration_type,
       payload.field,
       payload.gender,
       payload.initial_idea ?? null,
       payload.program_version_id ?? null,
-      payload.telegram_group_link ?? null
+      payload.telegram_group_link ?? null,
     )
     .first()
 
@@ -67,7 +80,7 @@ export const createTeam = async (
         `INSERT INTO team_members (
           team_id, full_name, email, phone, is_leader, membership_number
         ) VALUES (?, ?, ?, ?, ?, ?)
-        RETURNING *`
+        RETURNING *`,
       )
         .bind(
           team.id,
@@ -75,7 +88,7 @@ export const createTeam = async (
           member.email,
           member.phone,
           boolToInt(member.is_leader ?? false),
-          member.membership_number ?? null
+          member.membership_number ?? null,
         )
         .first()
       members.push(mapTeamMember(created as Record<string, unknown>))

@@ -1,24 +1,27 @@
 import { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Menu, X, Home, Users, User, FileText, Trophy, LogIn, LogOut, Shield } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession, isLoggedIn, isStaffSession, getSession } from '../lib/auth-session'
-
-const navLinks = [
-  { to: '/', label: 'الرئيسية', icon: Home },
-  { to: '/register/team', label: 'تسجيل فريق', icon: Users },
-  { to: '/register/individual', label: 'تسجيل فردي', icon: User },
-  { to: '/project/submit', label: 'تقديم مشروع', icon: FileText },
-  { to: '/top-teams', label: 'أفضل الفرق', icon: Trophy },
-]
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const { eventId } = useParams()
   const loggedIn = isLoggedIn()
   const staff = isStaffSession()
   const session = getSession()
+
+  const navLinks = eventId
+    ? [
+        { to: `/events/${eventId}`, label: 'المطبخ', icon: Home },
+        { to: `/events/${eventId}/register/team`, label: 'تسجيل فريق', icon: Users },
+        { to: `/events/${eventId}/register/individual`, label: 'تسجيل فردي', icon: User },
+        { to: `/events/${eventId}/project/submit`, label: 'تقديم مشروع', icon: FileText },
+        { to: `/events/${eventId}/top-teams`, label: 'أفضل الفرق', icon: Trophy },
+      ]
+    : [{ to: '/', label: 'الرئيسية', icon: Home }]
 
   const logout = () => {
     clearSession()
@@ -61,7 +64,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-3">
             {staff ? (
               <Link
-                to="/admin"
+                to="/admin/kitchens"
                 className="flex items-center gap-2 px-4 py-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg hover:bg-teknofest-cyan hover:text-teknofest-dark-blue transition-all duration-300"
               >
                 <Shield className="w-4 h-4" />
@@ -82,80 +85,42 @@ export default function Navbar() {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-2 px-4 py-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg hover:bg-teknofest-cyan hover:text-teknofest-dark-blue transition-all duration-300"
+                className="flex items-center gap-2 px-4 py-2 bg-teknofest-orange text-white rounded-lg hover:opacity-90 transition-all"
               >
                 <LogIn className="w-4 h-4" />
-                <span>تسجيل الدخول</span>
+                <span>دخول</span>
               </Link>
             )}
           </div>
 
           <button
+            type="button"
+            className="lg:hidden p-2 text-gray-300"
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
-
-        {isOpen && (
-          <div className="lg:hidden py-4 border-t border-teknofest-light-blue/20">
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) => {
-                const Icon = link.icon
-                const isActive = location.pathname === link.to
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-teknofest-orange text-white'
-                        : 'text-gray-300 hover:bg-teknofest-medium-blue'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{link.label}</span>
-                  </Link>
-                )
-              })}
-              {staff ? (
-                <Link
-                  to="/admin"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 mt-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg"
-                >
-                  <Shield className="w-5 h-5" />
-                  <span>لوحة الإدارة</span>
-                </Link>
-              ) : null}
-              {loggedIn ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOpen(false)
-                    logout()
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 text-gray-300"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>خروج</span>
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 mt-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg"
-                >
-                  <LogIn className="w-5 h-5" />
-                  <span>تسجيل الدخول</span>
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {isOpen ? (
+        <div className="lg:hidden border-t border-teknofest-light-blue/20 px-4 py-4 space-y-2">
+          {navLinks.map((link) => {
+            const Icon = link.icon
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+              >
+                <Icon className="w-4 h-4" />
+                {link.label}
+              </Link>
+            )
+          })}
+        </div>
+      ) : null}
     </nav>
   )
 }
