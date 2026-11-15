@@ -18,20 +18,29 @@ export interface Environment {
   SUPER_ADMIN_PASSWORD?: string
 }
 
-export type KitchenStaffVariables = {
-  staff: {
-    membership_number: string
-    email: string
-    full_name: string | null
-    evaluation_weight: number
-    is_active: boolean
-    is_superadmin: boolean
-    created_at: string
-    vms_role: string
-  }
+export type KitchenMember = {
+  membership_number: string
+  email: string
+  vms_role: string
+}
+
+export type KitchenStaffSession = {
+  membership_number: string
+  email: string
+  full_name: string | null
+  evaluation_weight: number
+  is_active: boolean
+  is_superadmin: boolean
+  created_at: string
+  vms_role: string
+}
+
+export type KitchenVariables = {
+  member: KitchenMember
+  staff?: KitchenStaffSession
 }
 
 export type AppBindings = {
   Bindings: Environment
-  Variables: KitchenStaffVariables
+  Variables: KitchenVariables
 }

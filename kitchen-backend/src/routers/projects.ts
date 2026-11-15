@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
+import { memberAuthMiddleware, staffAuthMiddleware } from '../middleware/staff-auth'
 import {
   createProject,
   getProject,
@@ -10,18 +11,18 @@ import { getTeam } from '../repositories/teams'
 
 const projectsRouter = new Hono<AppBindings>()
 
-projectsRouter.post('/submit', async (c) => {
+projectsRouter.post('/submit', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
   const project = await createProject(c.env, body)
   return c.json(project, 201)
 })
 
-projectsRouter.get('/', async (c) => {
+projectsRouter.get('/', staffAuthMiddleware, async (c) => {
   const projects = await listProjects(c.env)
   return c.json(projects)
 })
 
-projectsRouter.get('/stats/summary', async (c) => {
+projectsRouter.get('/stats/summary', staffAuthMiddleware, async (c) => {
   const projects = await listProjects(c.env)
   return c.json({
     total: projects.length,
@@ -31,13 +32,13 @@ projectsRouter.get('/stats/summary', async (c) => {
   })
 })
 
-projectsRouter.get('/team/:team_id', async (c) => {
+projectsRouter.get('/team/:team_id', staffAuthMiddleware, async (c) => {
   const teamId = Number(c.req.param('team_id'))
   const projects = await listProjectsByTeam(c.env, teamId)
   return c.json(projects)
 })
 
-projectsRouter.get('/:project_id', async (c) => {
+projectsRouter.get('/:project_id', staffAuthMiddleware, async (c) => {
   const projectId = Number(c.req.param('project_id'))
   const project = await getProject(c.env, projectId)
   if (!project) return c.json({ message: 'Project not found' }, 404)

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
+import { memberAuthMiddleware } from '../middleware/staff-auth'
 import { getStaffByMembershipNumber } from '../repositories/staff'
 import { staffToAdminView } from '../utils/mappers'
 
@@ -51,25 +52,34 @@ authRouter.post('/vms/exchange', async (c) => {
   }
 
   const staff = await getStaffByMembershipNumber(c.env, exchangePayload.membershipNumber)
-  if (!staff || !staff.is_active) {
-    return c.json(
-      {
-        message: 'Your VMS account is not authorized for kitchen admin',
-        code: 'NOT_KITCHEN_STAFF',
-      },
-      403,
-    )
-  }
+  const isStaff = Boolean(staff?.is_active)
 
   return c.json({
     access_token: exchangePayload.accessToken,
     token_type: 'bearer',
-    admin: staffToAdminView(staff),
+    is_staff: isStaff,
+    is_superadmin: Boolean(staff?.is_superadmin),
+    admin: isStaff && staff ? staffToAdminView(staff) : null,
     user: {
       membershipNumber: exchangePayload.membershipNumber,
       email: exchangePayload.email,
       role: exchangePayload.role,
     },
+  })
+})
+
+authRouter.get('/me', memberAuthMiddleware, async (c) => {
+  const member = c.get('member')
+  const staff = c.get('staff')
+  return c.json({
+    user: {
+      membershipNumber: member.membership_number,
+      email: member.email,
+      role: member.vms_role,
+    },
+    is_staff: Boolean(staff),
+    is_superadmin: Boolean(staff?.is_superadmin),
+    admin: staff ? staffToAdminView(staff) : null,
   })
 })
 

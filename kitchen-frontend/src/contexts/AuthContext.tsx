@@ -2,14 +2,15 @@ import { useState, useEffect, ReactNode } from 'react'
 import { authService } from '../services/api'
 import type { Admin } from '../types'
 import { AuthContext } from './auth-context'
+import { clearSession, getAccessToken, getSession, isStaffSession } from '../lib/auth-session'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('admin_token')
-    if (token) {
+    const token = getAccessToken()
+    if (token && isStaffSession()) {
       fetchAdmin()
     } else {
       setIsLoading(false)
@@ -21,19 +22,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await authService.getCurrentAdmin()
       setAdmin(data)
     } catch {
-      localStorage.removeItem('admin_token')
+      clearSession()
     } finally {
       setIsLoading(false)
     }
   }
 
-  const login = (token: string) => {
-    localStorage.setItem('admin_token', token)
-    fetchAdmin()
+  const login = (_token: string) => {
+    // Session is established via VMS SSO callback (setSession).
+    if (isStaffSession()) {
+      fetchAdmin()
+    }
   }
 
   const logout = () => {
-    localStorage.removeItem('admin_token')
+    clearSession()
     setAdmin(null)
   }
 
@@ -41,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         admin,
-        isAuthenticated: !!admin,
+        isAuthenticated: Boolean(getAccessToken() || getSession()),
         isLoading,
         login,
         logout,

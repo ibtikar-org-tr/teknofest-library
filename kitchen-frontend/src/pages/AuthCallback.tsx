@@ -4,9 +4,15 @@ import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authService } from '../services/api'
 import { startVmsSsoLogin } from '../lib/vms-sso'
+import { setSession } from '../lib/auth-session'
 
 /** Prevents React Strict Mode double-mount from consuming the one-time code twice. */
 const inFlightCodes = new Set<string>()
+
+function safeNext(raw: string | null): string {
+  if (!raw?.startsWith('/') || raw.startsWith('//')) return '/'
+  return raw
+}
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams()
@@ -15,6 +21,8 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const code = searchParams.get('code')?.trim()
+    const next = safeNext(searchParams.get('next'))
+
     if (!code) {
       setError('رمز الدخول غير موجود. أعد المحاولة من صفحة تسجيل الدخول.')
       return
@@ -30,20 +38,34 @@ export default function AuthCallback() {
     ;(async () => {
       try {
         const response = await authService.exchangeVmsCode(code)
-        localStorage.setItem('admin_token', response.access_token)
+        if (!response.user) {
+          throw new Error('missing user')
+        }
+
+        setSession(response.access_token, {
+          user: response.user,
+          is_staff: Boolean(response.is_staff),
+          is_superadmin: Boolean(response.is_superadmin),
+        })
+
         toast.success('تم تسجيل الدخول بنجاح')
-        navigate('/admin', { replace: true })
+
+        let destination = next
+        if (destination.startsWith('/admin') && !response.is_staff) {
+          destination = '/'
+        } else if (destination === '/' && response.is_staff && next === '/') {
+          // keep home for members; staff landing on bare callback without next stays home
+          destination = '/'
+        }
+
+        navigate(destination, { replace: true })
       } catch (err: unknown) {
         inFlightCodes.delete(code)
         if (cancelled) return
         const axiosError = err as {
-          response?: { data?: { message?: string; code?: string }; status?: number }
+          response?: { data?: { message?: string }; status?: number }
         }
-        const message =
-          axiosError.response?.data?.message ||
-          (axiosError.response?.data?.code === 'NOT_KITCHEN_STAFF'
-            ? 'حسابك غير مصرح له بدخول لوحة المطبخ'
-            : 'فشل إكمال تسجيل الدخول')
+        const message = axiosError.response?.data?.message || 'فشل إكمال تسجيل الدخول'
         setError(message)
         toast.error(message)
       }
@@ -65,7 +87,7 @@ export default function AuthCallback() {
               <button type="button" className="btn-primary" onClick={() => startVmsSsoLogin()}>
                 إعادة المحاولة عبر منصة الأعضاء
               </button>
-              <Link to="/admin/login" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/login" className="text-sm text-gray-400 hover:text-white">
                 العودة لصفحة الدخول
               </Link>
             </div>

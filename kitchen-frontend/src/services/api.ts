@@ -10,6 +10,7 @@ import type {
   Admin,
   TeamWithSpace,
 } from '../types'
+import { clearSession, getAccessToken } from '../lib/auth-session'
 
 const API_BASE_URL = import.meta.env.VITE_API_TARGET || 'http://localhost:9680'
 
@@ -23,7 +24,7 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('admin_token')
+  const token = getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -37,18 +38,35 @@ api.interceptors.response.use(
     const url = String(error.config?.url ?? '')
     const isExchange = url.includes('/auth/vms/exchange')
     if (error.response?.status === 401 && !isExchange) {
-      localStorage.removeItem('admin_token')
-      window.location.href = '/admin/login'
+      clearSession()
+      const next = encodeURIComponent(window.location.pathname + window.location.search)
+      window.location.href = `/login?next=${next}`
     }
     return Promise.reject(error)
   }
 )
 
+export type VmsExchangeResponse = AuthToken & {
+  is_staff: boolean
+  is_superadmin: boolean
+  admin?: Admin | null
+  user: {
+    membershipNumber: string
+    email: string
+    role: string
+  }
+}
+
 // ==================== Auth ====================
 
 export const authService = {
-  exchangeVmsCode: async (code: string): Promise<AuthToken & { admin?: Admin }> => {
+  exchangeVmsCode: async (code: string): Promise<VmsExchangeResponse> => {
     const response = await api.post('/auth/vms/exchange', { code })
+    return response.data
+  },
+
+  getMe: async () => {
+    const response = await api.get('/auth/me')
     return response.data
   },
 

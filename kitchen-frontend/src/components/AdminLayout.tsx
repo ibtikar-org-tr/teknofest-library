@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import Logo from './Logo'
 import { adminService } from '../services/api'
+import { clearSession } from '../lib/auth-session'
 
 const sidebarLinks = [
   { to: '/admin', label: 'لوحة التحكم', icon: LayoutDashboard },
@@ -139,8 +140,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [])
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token')
-    navigate('/admin/login')
+    clearSession()
+    navigate('/login')
   }
 
   return (

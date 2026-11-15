@@ -16,11 +16,13 @@ const adminRouter = new Hono<AppBindings>()
 adminRouter.use('*', staffAuthMiddleware)
 
 adminRouter.get('/me', async (c) => {
-  return c.json(staffToAdminView(c.get('staff')))
+  const staff = c.get('staff')
+  if (!staff) return c.json({ message: 'Unauthorized' }, 401)
+  return c.json(staffToAdminView(staff))
 })
 
 adminRouter.get('/is-super-admin', async (c) => {
-  return c.json({ is_super_admin: Boolean(c.get('staff').is_superadmin) })
+  return c.json({ is_super_admin: Boolean(c.get('staff')?.is_superadmin) })
 })
 
 adminRouter.get('/stats', async (c) => {

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Home, Users, User, FileText, Trophy, LogIn } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Menu, X, Home, Users, User, FileText, Trophy, LogIn, LogOut, Shield } from 'lucide-react'
 import Logo from './Logo'
+import { clearSession, isLoggedIn, isStaffSession, getSession } from '../lib/auth-session'
 
 const navLinks = [
   { to: '/', label: 'الرئيسية', icon: Home },
@@ -14,12 +15,20 @@ const navLinks = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const loggedIn = isLoggedIn()
+  const staff = isStaffSession()
+  const session = getSession()
+
+  const logout = () => {
+    clearSession()
+    navigate('/')
+  }
 
   return (
     <nav className="bg-teknofest-dark-blue/90 backdrop-blur-md border-b border-teknofest-light-blue/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <Logo size="md" className="transform group-hover:scale-110 transition-transform" />
             <div className="hidden sm:block">
@@ -28,7 +37,6 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => {
               const Icon = link.icon
@@ -50,18 +58,38 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Admin Login Button */}
-          <div className="hidden lg:flex items-center gap-4">
-            <Link
-              to="/admin/login"
-              className="flex items-center gap-2 px-4 py-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg hover:bg-teknofest-cyan hover:text-teknofest-dark-blue transition-all duration-300"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>لوحة الإدارة</span>
-            </Link>
+          <div className="hidden lg:flex items-center gap-3">
+            {staff ? (
+              <Link
+                to="/admin"
+                className="flex items-center gap-2 px-4 py-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg hover:bg-teknofest-cyan hover:text-teknofest-dark-blue transition-all duration-300"
+              >
+                <Shield className="w-4 h-4" />
+                <span>لوحة الإدارة</span>
+              </Link>
+            ) : null}
+
+            {loggedIn ? (
+              <button
+                type="button"
+                onClick={logout}
+                className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white rounded-lg hover:bg-teknofest-medium-blue transition-all"
+                title={session?.user.email}
+              >
+                <LogOut className="w-4 h-4" />
+                <span>خروج</span>
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-2 px-4 py-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg hover:bg-teknofest-cyan hover:text-teknofest-dark-blue transition-all duration-300"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>تسجيل الدخول</span>
+              </Link>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="lg:hidden p-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
@@ -70,7 +98,6 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Navigation */}
         {isOpen && (
           <div className="lg:hidden py-4 border-t border-teknofest-light-blue/20">
             <div className="flex flex-col gap-2">
@@ -93,14 +120,38 @@ export default function Navbar() {
                   </Link>
                 )
               })}
-              <Link
-                to="/admin/login"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 mt-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg"
-              >
-                <LogIn className="w-5 h-5" />
-                <span>لوحة الإدارة</span>
-              </Link>
+              {staff ? (
+                <Link
+                  to="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 mt-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg"
+                >
+                  <Shield className="w-5 h-5" />
+                  <span>لوحة الإدارة</span>
+                </Link>
+              ) : null}
+              {loggedIn ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false)
+                    logout()
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 text-gray-300"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>خروج</span>
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 mt-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span>تسجيل الدخول</span>
+                </Link>
+              )}
             </div>
           </div>
         )}

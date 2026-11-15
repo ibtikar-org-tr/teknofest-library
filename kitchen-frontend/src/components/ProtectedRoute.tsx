@@ -1,11 +1,22 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import AdminLayout from './AdminLayout'
+import { isLoggedIn, isStaffSession } from '../lib/auth-session'
 
+/** Requires kitchen staff (admin) session. */
 export default function ProtectedRoute() {
-  const token = localStorage.getItem('admin_token')
+  const location = useLocation()
 
-  if (!token) {
-    return <Navigate to="/admin/login" replace />
+  if (!isLoggedIn()) {
+    return (
+      <Navigate
+        to={`/login?next=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
+    )
+  }
+
+  if (!isStaffSession()) {
+    return <Navigate to="/" replace />
   }
 
   return (
