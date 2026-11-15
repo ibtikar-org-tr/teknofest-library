@@ -7,6 +7,7 @@ import {
   listIndividuals,
 } from '../repositories/individuals'
 import { createTeam, getTeam, listTeams } from '../repositories/teams'
+import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
 
 const studentsRouter = new Hono<AppBindings>()
 
@@ -46,11 +47,29 @@ studentsRouter.post('/individual', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
   if (!body.event_id) return c.json({ message: 'event_id is required' }, 400)
   const member = c.get('member')
-  if (!member?.email) return c.json({ message: 'Authenticated email required' }, 401)
+  if (!member?.membership_number || !member.email) {
+    return c.json({ message: 'Authenticated VMS member required' }, 401)
+  }
+
+  const profile = await fetchVmsMemberProfile(
+    c.env,
+    member.membership_number,
+    c.req.header('Authorization'),
+  )
+  if (!profile) {
+    return c.json(
+      { message: 'Could not load your VMS profile — re-login and try again' },
+      502,
+    )
+  }
+
   const individual = await createIndividual(c.env, {
     ...body,
-    email: member.email,
-    membership_number: body.membership_number || member.membership_number,
+    email: member.email || profile.email,
+    membership_number: member.membership_number,
+    full_name: profile.full_name,
+    phone: profile.phone,
+    gender: profile.gender,
   })
   return c.json(individual, 201)
 })

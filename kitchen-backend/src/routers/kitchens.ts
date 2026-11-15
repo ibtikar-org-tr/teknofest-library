@@ -6,6 +6,7 @@ import { createProject, listProjects } from '../repositories/projects'
 import { getEventKitchen, listEventKitchens } from '../repositories/event-kitchens'
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import { createTeam, getTeam, listTeams } from '../repositories/teams'
+import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
 import {
   getVmsEvent,
   getVmsEventsByIds,
@@ -129,14 +130,30 @@ kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const body = await c.req.json()
   const member = c.get('member')
-  if (!member?.email) {
-    return c.json({ message: 'Authenticated email required' }, 401)
+  if (!member?.membership_number || !member.email) {
+    return c.json({ message: 'Authenticated VMS member required' }, 401)
   }
+
+  const profile = await fetchVmsMemberProfile(
+    c.env,
+    member.membership_number,
+    c.req.header('Authorization'),
+  )
+  if (!profile) {
+    return c.json(
+      { message: 'Could not load your VMS profile — re-login and try again' },
+      502,
+    )
+  }
+
   const individual = await createIndividual(c.env, {
     ...body,
     event_id: eventId,
-    email: member.email,
-    membership_number: body.membership_number || member.membership_number,
+    email: member.email || profile.email,
+    membership_number: member.membership_number,
+    full_name: profile.full_name,
+    phone: profile.phone,
+    gender: profile.gender,
   })
   return c.json(individual, 201)
 })

@@ -1,27 +1,18 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { User, Lightbulb, Users, Check, ChevronLeft, ChevronRight } from 'lucide-react'
-import { PROJECT_FIELDS, type Individual, type RegistrationType, type Gender } from '../types'
-import { individualsService, iForgotService } from '../services/api'
+import { PROJECT_FIELDS, type Individual, type RegistrationType } from '../types'
+import { individualsService } from '../services/api'
 import { getSession } from '../lib/auth-session'
 
 interface IndividualFormData {
-  membership_number: string
-  full_name: string
-  phone: string
   technical_skills: string
   interests: string
   experience_level: string
   preferred_field: string
   project_idea?: string
-  gender: Gender
-}
-
-const GENDER_LABELS: Record<Gender, string> = {
-  male: 'ذكر',
-  female: 'أنثى',
 }
 
 const experienceLevels = [
@@ -37,125 +28,23 @@ export default function IndividualRegistration() {
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [verifyingMembership, setVerifyingMembership] = useState(false)
-  const [membershipStatus, setMembershipStatus] = useState<'valid' | 'invalid' | null>(null)
-  const [memberData, setMemberData] = useState<{ full_name: string; email: string; phone: string } | null>(null)
-  const membershipRequestId = useRef<number>(0)
 
   const {
     register,
     handleSubmit,
     trigger,
-    setValue,
     formState: { errors },
-  } = useForm<IndividualFormData>({
-    defaultValues: { gender: 'male' },
-  })
-
-  const verifyMembershipNumber = async (membershipNumber: string) => {
-    if (!membershipNumber) {
-      setMembershipStatus(null)
-
-      const wasAutofilled = !!memberData
-      setMemberData(null)
-
-      if (wasAutofilled) {
-        setValue('full_name', '')
-        setValue('phone', '')
-      }
-      return
-    }
-
-    if (membershipNumber.length !== 7) {
-      setMembershipStatus('invalid')
-
-      const wasAutofilled = !!memberData
-      setMemberData(null)
-
-      if (wasAutofilled) {
-        setValue('full_name', '')
-        setValue('phone', '')
-      }
-      return
-    }
-      
-
-    const requestId = Date.now()
-    membershipRequestId.current = requestId
-    setVerifyingMembership(true)
-
-    try {
-      const memberResponse = await iForgotService.verifyMembershipNumber(membershipNumber)
-
-      if (membershipRequestId.current !== requestId) return
-
-      if (memberResponse.success) {
-        setMembershipStatus('valid')
-
-        const data = {
-          full_name: memberResponse.member.ar_name || '',
-          email: memberResponse.member.email || '',
-          phone: memberResponse.member.phone || '',
-        }
-
-        setMemberData(data)
-
-        setValue('full_name', data.full_name)
-        setValue('phone', data.phone)
-
-        // set gender from API (male/female)
-        setValue('gender', memberResponse.member.sex)
-      } else {
-        setMembershipStatus('invalid')
-        setMemberData(null)
-        setValue('full_name', '')
-        setValue('phone', '')
-      }
-    } catch {
-      if (membershipRequestId.current !== requestId) return
-      setMembershipStatus('invalid')
-      setMemberData(null)
-      setValue('full_name', '')
-      setValue('phone', '')
-    } finally {
-      if (membershipRequestId.current === requestId) setVerifyingMembership(false)
-    }
-  }
-
-  const useDebounce = (callback: (...args: never[]) => void, delay: number) => {
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-    useEffect(() => {
-      return () => {
-        if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
-      }
-    }, [])
-
-    return (...args: any[]) => {
-      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
-      timeoutRef.current = setTimeout(() => callback(...args), delay)
-    }
-  }
-
-  const debouncedVerify = useDebounce(verifyMembershipNumber, 800)
-
+  } = useForm<IndividualFormData>()
 
   const onSubmit = async (data: IndividualFormData) => {
-    const hasMembership = !!data.membership_number?.trim()
-    if (hasMembership && membershipStatus !== 'valid') {
-      toast.error('يرجى إدخال رقم عضوية صحيح')
-      return
-    }
-
     if (!eventId) {
       toast.error('معرف الفعالية مفقود')
       return
     }
 
     const session = getSession()
-    const sessionEmail = session?.user.email?.trim()
-    if (!sessionEmail) {
-      toast.error('تعذر قراءة البريد من جلسة VMS — أعد تسجيل الدخول')
+    if (!session?.user.email || !session.user.membershipNumber) {
+      toast.error('تعذر قراءة جلسة VMS — أعد تسجيل الدخول')
       return
     }
 
@@ -165,21 +54,30 @@ export default function IndividualRegistration() {
         ? 'individual_with_idea'
         : 'individual_no_idea'
 
-      const individualData: Omit<Individual, 'id'> & { event_id: string } = {
-        ...data,
+      // Identity fields (name, phone, gender, email, membership) come from VMS on the backend.
+      const individualData = {
         event_id: eventId,
-        email: sessionEmail,
         registration_type: registrationType,
-        preferred_field: data.preferred_field as any,
-        gender: data.gender,
-        membership_number: data.membership_number || session.user.membershipNumber,
+        preferred_field: data.preferred_field as Individual['preferred_field'],
+        technical_skills: data.technical_skills,
+        interests: data.interests,
+        experience_level: data.experience_level,
+        project_idea: hasIdea ? data.project_idea : undefined,
+        // Placeholders overwritten by kitchen-backend from VMS profile:
+        membership_number: session.user.membershipNumber,
+        email: session.user.email,
+        full_name: session.user.membershipNumber,
+        phone: 'n/a',
+        gender: 'male' as const,
       }
 
       await individualsService.create(individualData)
       toast.success('تم التسجيل بنجاح! سيتم التواصل معك قريباً')
       navigate(`/events/${eventId}`)
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء التسجيل')
+      toast.error(
+        error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء التسجيل',
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -188,18 +86,18 @@ export default function IndividualRegistration() {
   return (
     <div className="min-h-screen py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
             <User className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">تسجيل فردي</h1>
-          <p className="text-gray-400">سجّل كفرد وسيتم ضمك لفريق مناسب</p>
+          <p className="text-gray-400">
+            بياناتك الشخصية من VMS — هنا فقط مهاراتك واهتماماتك
+          </p>
         </div>
 
-        {/* Progress Steps */}
         <div className="flex items-center justify-center gap-4 mb-12">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div key={s} className="flex items-center">
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
@@ -210,7 +108,7 @@ export default function IndividualRegistration() {
               >
                 {step > s ? <Check className="w-5 h-5" /> : s}
               </div>
-              {s < 3 && (
+              {s < 2 && (
                 <div
                   className={`w-16 sm:w-24 h-1 mx-2 rounded ${
                     step > s ? 'bg-purple-500' : 'bg-teknofest-medium-blue'
@@ -222,7 +120,6 @@ export default function IndividualRegistration() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          {/* Step 1: Do you have an idea? */}
           {step === 1 && (
             <div className="card fade-in">
               <h2 className="text-2xl font-bold text-white mb-6 text-center">
@@ -269,108 +166,13 @@ export default function IndividualRegistration() {
             </div>
           )}
 
-          {/* Step 2: Personal Info */}
           {step === 2 && (
             <div className="card fade-in">
-              <h2 className="text-2xl font-bold text-white mb-6">المعلومات الشخصية</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">المهارات والاهتمامات</h2>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-white font-medium mb-2">رقم العضوية *</label>
-                  <input
-                    {...register('membership_number', {
-                      validate: (v) => !v || v.length === 7 || 'رقم العضوية يجب أن يكون 7 أرقام',
-                    })}
-                    type="text"
-                    className="input-field"
-                    placeholder="رقم العضوية"
-                    onChange={(e) => {
-                      register('membership_number').onChange(e)
-                      debouncedVerify(e.target.value)
-                    }}
-                  />
-
-                  <div className="mt-2 flex items-center gap-2">
-                    {verifyingMembership && (
-                      <div className="flex items-center gap-2 text-blue-400 text-xs">
-                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                        <span>جاري التحقق...</span>
-                      </div>
-                    )}
-                    {!verifyingMembership && membershipStatus === 'valid' && (
-                      <div className="flex items-center gap-2 text-green-400 text-xs">
-                        <span>رقم العضوية صحيح</span>
-                      </div>
-                    )}
-                    {!verifyingMembership && membershipStatus === 'invalid' && !errors.membership_number && (
-                      <div className="flex items-center gap-2 text-red-400 text-xs">
-                        <span>رقم العضوية غير صحيح</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {errors.membership_number && (
-                    <p className="text-red-400 text-sm mt-1">{errors.membership_number.message}</p>
-                  )}
-                </div>
-
-                {/* Full Name */}
-                <div>
-                  <label className="block text-white font-medium mb-2">الاسم الكامل *</label>
-                  <input
-                    {...register('full_name', {
-                      required: 'الاسم مطلوب',
-                      minLength: { value: 2, message: 'الاسم قصير جداً' },
-                    })}
-                    type="text"
-                    disabled={!!memberData?.full_name}
-                    className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    placeholder="أدخل اسمك الكامل"
-                  />
-                  {errors.full_name && (
-                    <p className="text-red-400 text-sm mt-1">{errors.full_name.message}</p>
-                  )}
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-white font-medium mb-2">رقم الهاتف *</label>
-                  <input
-                    {...register('phone', {
-                      required: 'رقم الهاتف مطلوب',
-                      minLength: { value: 10, message: 'رقم الهاتف غير صالح' },
-                    })}
-                    type="tel"
-                    disabled={!!memberData?.full_name}
-                    className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    placeholder="+90 XXX XXX XXXX"
-                    dir="ltr"
-                  />
-                  {errors.phone && (
-                    <p className="text-red-400 text-sm mt-1">{errors.phone.message}</p>
-                  )}
-                </div>
-                
-                {membershipStatus !== 'valid' && (
-                <div>
-                  <label className="block text-white font-medium mb-2">الجنس *</label>
-                  <select
-                    {...register('gender', { required: 'يرجى اختيار الجنس' })}
-                    className="input-field"
-                  >
-                    <option value="male">{GENDER_LABELS.male}</option>
-                    <option value="female">{GENDER_LABELS.female}</option>
-                  </select>
-
-                  {errors.gender && (
-                    <p className="text-red-400 text-sm mt-1">{errors.gender.message as string}</p>
-                  )}
-                </div>
-              )}
-
-                {/* Experience Level */}
-                <div>
-                  <label className="block text-white font-medium mb-2"> مستوى الخبرة في مجالك *</label>
+                  <label className="block text-white font-medium mb-2">مستوى الخبرة في مجالك *</label>
                   <select
                     {...register('experience_level', { required: 'يرجى اختيار مستوى الخبرة' })}
                     className="input-field"
@@ -386,44 +188,7 @@ export default function IndividualRegistration() {
                     <p className="text-red-400 text-sm mt-1">{errors.experience_level.message}</p>
                   )}
                 </div>
-              </div>
 
-              <div className="flex justify-between mt-8">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                  السابق
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const fieldsToValidate: any = ['full_name', 'phone', 'experience_level']
-                    if (membershipStatus !== 'valid') fieldsToValidate.push('gender')
-
-                    const isValid = await trigger(fieldsToValidate)
-                    if (isValid) {
-                      setStep(3)
-                    }
-                  }}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  التالي
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Skills & Interests */}
-          {step === 3 && (
-            <div className="card fade-in">
-              <h2 className="text-2xl font-bold text-white mb-6">المهارات والاهتمامات</h2>
-
-              <div className="space-y-6">
-                {/* Preferred Field */}
                 <div>
                   <label className="block text-white font-medium mb-2">المجال المفضل *</label>
                   <select
@@ -442,7 +207,6 @@ export default function IndividualRegistration() {
                   )}
                 </div>
 
-                {/* Technical Skills */}
                 <div>
                   <label className="block text-white font-medium mb-2">المهارات التقنية *</label>
                   <textarea
@@ -458,7 +222,6 @@ export default function IndividualRegistration() {
                   )}
                 </div>
 
-                {/* Interests */}
                 <div>
                   <label className="block text-white font-medium mb-2">الاهتمامات *</label>
                   <textarea
@@ -474,7 +237,6 @@ export default function IndividualRegistration() {
                   )}
                 </div>
 
-                {/* Project Idea (if hasIdea) */}
                 {hasIdea && (
                   <div>
                     <label className="block text-white font-medium mb-2">فكرة المشروع *</label>
@@ -498,7 +260,7 @@ export default function IndividualRegistration() {
               <div className="flex justify-between mt-8">
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(1)}
                   className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white transition-colors"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -507,6 +269,17 @@ export default function IndividualRegistration() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
+                  onClick={async (e) => {
+                    const fields: Array<keyof IndividualFormData> = [
+                      'experience_level',
+                      'preferred_field',
+                      'technical_skills',
+                      'interests',
+                    ]
+                    if (hasIdea) fields.push('project_idea')
+                    const ok = await trigger(fields)
+                    if (!ok) e.preventDefault()
+                  }}
                   className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
