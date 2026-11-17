@@ -79,8 +79,8 @@
 
   --radius: 0.5rem;
   
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Chakra Petch', sans-serif;
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-display: 'Chakra Petch', 'Outfit', system-ui, sans-serif;
 }
 
 .dark {

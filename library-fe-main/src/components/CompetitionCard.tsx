@@ -1,9 +1,8 @@
 import { Link } from "wouter";
-import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Calendar, Trophy, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { useLanguage } from "@/lib/LanguageContext";
 
 export interface CompetitionProps {
@@ -21,134 +20,89 @@ export interface CompetitionProps {
   applicationLink?: string;
 }
 
-export default function CompetitionCard({ competition, index }: { competition: CompetitionProps; index: number }) {
+export default function CompetitionCard({
+  competition,
+  index,
+}: {
+  competition: CompetitionProps;
+  index: number;
+}) {
   const { t } = useLanguage();
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
-    const { left, top } = currentTarget.getBoundingClientRect();
-    mouseX.set(clientX - left);
-    mouseY.set(clientY - top);
-  }
 
   const statusColors = {
-    open: "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20",
-    closed: "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20",
-    coming_soon: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20 hover:bg-yellow-500/20",
+    open: "bg-emerald-500/15 text-emerald-100 border-emerald-400/30",
+    closed: "bg-red-500/15 text-red-100 border-red-400/30",
+    coming_soon: "bg-amber-500/15 text-amber-100 border-amber-400/30",
   };
 
   const statusText = {
-    open: t('card.applicationsOpen'),
-    closed: t('card.applicationsClosed'),
-    coming_soon: t('card.comingSoon'),
+    open: t("card.applicationsOpen"),
+    closed: t("card.applicationsClosed"),
+    coming_soon: t("card.comingSoon"),
   };
 
+  const metaBits = [
+    competition.years && competition.years.length > 0
+      ? competition.years.join(", ")
+      : null,
+    competition.teamSize && competition.teamSize !== t("card.notSpecified")
+      ? competition.teamSize
+      : null,
+  ].filter(Boolean) as string[];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 50 }}
-      viewport={{ once: true }}
-      whileHover={{ y: -8 }}
+    <motion.article
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.4) }}
+      className="group h-full"
     >
-      <div 
-        className="group relative h-full rounded-xl border border-border/50 bg-card overflow-hidden"
-        onMouseMove={handleMouseMove}
-      >
-        <motion.div
-          className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100"
-          style={{
-            background: useMotionTemplate`
-              radial-gradient(
-                650px circle at ${mouseX}px ${mouseY}px,
-                hsl(var(--primary) / 0.15),
-                transparent 80%
-              )
-            `,
-          }}
-        />
-        
-        <Card className="h-full flex flex-col bg-transparent border-none relative z-10">
-          {/* Image Container */}
-          <div className="relative h-48 overflow-hidden rounded-t-xl">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
-            <motion.img
+      <Link href={`/competition/${competition.id}`} className="block h-full">
+        <div className="relative h-full overflow-hidden border border-border/70 bg-card transition-colors duration-300 group-hover:border-primary/40">
+          <div className="relative aspect-[16/10] overflow-hidden">
+            <img
               src={competition.image}
-              alt={competition.title}
-              className="w-full h-full object-cover"
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.6 }}
+              alt=""
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
             />
-            <Badge 
-              variant="outline" 
-              className={`absolute top-4 right-4 rtl:left-4 rtl:right-auto z-20 backdrop-blur-md border ${statusColors[competition.status]}`}
+            <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(8,12,24,0.92)_0%,rgba(8,12,24,0.35)_45%,rgba(8,12,24,0.15)_100%)]" />
+
+            <Badge
+              variant="outline"
+              className={`absolute top-3 right-3 rtl:left-3 rtl:right-auto z-10 backdrop-blur-sm border ${statusColors[competition.status]}`}
             >
               {statusText[competition.status]}
             </Badge>
-            <div className="absolute top-4 left-4 rtl:right-4 rtl:left-auto z-20 flex flex-wrap gap-2 max-w-[70%]">
-              {competition.tkNumber && (
-                <Badge variant="outline" className="backdrop-blur-md border-primary/30 text-primary">
-                  {t("card.tkNumber")}: {competition.tkNumber}
-                </Badge>
-              )}
-              {competition.t3kysNumber && (
-                <Badge variant="outline" className="backdrop-blur-md border-primary/30 text-primary">
-                  {t("card.t3kysNumber")}: {competition.t3kysNumber}
-                </Badge>
-              )}
-              {competition.years && competition.years.length > 0 && (
-                <Badge variant="outline" className="backdrop-blur-md border-primary/30 text-primary">
-                  {t("card.years")}: {competition.years.join(", ")}
-                </Badge>
-              )}
-            </div>
-            <div className="absolute bottom-4 left-4 rtl:right-4 rtl:left-auto z-20">
-              <span className="text-primary text-xs font-bold uppercase tracking-wider mb-1 block">
-                {competition.category}
-              </span>
-              <h3 className="text-white text-xl font-bold font-display leading-tight line-clamp-2">
+
+            <div className="absolute inset-x-0 bottom-0 z-10 p-4 pt-10">
+              <h3 className="text-white text-lg md:text-xl font-bold font-display leading-snug line-clamp-2">
                 {competition.title}
               </h3>
             </div>
           </div>
 
-          <CardContent className="flex-1 pt-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Calendar className="w-4 h-4 text-primary" />
-                <span>{competition.deadline}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Users className="w-4 h-4 text-primary" />
-                <span>{competition.teamSize}</span>
-              </div>
-              <div className="col-span-2 flex items-center gap-3 text-sm font-medium text-foreground mt-2">
-                <Trophy className="w-4 h-4 text-primary" />
-                <span>{t('card.prizePool')}: {competition.prize}</span>
-              </div>
+          <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              {metaBits.length > 0 ? (
+                <>
+                  <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="truncate">{metaBits.join(" · ")}</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground/80">{t("card.viewDetails")}</span>
+              )}
             </div>
-            {competition.applicationLink && (
-              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                <span>{t("card.applyLink")}</span>
-                <Button asChild variant="link" className="px-0 text-primary">
-                  <a href={competition.applicationLink} target="_blank" rel="noreferrer">
-                    {t("card.applyLink")}
-                  </a>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-
-          <CardFooter className="pb-6 pt-0">
-            <Link href={`/competition/${competition.id}`}>
-              <Button className="w-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors group-hover:bg-primary group-hover:text-white">
-                {t('card.viewDetails')}
-              </Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-    </motion.div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0 text-primary hover:text-primary hover:bg-primary/10 rounded-sm px-2"
+              tabIndex={-1}
+            >
+              {t("card.viewDetails")}
+            </Button>
+          </div>
+        </div>
+      </Link>
+    </motion.article>
   );
 }

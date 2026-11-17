@@ -77,8 +77,8 @@ export const formatTeamSize = (
   membersLabel: string,
   fallback: string,
 ) => {
-  if (minMember && maxMember) return `${minMember}-${maxMember} ${membersLabel}`;
+  if (minMember && maxMember) return `${minMember}–${maxMember} ${membersLabel}`;
   if (minMember && !maxMember) return `${minMember}+ ${membersLabel}`;
-  if (!minMember && maxMember) return `${membersLabel} <= ${maxMember}`;
+  if (!minMember && maxMember) return `≤${maxMember} ${membersLabel}`;
   return fallback;
 };

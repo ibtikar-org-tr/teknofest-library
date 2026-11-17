@@ -21,13 +21,10 @@ import aiImg from "@assets/generated_images/ai_competition.png";
 import droneImg from "@assets/generated_images/drone_competition.png";
 import roboticsImg from "@assets/generated_images/robotics_competition.png";
 import agriImg from "@assets/generated_images/agritech_competition.png";
-import heroBg from "@assets/generated_images/teknofest_hero_background.png"; // reusing as fallback
+import heroBg from "@assets/generated_images/teknofest_hero_background.png";
 
 const FALLBACK_CATEGORY = "General";
 const FALLBACK_STATUS: CompetitionProps["status"] = "open";
-const FALLBACK_DEADLINE = "TBD";
-const FALLBACK_PRIZE = "TBA";
-const CATEGORIES = ["All", FALLBACK_CATEGORY];
 const FALLBACK_IMAGES = [rocketImg, aiImg, droneImg, roboticsImg, agriImg, heroBg];
 
 const mapCompetitionToCard = (
@@ -45,14 +42,14 @@ const mapCompetitionToCard = (
     category: FALLBACK_CATEGORY,
     image: competition.image_path ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length],
     status: FALLBACK_STATUS,
-    deadline: FALLBACK_DEADLINE,
+    deadline: "",
     teamSize: formatTeamSize(
       competition.min_member,
       competition.max_member,
-      t("card.notSpecified"),
+      t("card.members"),
       t("card.notSpecified"),
     ),
-    prize: FALLBACK_PRIZE,
+    prize: "",
     tkNumber: competition.tk_number ?? undefined,
     t3kysNumber: competition.t3kys_number ?? undefined,
     years: competition.years ?? [],
@@ -62,7 +59,6 @@ const mapCompetitionToCard = (
 
 export default function CompetitionsPage() {
   const { t, language } = useLanguage();
-  const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   const {
@@ -81,67 +77,51 @@ export default function CompetitionsPage() {
     [apiCompetitions, language, t],
   );
 
-  const filteredCompetitions = competitions.filter((comp) => {
-    const matchesCategory = activeCategory === "All" || comp.category === activeCategory;
-    const matchesSearch = comp.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredCompetitions = competitions.filter((comp) =>
+    comp.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const countLabel = (t("filters.count") ?? "{count} competitions").replace(
+    "{count}",
+    String(filteredCompetitions.length),
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <Navbar />
-      
+
       <main className="grow">
         <Hero />
 
-        <section className="container mx-auto px-4 py-16 -mt-20 relative z-20" id="mainpage_competitions_section">
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-card/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl"
-          >
-            {/* Filter Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+        <section
+          id="mainpage_competitions_section"
+          className="relative z-20 border-t border-border/60 bg-[linear-gradient(180deg,hsl(210_40%_96%)_0%,hsl(var(--background))_28%)]"
+        >
+          <div className="container mx-auto px-4 py-14 md:py-20">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-10">
               <div>
-                <h2 className="text-3xl font-bold font-display text-foreground">
-                  {t('filters.title')}
+                <h2 className="text-3xl md:text-4xl font-bold font-display text-foreground">
+                  {t("filters.title")}
                 </h2>
-                <p className="text-muted-foreground mt-1">
-                  {t('filters.subtitle')}
+                <p className="text-muted-foreground mt-2 max-w-xl">
+                  {t("filters.subtitle")}
                 </p>
+                {!isLoading && !error && (
+                  <p className="mt-3 text-sm font-medium text-primary">{countLabel}</p>
+                )}
               </div>
 
-              {/* Search Bar */}
-              <div className="relative w-full md:w-96">
+              <div className="relative w-full md:w-[22rem]">
                 <Search className="absolute rtl:right-3 rtl:left-auto left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input 
-                  placeholder={t('filters.searchPlaceholder')}
-                  className="pl-10 rtl:pl-3 rtl:pr-10 bg-background/50 border-border focus:border-primary/50 transition-colors"
+                <Input
+                  placeholder={t("filters.searchPlaceholder")}
+                  className="h-11 pl-10 rtl:pl-3 rtl:pr-10 bg-background border-border focus-visible:ring-primary/30"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
 
-            {/* Category Tabs */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    activeCategory === category
-                      ? "bg-primary text-white shadow-md scale-105"
-                      : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-
-            {/* Grid */}
             <AnimatePresence mode="wait">
               {isLoading ? (
                 <motion.div
@@ -162,64 +142,63 @@ export default function CompetitionsPage() {
                   {t("filters.error") ?? "Failed to load competitions."}
                 </motion.div>
               ) : filteredCompetitions.length > 0 ? (
-                <motion.div 
+                <motion.div
                   layout
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6"
                 >
-                  <AnimatePresence>
                   {filteredCompetitions.map((competition, index) => (
-                    <CompetitionCard 
-                      key={competition.id} 
-                      competition={competition} 
-                      index={index} 
+                    <CompetitionCard
+                      key={competition.id}
+                      competition={competition}
+                      index={index}
                     />
                   ))}
-                  </AnimatePresence>
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="text-center py-20"
                 >
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                    <Filter className="w-8 h-8 text-muted-foreground" />
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-md bg-muted mb-4">
+                    <Filter className="w-7 h-7 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{t('filters.noResults')}</h3>
-                  <p className="text-muted-foreground">
-                    {t('filters.tryAdjusting')}
-                  </p>
-                  <Button 
-                    variant="link" 
-                    onClick={() => { setActiveCategory("All"); setSearchQuery(""); }}
+                  <h3 className="text-xl font-bold mb-2">{t("filters.noResults")}</h3>
+                  <p className="text-muted-foreground">{t("filters.tryAdjusting")}</p>
+                  <Button
+                    variant="link"
+                    onClick={() => setSearchQuery("")}
                     className="mt-4 text-primary"
                   >
-                    {t('filters.reset')}
+                    {t("filters.reset")}
                   </Button>
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </div>
         </section>
 
-        {/* Call to Action Section */}
-        <section className="container mx-auto px-4 py-20 text-center">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+        <section className="container mx-auto px-4 py-16 md:py-20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-4xl mx-auto bg-linear-to-r from-primary/10 via-primary/5 to-primary/10 rounded-3xl p-12 border border-primary/20"
+            transition={{ duration: 0.45 }}
+            className="max-w-3xl mx-auto border border-primary/20 bg-primary/[0.04] px-8 py-12 md:px-12"
           >
-            <h2 className="text-4xl font-bold font-display mb-6">{t('cta.title')}</h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              {t('cta.description')}
+            <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
+              {t("cta.title")}
+            </h2>
+            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+              {t("cta.description")}
             </p>
             <Button
-              onClick={() => window.open("https://www.teknofest.org", "_blank", "noopener,noreferrer")}
+              onClick={() =>
+                window.open("https://www.teknofest.org", "_blank", "noopener,noreferrer")
+              }
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-white text-lg px-10 py-6 rounded-full shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-1 hover:cursor-pointer active:translate-y-0.5"
+              className="bg-primary hover:bg-primary/90 text-white px-8 rounded-sm"
             >
               {t("cta.register")}
             </Button>
