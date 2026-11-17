@@ -1,12 +1,12 @@
 name: (main) [library-be-scraper-fastapi] Deploy Library Scraper Backend Microservice via SSH
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'library-be-scraper-fastapi/**'
-      - .github/workflows/library-be-scraper.yml
+# push:
+#   branches:
+#     - main
+#   paths:
+#     - 'library-be-scraper-fastapi/**'
+#     - .github/workflows/library-be-scraper.yml
   workflow_dispatch:
 
 jobs:
