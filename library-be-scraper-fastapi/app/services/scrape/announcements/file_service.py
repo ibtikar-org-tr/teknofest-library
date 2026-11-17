@@ -25,6 +25,22 @@ def download_file(url, DOWNLOAD_FOLDER):
     except requests.RequestException as e:
         print(f"Error checking URL: {e}")
 
+def _already_have_file(download_folder, sanitized_file_name):
+    """True if basename or a previously title-prefixed rename already exists."""
+    direct = os.path.join(download_folder, sanitized_file_name)
+    if os.path.exists(direct) and os.path.getsize(direct) > 0:
+        return True
+    if not os.path.isdir(download_folder):
+        return False
+    suffix = f"_{sanitized_file_name}"
+    for name in os.listdir(download_folder):
+        path = os.path.join(download_folder, name)
+        if not os.path.isfile(path) or os.path.getsize(path) == 0:
+            continue
+        if name == sanitized_file_name or name.endswith(suffix):
+            return True
+    return False
+
 def download_to_folder(url, DOWNLOAD_FOLDER):
     try:
         file_name = url.split('/')[-1]
@@ -38,6 +54,11 @@ def download_to_folder(url, DOWNLOAD_FOLDER):
         file_path = os.path.join(DOWNLOAD_FOLDER, sanitized_file_name)
         
         os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+
+        # Never overwrite existing files — old library assets must be preserved.
+        if _already_have_file(DOWNLOAD_FOLDER, sanitized_file_name):
+            print(f"Skip existing: {file_path}")
+            return None
         
         response = requests.get(url, stream=True)
         response.raise_for_status()
@@ -71,6 +92,11 @@ def rename_file_with_title(file_path, title):
 
         new_file_name = f"{sanitized_title}_{file_name}{file_extension}"
         new_file_path = os.path.join(directory, new_file_name)
+
+        # Do not clobber an existing renamed file.
+        if os.path.exists(new_file_path):
+            print(f"Skip rename, target exists: {new_file_name}")
+            return new_file_path
         
         os.rename(file_path, new_file_path)
         print(f"File renamed to: {new_file_name}")
@@ -82,14 +108,15 @@ def rename_file_with_title(file_path, title):
 def download_the_files(file_urls, DOWNLOAD_FOLDER):
     for url in file_urls:
         downloaded_file_path = download_file(url, DOWNLOAD_FOLDER)
+        if not downloaded_file_path:
+            continue
         print("file downloaded")
 
-        if downloaded_file_path:
-            pdf_title = extract_pdf_title(downloaded_file_path)
-            
-            if pdf_title:
-                rename_file_with_title(downloaded_file_path, pdf_title)
-                print("file renamed")
+        pdf_title = extract_pdf_title(downloaded_file_path)
+        
+        if pdf_title:
+            rename_file_with_title(downloaded_file_path, pdf_title)
+            print("file renamed")
 
 
 if __name__ == "__main__":

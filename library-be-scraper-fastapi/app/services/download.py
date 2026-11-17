@@ -4,6 +4,11 @@ from time import sleep
 from pathlib import Path
 
 def download_file(url, destination, MAX_RETRY_ATTEMPTS=3, RETRY_DELAY_SECONDS=5):
+    # Never overwrite existing files — old library assets must be preserved.
+    if destination and os.path.exists(destination) and os.path.getsize(destination) > 0:
+        print(f"Skip existing: {destination}")
+        return True
+
     retry_attempts = 0
     while retry_attempts < MAX_RETRY_ATTEMPTS:
         try:

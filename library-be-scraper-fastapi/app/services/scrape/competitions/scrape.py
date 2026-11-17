@@ -39,6 +39,10 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
     if __name__ == "__main__": print(f"Found {len(tabs_in_the_page)} tabs in the page.")
     # if __name__ == "__main__": print(f"tabs_in_the_page: {tabs_in_the_page}")
 
+    # Resolve disk folder slug once per page (exact/alias/EN switcher — never fuzzy)
+    safe_comp_name = links_service.resolve_disk_comp_slug(link, html=content)
+    unified_comp_name = find_original_sentence(links_service.get_name_from_link(link))
+
     # reports
     if check_prev_year_reports:
         if tabs_in_the_page:
@@ -54,13 +58,9 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                         
                         file_name = os.path.basename(urlparse(report_file_url).path)
                         
-                        comp_name_in_link = links_service.get_name_from_link(link)
-                        unified_comp_name = find_original_sentence(comp_name_in_link)
-                        if unified_comp_name is None or folder_name is None:
+                        if safe_comp_name is None or folder_name is None:
                             continue
                         
-                        # Sanitize folder and file names
-                        safe_comp_name = sanitize_filename(unified_comp_name)
                         safe_folder_name = sanitize_filename(folder_name)
                         safe_file_name = sanitize_filename(file_name)
                         
@@ -70,8 +70,8 @@ def scrape_link(link, check_prev_year_reports: bool = False, update_downloads: b
                         report_storage_path = build_bucket_link(report_file_path) if report_file_path else None
                         
                         if update_downloads:
-                            download.download_file(report_file_url, report_file_path)
-                            files_downloaded += 1
+                            if download.download_file(report_file_url, report_file_path):
+                                files_downloaded += 1
 
                         if update_database:
                             competition_crud_services.update_or_create_report_file(

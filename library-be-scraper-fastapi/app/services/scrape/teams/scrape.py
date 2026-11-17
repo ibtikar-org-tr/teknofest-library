@@ -6,6 +6,7 @@ from app.services import download
 from app.services.unify.function import find_original_sentence
 from app.services.repo_additional import team_crud_services
 from app.services.scrape.competitions.scrape import get_session_id_for_specific_year
+from app.services.scrape.competitions.links_service import resolve_disk_comp_slug
 from app.services.filename_utils import sanitize_filename
 from datetime import datetime
 from app.services.helpers.bucket_link import build_bucket_link
@@ -52,8 +53,12 @@ def scrape_page(page, update_downloads: bool = False, update_database: bool = Fa
                     team_name = tr.find_all('td')[0].find('a').text.strip()
                     year = tr.find_all('td')[1].text.strip()
                     
-                    # Sanitize names for file paths
-                    safe_comp_name = sanitize_filename(str(comp_name))
+                    # Disk folders use EN competition slugs; never fuzzy-merge into wrong comps.
+                    safe_comp_name = resolve_disk_comp_slug(str(comp_name)) if comp_name else None
+                    if not safe_comp_name:
+                        print(f"Skipping team row; unresolved competition: {comp_name}")
+                        stats["errors"] += 1
+                        continue
                     safe_team_name = sanitize_filename(team_name)
                     
                     stats["teams_retrieved"] += 1

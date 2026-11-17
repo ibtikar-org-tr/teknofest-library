@@ -54,11 +54,21 @@ except Exception as e:
     print(f"Error reading CSV file: {str(e)}")
 
 # Combine the lists into a single list of groups for find_original_sentence
-# full_groups format: [en_link, tr_link, ar_name, tr_name, en_name]
+# full_groups format: [en_link, tr_link, ar_name, tr_name, en_name, en_slug, tr_slug]
+# Keep en_link as group[0] for DB lookups (get_competition_by_en_link).
+# Include en_slug/tr_slug so link-slug inputs match reliably.
 full_groups = [
-    [en_link, tr_link, ar_name, tr_name, en_name]
-    for tr_link, en_link, ar_name, tr_name, en_name 
-    in zip(tr_links_list, en_links_list, ar_names_list, tr_names_list, en_names_list)
+    [en_link, tr_link, ar_name, tr_name, en_name, en_slug, tr_slug]
+    for tr_link, en_link, ar_name, tr_name, en_name, en_slug, tr_slug
+    in zip(
+        tr_links_list,
+        en_links_list,
+        ar_names_list,
+        tr_names_list,
+        en_names_list,
+        en_slugs_list,
+        tr_slugs_list,
+    )
 ]
 
 if __name__ == "__main__":
