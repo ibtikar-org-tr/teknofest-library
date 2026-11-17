@@ -1,31 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
-from app.services.unify.lists import tr_slugs_list, en_slugs_list
+from app.services.unify.lists import slug_to_en_slug
 from app.services.filename_utils import sanitize_filename
-
-# Exact TR slug -> EN folder slug (no fuzzy matching — fuzzy polluted wrong competition folders)
-_TR_TO_EN_SLUG = {t: e for t, e in zip(tr_slugs_list, en_slugs_list) if t and e}
-_EN_SLUGS = {e for e in en_slugs_list if e}
-
-# Known site renames / disk folders that differ from current CSV tr_slug
-_DISK_SLUG_ALIASES = {
-    "celikkubbe-hava-savunma-sistemleri-yarismasi": "air-defense-systems-competition",
-    "5g-yapay-zeka-ile-akilli-yol-guvenligi-yarismasi": "5g-artificial-intelligence-smart-road-safety-competition",
-    "havacilikta-yapay-zeka-yarismasi": "aviation-artificial-intelligence-competition",
-    "insanlik-yararina-teknolojiler-yarismasi-ilkokul-seviyesi": "technologies-for-humanity-competition-elementary-school-level",
-    "insanlik-yararina-teknolojiler-yarismasi-ortaokul-seviyesi": "technologies-for-humanity-competition-elementary-school-level",
-    "insanlik-yararina-teknolojiler-yarismasi-lise-seviyesi": "technologies-for-humanity-competition-high-school-level",
-    "ucan-araba-simulasyon-yarismasi": "flying-car-simulation-competition",
-}
 
 
 def resolve_disk_comp_slug(link_or_slug: str, html: str | None = None) -> str:
     """
     Resolve the downloads/competitions/<slug> folder name.
 
-    Prefer exact CSV / alias / EN language-switcher slug. Never fuzzy-match —
-    that previously dumped new competitions into unrelated folders.
+    Source of truth: app/services/unify/lists.csv (tr_slug/en_slug/other_slugs).
+    Never fuzzy-match — that previously dumped new competitions into wrong folders.
     """
     if not link_or_slug:
         return None
@@ -33,12 +18,9 @@ def resolve_disk_comp_slug(link_or_slug: str, html: str | None = None) -> str:
     raw = link_or_slug.strip()
     slug = get_name_from_link(raw) if "://" in raw or raw.startswith("/") else raw.strip("/")
 
-    if slug in _TR_TO_EN_SLUG:
-        return sanitize_filename(_TR_TO_EN_SLUG[slug])
-    if slug in _EN_SLUGS:
-        return sanitize_filename(slug)
-    if slug in _DISK_SLUG_ALIASES:
-        return sanitize_filename(_DISK_SLUG_ALIASES[slug])
+    mapped = slug_to_en_slug.get(slug)
+    if mapped:
+        return sanitize_filename(mapped)
 
     # Read EN language switcher from the competition page when available
     page_html = html
@@ -54,8 +36,11 @@ def resolve_disk_comp_slug(link_or_slug: str, html: str | None = None) -> str:
             href = a["href"]
             if "/en/competitions/" in href:
                 en_slug = get_name_from_link(href)
-                if en_slug:
-                    return sanitize_filename(en_slug)
+                if not en_slug:
+                    continue
+                # Prefer CSV canonical folder if this EN slug (or alias) is known
+                mapped = slug_to_en_slug.get(en_slug)
+                return sanitize_filename(mapped or en_slug)
 
     # Last resort: keep the TR/source slug so files stay isolated, not merged wrongly
     return sanitize_filename(slug)
