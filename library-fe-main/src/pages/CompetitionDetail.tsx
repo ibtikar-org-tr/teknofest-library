@@ -89,22 +89,30 @@ export default function CompetitionDetail() {
         t("card.notSpecified"),
     );
     const yearsText = data?.years?.length ? data.years.join(", ") : t("detail.noYears");
-    const image = data?.image_path ?? heroBg;
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <Navbar />
       
       {/* Hero — dark scrim keeps title readable on light competition images */}
-      <div className="relative h-[52vh] min-h-[22rem] w-full overflow-hidden flex items-end">
-        <div className="absolute inset-0 z-0">
+      <div className="relative flex h-[52vh] min-h-[22rem] w-full items-end overflow-hidden">
+        <div className="absolute inset-0 z-0 bg-[#0b1220]">
           <img
-            src={image}
+            key={data?.image_path ?? "fallback"}
+            src={data?.image_path || heroBg}
             alt=""
-            className="h-full w-full object-cover scale-[1.02]"
+            className="h-full w-full scale-[1.02] object-cover"
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (!img.src.includes(String(heroBg))) {
+                img.src = heroBg;
+              }
+            }}
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,24,0.55)_0%,rgba(8,12,24,0.35)_38%,rgba(8,12,24,0.82)_78%,hsl(var(--background))_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(8,12,24,0.72)_0%,rgba(8,12,24,0.28)_48%,rgba(8,12,24,0.45)_100%)]" />
+          {/* Always-dark cinematic overlays so white type stays legible */}
+          <div className="absolute inset-0 bg-black/45" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,24,0.35)_0%,rgba(8,12,24,0.25)_40%,rgba(8,12,24,0.88)_82%,hsl(var(--background))_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(8,12,24,0.65)_0%,rgba(8,12,24,0.2)_55%,rgba(8,12,24,0.4)_100%)]" />
         </div>
 
         <div className="container relative z-10 mx-auto flex flex-col items-start justify-between gap-6 px-4 pb-10 pt-28 md:flex-row md:items-end md:pb-12">
@@ -112,12 +120,12 @@ export default function CompetitionDetail() {
             <div className="mb-4 flex flex-wrap gap-2">
               <Badge
                 variant="outline"
-                className="border-white/25 bg-black/35 text-white backdrop-blur-md"
+                className="border-white/30 bg-black/50 text-white backdrop-blur-md"
               >
                 {t("detail.yearsLabel")}: {yearsText}
               </Badge>
             </div>
-            <h1 className="font-display text-3xl font-bold leading-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.55)] sm:text-4xl md:text-5xl lg:text-6xl">
+            <h1 className="font-display text-3xl font-bold leading-tight text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.65)] sm:text-4xl md:text-5xl lg:text-6xl">
               {title}
             </h1>
           </div>
@@ -126,7 +134,7 @@ export default function CompetitionDetail() {
             {applicationLink ? (
               <Button
                 size="lg"
-                className="h-12 bg-primary px-7 text-base font-bold text-white hover:bg-primary/90 md:h-14 md:px-8 md:text-lg"
+                className="h-12 bg-primary px-7 text-base font-bold text-white shadow-lg shadow-black/25 hover:bg-primary/90 md:h-14 md:px-8 md:text-lg"
                 asChild
               >
                 <a href={applicationLink} target="_blank" rel="noreferrer">
@@ -137,7 +145,7 @@ export default function CompetitionDetail() {
               <Button
                 size="lg"
                 disabled
-                className="h-12 border border-white/20 bg-white/10 px-7 text-base font-bold text-white/80 backdrop-blur-sm md:h-14 md:px-8 md:text-lg"
+                className="h-12 border border-white/25 bg-black/40 px-7 text-base font-bold text-white/85 backdrop-blur-sm md:h-14 md:px-8 md:text-lg"
               >
                 {t("card.applyLink")}
               </Button>
