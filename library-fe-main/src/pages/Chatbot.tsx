@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Sparkles } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import botAvatar from "@assets/generated_images/teknofest_chatbot_avatar.png";
+import { useLanguage } from "@/lib/LanguageContext";
 
 type Message = {
   id: string;
@@ -13,6 +14,7 @@ type Message = {
 };
 
 export default function Chatbot() {
+  const { t } = useLanguage();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     { 
@@ -59,16 +61,16 @@ export default function Chatbot() {
               <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
               <img src={botAvatar} alt="TeknoBot" className="w-full h-full object-contain p-2 relative z-10" />
             </div>
-            <h2 className="text-2xl font-bold font-display">TeknoBot</h2>
+            <h2 className="text-2xl font-bold font-display">{t("pages.chatbotTitle")}</h2>
             <p className="text-muted-foreground mt-2 text-sm">
-              Your AI Assistant for all things Teknofest. Powered by advanced LLMs.
+              {t("pages.chatbotSubtitle")}
             </p>
           </div>
 
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="font-bold mb-4 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              Suggested Topics
+              {t("pages.chatbotSuggested")}
             </h3>
             <div className="flex flex-wrap gap-2">
               {["Deadline extensions", "Drone specifications", "Team registration", "Prize distribution", "Venue location"].map(tag => (
@@ -134,7 +136,7 @@ export default function Chatbot() {
               <Input 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about competitions, rules, or dates..."
+                placeholder={t("pages.chatbotPlaceholder")}
                 className="flex-1 h-12 bg-background border-input focus:border-primary/50 rounded-xl"
               />
               <Button type="submit" size="icon" className="h-12 w-12 rounded-xl shrink-0">

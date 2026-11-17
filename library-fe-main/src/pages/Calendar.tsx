@@ -2,8 +2,10 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Calendar() {
+  const { t } = useLanguage();
   const events = [
     {
       month: "January 2025",
@@ -41,10 +43,10 @@ export default function Calendar() {
       
       <main className="flex-grow pt-28 pb-16 container mx-auto px-4">
         <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4 border-primary/50 text-primary uppercase tracking-widest">Schedule</Badge>
-          <h1 className="text-4xl md:text-6xl font-bold font-display mb-6">Important Dates</h1>
+          <Badge variant="outline" className="mb-4 border-primary/50 text-primary uppercase tracking-widest">{t("pages.datesBadge")}</Badge>
+          <h1 className="text-4xl md:text-6xl font-bold font-display mb-6">{t("pages.datesTitle")}</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Mark your calendars. Don't miss any deadlines on your journey to the finals.
+            {t("pages.datesSubtitle")}
           </p>
         </div>
 

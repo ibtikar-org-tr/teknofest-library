@@ -3,8 +3,10 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, PlayCircle, BookOpen, FileCode } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Resources() {
+  const { t } = useLanguage();
   const resources = [
     {
       category: "Competition Guides",
@@ -38,9 +40,9 @@ export default function Resources() {
       
       <main className="flex-grow pt-28 pb-16 container mx-auto px-4">
         <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-display mb-4">Resources</h1>
+          <h1 className="text-4xl md:text-5xl font-bold font-display mb-4">{t("pages.resourcesTitle")}</h1>
           <p className="text-lg text-muted-foreground max-w-2xl">
-            Everything you need to succeed in Teknofest competitions. Download rulebooks, technical assets, and educational materials.
+            {t("pages.resourcesSubtitle")}
           </p>
         </div>
 

@@ -10,16 +10,29 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const STORAGE_KEY = "tk-library-lang";
+
+const isLanguage = (value: string): value is Language =>
+  value === "en" || value === "tr" || value === "ar";
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en');
-  const [direction, setDirection] = useState<Direction>('ltr');
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window === "undefined") return "en";
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    return saved && isLanguage(saved) ? saved : "en";
+  });
+  const [direction, setDirection] = useState<Direction>(
+    language === "ar" ? "rtl" : "ltr",
+  );
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    window.localStorage.setItem(STORAGE_KEY, lang);
+  };
 
   useEffect(() => {
-    // Update direction based on language
-    const newDir = language === 'ar' ? 'rtl' : 'ltr';
+    const newDir = language === "ar" ? "rtl" : "ltr";
     setDirection(newDir);
-    
-    // Update HTML dir attribute
     document.documentElement.dir = newDir;
     document.documentElement.lang = language;
   }, [language]);

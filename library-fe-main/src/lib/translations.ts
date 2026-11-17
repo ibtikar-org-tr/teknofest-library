@@ -65,7 +65,77 @@ export const translations = {
       error: "Unable to load this competition.",
       deadlineFallback: "To be announced",
       prizeFallback: "Prize to be announced",
-      yearsLabel: "Years"
+      yearsLabel: "Years",
+      tabs: {
+        overview: "Overview",
+        resources: "Resources",
+        rules: "Rules",
+        awards: "Awards",
+        faq: "FAQ"
+      },
+      challengeDescription: "Challenge Description",
+      atAGlance: "At a Glance",
+      teamSize: "Team Size",
+      timeline: "Timeline",
+      noResources: "No resources available for this competition",
+      learningResources: "Learning Resources",
+      yearLabel: "Year {year}",
+      externalResource: "External Resource",
+      visit: "Visit",
+      technicalRegulations: "Technical Regulations",
+      technicalRegulationsDesc: "Download the full technical rulebook for detailed specifications.",
+      viewRulebook: "View Rulebook",
+      noRulebook: "No rulebook available for this competition",
+      noFaqs: "No FAQs available for this competition",
+      noAwards: "No award information available",
+      apply: "Apply"
+    },
+    reports: {
+      title: "Report Files",
+      searchPlaceholder: "Search reports by name, folder, type…",
+      all: "All",
+      level: "Level",
+      type: "Type",
+      track: "Track",
+      format: "Format",
+      clearFilters: "Clear filters",
+      resetFilters: "Reset filters",
+      noMatches: "No report files match these filters.",
+      download: "Download",
+      reportFallback: "Report",
+      reportFallbackYear: "Report {year}",
+      levels: {
+        "high-school": "High school",
+        university: "University",
+        "middle-school": "Middle school",
+        "all-levels": "All levels"
+      },
+      kinds: {
+        template: "Templates",
+        finalist: "Finalists",
+        ranking: "Rankings",
+        preliminary: "Preliminary (ODR)",
+        detail: "Detail (PDR)",
+        presentation: "Presentations",
+        technical: "Technical reports",
+        other: "Other"
+      },
+      tracks: {
+        idea: "Idea",
+        project: "Project",
+        general: "General"
+      }
+    },
+    pages: {
+      resourcesTitle: "Resources",
+      resourcesSubtitle: "Guides, assets, and learning materials.",
+      datesTitle: "Important Dates",
+      datesSubtitle: "Mark your calendar so you don't miss a deadline.",
+      datesBadge: "Schedule",
+      chatbotTitle: "TeknoBot",
+      chatbotSubtitle: "Your AI assistant for TEKNOFEST competitions.",
+      chatbotPlaceholder: "Ask about competitions, rules, or dates...",
+      chatbotSuggested: "Suggested Topics"
     },
     footer: {
       description: "One library for all your needs.",
@@ -150,10 +220,80 @@ export const translations = {
       error: "Bu yarışma yüklenemedi.",
       deadlineFallback: "Duyurulacak",
       prizeFallback: "Ödül duyurulacak",
-      yearsLabel: "Yıllar"
+      yearsLabel: "Yıllar",
+      tabs: {
+        overview: "Genel Bakış",
+        resources: "Kaynaklar",
+        rules: "Kurallar",
+        awards: "Ödüller",
+        faq: "SSS"
+      },
+      challengeDescription: "Yarışma Açıklaması",
+      atAGlance: "Özet",
+      teamSize: "Takım Boyutu",
+      timeline: "Zaman Çizelgesi",
+      noResources: "Bu yarışma için kaynak bulunmuyor",
+      learningResources: "Öğrenme Kaynakları",
+      yearLabel: "Yıl {year}",
+      externalResource: "Harici Kaynak",
+      visit: "Ziyaret Et",
+      technicalRegulations: "Teknik Şartname",
+      technicalRegulationsDesc: "Detaylı teknik kural kitabını indirin.",
+      viewRulebook: "Kural Kitabını Gör",
+      noRulebook: "Bu yarışma için kural kitabı yok",
+      noFaqs: "Bu yarışma için SSS bulunmuyor",
+      noAwards: "Ödül bilgisi bulunmuyor",
+      apply: "Başvur"
+    },
+    reports: {
+      title: "Rapor Dosyaları",
+      searchPlaceholder: "Ada, klasöre veya türe göre ara…",
+      all: "Tümü",
+      level: "Seviye",
+      type: "Tür",
+      track: "Kategori",
+      format: "Biçim",
+      clearFilters: "Filtreleri temizle",
+      resetFilters: "Filtreleri sıfırla",
+      noMatches: "Bu filtrelere uyan rapor dosyası yok.",
+      download: "İndir",
+      reportFallback: "Rapor",
+      reportFallbackYear: "Rapor {year}",
+      levels: {
+        "high-school": "Lise",
+        university: "Üniversite",
+        "middle-school": "Ortaokul",
+        "all-levels": "Tüm seviyeler"
+      },
+      kinds: {
+        template: "Şablonlar",
+        finalist: "Finalistler",
+        ranking: "Dereceler",
+        preliminary: "Ön Değerlendirme (ODR)",
+        detail: "Proje Detay (PDR)",
+        presentation: "Sunumlar",
+        technical: "Teknik raporlar",
+        other: "Diğer"
+      },
+      tracks: {
+        idea: "Fikir",
+        project: "Proje",
+        general: "Genel"
+      }
+    },
+    pages: {
+      resourcesTitle: "Kaynaklar",
+      resourcesSubtitle: "Kılavuzlar, dosyalar ve öğrenme materyalleri.",
+      datesTitle: "Önemli Tarihler",
+      datesSubtitle: "Takviminizi işaretleyin, son tarihleri kaçırmayın.",
+      datesBadge: "Takvim",
+      chatbotTitle: "TeknoBot",
+      chatbotSubtitle: "TEKNOFEST yarışmaları için yapay zeka asistanınız.",
+      chatbotPlaceholder: "Yarışmalar, kurallar veya tarihler hakkında sorun...",
+      chatbotSuggested: "Önerilen Konular"
     },
     footer: {
-      description: "Dünyanın en büyük havacılık, uzay ve teknoloji festivali. Teknoloji üreten bir Türkiye inşa ediyoruz.",
+      description: "İhtiyacınız olan her şey için tek kütüphane.",
       quickLinks: "Hızlı Bağlantılar",
       categories: "Kategoriler",
       contact: "İletişim",
@@ -209,8 +349,8 @@ export const translations = {
       error: "تعذر تحميل المسابقات."
     },
     card: {
-      applicationsOpen: "التطبيقات مفتوحة",
-      applicationsClosed: "التطبيقات مغلقة",
+      applicationsOpen: "التقديم مفتوح",
+      applicationsClosed: "التقديم مغلق",
       comingSoon: "قريباً",
       deadline: "الموعد النهائي",
       teamSize: "حجم الفريق",
@@ -235,7 +375,77 @@ export const translations = {
       error: "تعذر تحميل هذه المسابقة.",
       deadlineFallback: "سيتم الإعلان لاحقاً",
       prizeFallback: "سيتم الإعلان عن الجائزة لاحقاً",
-      yearsLabel: "الأعوام"
+      yearsLabel: "الأعوام",
+      tabs: {
+        overview: "نظرة عامة",
+        resources: "الموارد",
+        rules: "القواعد",
+        awards: "الجوائز",
+        faq: "الأسئلة الشائعة"
+      },
+      challengeDescription: "وصف التحدي",
+      atAGlance: "لمحة سريعة",
+      teamSize: "حجم الفريق",
+      timeline: "الجدول الزمني",
+      noResources: "لا توجد موارد لهذه المسابقة",
+      learningResources: "موارد التعلم",
+      yearLabel: "السنة {year}",
+      externalResource: "مورد خارجي",
+      visit: "زيارة",
+      technicalRegulations: "اللوائح الفنية",
+      technicalRegulationsDesc: "حمّل كتاب القواعد الفنية الكامل للمواصفات التفصيلية.",
+      viewRulebook: "عرض كتاب القواعد",
+      noRulebook: "لا يوجد كتاب قواعد لهذه المسابقة",
+      noFaqs: "لا توجد أسئلة شائعة لهذه المسابقة",
+      noAwards: "لا تتوفر معلومات عن الجوائز",
+      apply: "تقديم"
+    },
+    reports: {
+      title: "ملفات التقارير",
+      searchPlaceholder: "ابحث بالاسم أو المجلد أو النوع…",
+      all: "الكل",
+      level: "المستوى",
+      type: "النوع",
+      track: "المسار",
+      format: "الصيغة",
+      clearFilters: "مسح الفلاتر",
+      resetFilters: "إعادة تعيين الفلاتر",
+      noMatches: "لا توجد ملفات تقارير مطابقة لهذه الفلاتر.",
+      download: "تحميل",
+      reportFallback: "تقرير",
+      reportFallbackYear: "تقرير {year}",
+      levels: {
+        "high-school": "ثانوية",
+        university: "جامعة",
+        "middle-school": "إعدادية",
+        "all-levels": "كل المستويات"
+      },
+      kinds: {
+        template: "قوالب",
+        finalist: "المتأهلون",
+        ranking: "المراكز",
+        preliminary: "تقييم أولي (ODR)",
+        detail: "تقرير تفصيلي (PDR)",
+        presentation: "عروض",
+        technical: "تقارير فنية",
+        other: "أخرى"
+      },
+      tracks: {
+        idea: "فكرة",
+        project: "مشروع",
+        general: "عام"
+      }
+    },
+    pages: {
+      resourcesTitle: "الموارد",
+      resourcesSubtitle: "أدلة وملفات ومواد تعليمية.",
+      datesTitle: "تواريخ مهمة",
+      datesSubtitle: "سجّل المواعيد حتى لا تفوت أي موعد نهائي.",
+      datesBadge: "الجدول",
+      chatbotTitle: "TeknoBot",
+      chatbotSubtitle: "مساعدك الذكي لمسابقات تكنوفست.",
+      chatbotPlaceholder: "اسأل عن المسابقات أو القواعد أو التواريخ...",
+      chatbotSuggested: "مواضيع مقترحة"
     },
     footer: {
       description: "مكتبة واحدة لجميع احتياجاتك.",

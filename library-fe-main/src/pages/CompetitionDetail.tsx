@@ -92,7 +92,7 @@ export default function CompetitionDetail() {
                         {applicationLink ? (
                             <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 text-lg" asChild>
                                 <a href={applicationLink} target="_blank" rel="noreferrer">
-                                    {t("card.applyLink")} <ArrowRight className="ml-2 w-5 h-5" />
+                                    {t("card.applyLink")} <ArrowRight className="ms-2 w-5 h-5" />
                                 </a>
                             </Button>
                         ) : (
@@ -110,11 +110,11 @@ export default function CompetitionDetail() {
             <div className="lg:col-span-2">
                 <Tabs defaultValue="overview" className="w-full">
                     <TabsList className="grid w-full grid-cols-5 bg-muted/50 p-1 mb-8">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="resources">Resources</TabsTrigger>
-                        <TabsTrigger value="rules">Rules</TabsTrigger>
-                        <TabsTrigger value="awards">Awards</TabsTrigger>
-                        <TabsTrigger value="faq">FAQ</TabsTrigger>
+                        <TabsTrigger value="overview">{t("detail.tabs.overview")}</TabsTrigger>
+                        <TabsTrigger value="resources">{t("detail.tabs.resources")}</TabsTrigger>
+                        <TabsTrigger value="rules">{t("detail.tabs.rules")}</TabsTrigger>
+                        <TabsTrigger value="awards">{t("detail.tabs.awards")}</TabsTrigger>
+                        <TabsTrigger value="faq">{t("detail.tabs.faq")}</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="overview" className="space-y-6">
@@ -126,7 +126,7 @@ export default function CompetitionDetail() {
                                                 )}
                         {description && (
                             <div className="prose dark:prose-invert max-w-none">
-                                <h3 className="text-2xl font-bold font-display mb-4">Challenge Description</h3>
+                                <h3 className="text-2xl font-bold font-display mb-4">{t("detail.challengeDescription")}</h3>
                                 <p className="text-muted-foreground text-lg leading-relaxed">
                                     {description}
                                 </p>
@@ -147,7 +147,7 @@ export default function CompetitionDetail() {
                         ) : (reportFiles?.length ?? 0) === 0 && (resources?.length ?? 0) === 0 ? (
                             <div className="border-2 border-dashed border-border rounded-xl p-12 text-center">
                                 <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                                <p className="text-muted-foreground">No resources available for this competition</p>
+                                <p className="text-muted-foreground">{t("detail.noResources")}</p>
                             </div>
                         ) : (
                             <>
@@ -155,15 +155,14 @@ export default function CompetitionDetail() {
                                     <ReportFilesPanel files={reportFiles ?? []} />
                                 )}
 
-                                {/* Resources Section */}
                                 {(resources?.length ?? 0) > 0 && (
                                     <div>
                                         <div className="flex items-center gap-3 mb-6">
                                             <div className="p-2 bg-blue-500/10 rounded-lg">
                                                 <Link2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                                             </div>
-                                            <h3 className="text-2xl font-bold font-display">Learning Resources</h3>
-                                            <Badge className="ml-auto bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/30">
+                                            <h3 className="text-2xl font-bold font-display">{t("detail.learningResources")}</h3>
+                                            <Badge className="ms-auto bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/30">
                                                 {resources?.length ?? 0}
                                             </Badge>
                                         </div>
@@ -193,7 +192,10 @@ export default function CompetitionDetail() {
                                                                             {resource.resource_type.replace(/_/g, ' ')}
                                                                         </div>
                                                                         <div className="text-xs text-muted-foreground mt-1">
-                                                                            Year {resource.year}
+                                                                            {String(t("detail.yearLabel") ?? "Year {year}").replace(
+                                                                                "{year}",
+                                                                                String(resource.year),
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -202,7 +204,7 @@ export default function CompetitionDetail() {
                                                                 </p>
                                                                 <div className="inline-block">
                                                                     <Badge variant="secondary" className="bg-blue-500/20 text-blue-700 dark:text-blue-400">
-                                                                        External Resource
+                                                                        {t("detail.externalResource")}
                                                                     </Badge>
                                                                 </div>
                                                             </div>
@@ -213,8 +215,8 @@ export default function CompetitionDetail() {
                                                                 asChild
                                                             >
                                                                 <a href={resource.resource_url} target="_blank" rel="noreferrer">
-                                                                    <ArrowRight className="w-4 h-4 mr-2" />
-                                                                    Visit
+                                                                    <ArrowRight className="w-4 h-4 me-2" />
+                                                                    {t("detail.visit")}
                                                                 </a>
                                                             </Button>
                                                         </div>
@@ -231,8 +233,8 @@ export default function CompetitionDetail() {
                     <TabsContent value="rules">
                         {externalLink ? (
                             <div className="border border-border rounded-xl p-6 bg-card">
-                                <h3 className="text-xl font-bold mb-4">Technical Regulations</h3>
-                                <p className="mb-6 text-muted-foreground">Download the full technical rulebook for detailed specifications.</p>
+                                <h3 className="text-xl font-bold mb-4">{t("detail.technicalRegulations")}</h3>
+                                <p className="mb-6 text-muted-foreground">{t("detail.technicalRegulationsDesc")}</p>
                                 <Button
                                     variant="outline"
                                     className="w-full h-12 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all"
@@ -245,14 +247,14 @@ export default function CompetitionDetail() {
                                         className="flex items-center justify-center gap-2"
                                     >
                                         <Download className="w-4 h-4" />
-                                        View Rulebook
+                                        {t("detail.viewRulebook")}
                                     </a>
                                 </Button>
                             </div>
                         ) : (
                             <div className="border-2 border-dashed border-border rounded-xl p-12 text-center">
                                 <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                                <p className="text-muted-foreground">No rulebook available for this competition</p>
+                                <p className="text-muted-foreground">{t("detail.noRulebook")}</p>
                             </div>
                         )}
                     </TabsContent>
@@ -264,16 +266,15 @@ export default function CompetitionDetail() {
                     <TabsContent value="faq">
                         <div className="border-2 border-dashed border-border rounded-xl p-12 text-center">
                             <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                            <p className="text-muted-foreground">No FAQs available for this competition</p>
+                            <p className="text-muted-foreground">{t("detail.noFaqs")}</p>
                         </div>
                     </TabsContent>
                 </Tabs>
             </div>
 
-            {/* Sidebar */}
             <div className="space-y-6">
                 <div className="p-6 border border-border rounded-xl bg-card space-y-6 sticky top-24">
-                    <h3 className="font-bold font-display text-xl">At a Glance</h3>
+                    <h3 className="font-bold font-display text-xl">{t("detail.atAGlance")}</h3>
                     
                     <div className="space-y-4">
                         <div className="flex items-center gap-4">
@@ -281,24 +282,15 @@ export default function CompetitionDetail() {
                                 <Users className="w-5 h-5" />
                             </div>
                             <div>
-                                <div className="text-sm text-muted-foreground">Team Size</div>
+                                <div className="text-sm text-muted-foreground">{t("detail.teamSize")}</div>
                                 <div className="font-medium">{teamSize}</div>
                             </div>
                         </div>
-                        {/* <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
-                                <Users className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <div className="text-sm text-muted-foreground">{t("card.tkNumber")}</div>
-                                <div className="font-medium">{tkNumber}</div>
-                            </div>
-                        </div> */}
                     </div>
 
                     {competitionData?.timeline && Array.isArray(competitionData.timeline) && competitionData.timeline.length > 0 && (
                         <div className="pt-6 border-t border-border">
-                            <h4 className="font-bold mb-2">Timeline</h4>
+                            <h4 className="font-bold mb-2">{t("detail.timeline")}</h4>
                             <CompetitionTimeline timeline={competitionData.timeline} isLoading={isLoadingData} />
                         </div>
                     )}

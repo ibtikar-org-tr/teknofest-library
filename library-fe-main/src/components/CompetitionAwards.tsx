@@ -1,5 +1,6 @@
 import { Trophy } from "lucide-react";
 import type { AwardEntry } from "@/lib/competitions";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface CompetitionAwardsProps {
   awards: Record<string, AwardEntry[]> | AwardEntry[] | null;
@@ -7,6 +8,8 @@ interface CompetitionAwardsProps {
 }
 
 export default function CompetitionAwards({ awards, isLoading }: CompetitionAwardsProps) {
+  const { t } = useLanguage();
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-6">
@@ -23,7 +26,7 @@ export default function CompetitionAwards({ awards, isLoading }: CompetitionAwar
     return (
       <div className="text-center py-12 text-muted-foreground">
         <Trophy className="w-12 h-12 mx-auto mb-2 opacity-50" />
-        <p>No award information available</p>
+        <p>{t("detail.noAwards")}</p>
       </div>
     );
   }

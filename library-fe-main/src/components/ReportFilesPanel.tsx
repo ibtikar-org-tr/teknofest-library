@@ -3,14 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  REPORT_KIND_LABELS,
-  REPORT_LEVEL_LABELS,
-  REPORT_TRACK_LABELS,
   getReportFileMeta,
   type ReportKind,
   type ReportLevel,
   type ReportTrack,
 } from "@/lib/competitions";
+import { useLanguage } from "@/lib/LanguageContext";
 import { Download, FileText, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -70,19 +68,34 @@ function FilterRow({
 }
 
 export default function ReportFilesPanel({ files }: { files: ReportFileItem[] }) {
+  const { t, direction } = useLanguage();
+  const isRtl = direction === "rtl";
+
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState<ReportLevel | "all">("all");
   const [kind, setKind] = useState<ReportKind | "all">("all");
   const [track, setTrack] = useState<ReportTrack | "all">("all");
   const [extension, setExtension] = useState<string | "all">("all");
 
+  const levelLabel = (value: ReportLevel) => t(`reports.levels.${value}`);
+  const kindLabel = (value: ReportKind) => t(`reports.kinds.${value}`);
+  const trackLabel = (value: ReportTrack) => t(`reports.tracks.${value}`);
+
   const enriched = useMemo(
     () =>
-      files.map((file) => ({
-        file,
-        meta: getReportFileMeta(file.file_path, file.year ? `Report ${file.year}` : "Report"),
-      })),
-    [files],
+      files.map((file) => {
+        const fallback = file.year
+          ? String(t("reports.reportFallbackYear") ?? "Report {year}").replace(
+              "{year}",
+              String(file.year),
+            )
+          : t("reports.reportFallback") ?? "Report";
+        return {
+          file,
+          meta: getReportFileMeta(file.file_path, fallback),
+        };
+      }),
+    [files, t],
   );
 
   const counts = useMemo(() => {
@@ -118,16 +131,16 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
         file.year,
         file.stage,
         file.rank,
-        REPORT_LEVEL_LABELS[meta.level],
-        REPORT_KIND_LABELS[meta.kind],
-        REPORT_TRACK_LABELS[meta.track],
+        levelLabel(meta.level),
+        kindLabel(meta.kind),
+        trackLabel(meta.track),
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [enriched, search, level, kind, track, extension]);
+  }, [enriched, search, level, kind, track, extension, t]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof filtered>();
@@ -162,12 +175,12 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-primary/10 rounded-lg">
-          <FileText className="w-6 h-6 text-primary" />
+      <div className="mb-6 flex items-center gap-3">
+        <div className="rounded-lg bg-primary/10 p-2">
+          <FileText className="h-6 w-6 text-primary" />
         </div>
-        <h3 className="text-2xl font-bold font-display">Report Files</h3>
-        <Badge className="ml-auto bg-primary/20 text-primary hover:bg-primary/30">
+        <h3 className="font-display text-2xl font-bold">{t("reports.title")}</h3>
+        <Badge className="ms-auto bg-primary/20 text-primary hover:bg-primary/30">
           {filtered.length}
           {filtered.length !== files.length ? ` / ${files.length}` : ""}
         </Badge>
@@ -175,21 +188,26 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
 
       <div className="mb-6 space-y-4 rounded-xl border border-border bg-card/60 p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            className={cn(
+              "absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
+              isRtl ? "right-3" : "left-3",
+            )}
+          />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search reports by name, folder, type…"
-            className="h-10 pl-9"
+            placeholder={t("reports.searchPlaceholder")}
+            className={cn("h-10", isRtl ? "pr-9" : "pl-9")}
           />
         </div>
 
         <div className="space-y-3">
           {levelOptions.length > 1 && (
-            <FilterRow title="Level">
+            <FilterRow title={t("reports.level")}>
               <FilterChip
                 active={level === "all"}
-                label="All"
+                label={t("reports.all")}
                 count={files.length}
                 onClick={() => setLevel("all")}
               />
@@ -197,7 +215,7 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
                 <FilterChip
                   key={value}
                   active={level === value}
-                  label={REPORT_LEVEL_LABELS[value]}
+                  label={levelLabel(value)}
                   count={counts.levels.get(value) ?? 0}
                   onClick={() => setLevel(value)}
                 />
@@ -206,10 +224,10 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
           )}
 
           {kindOptions.length > 1 && (
-            <FilterRow title="Type">
+            <FilterRow title={t("reports.type")}>
               <FilterChip
                 active={kind === "all"}
-                label="All"
+                label={t("reports.all")}
                 count={files.length}
                 onClick={() => setKind("all")}
               />
@@ -217,7 +235,7 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
                 <FilterChip
                   key={value}
                   active={kind === value}
-                  label={REPORT_KIND_LABELS[value]}
+                  label={kindLabel(value)}
                   count={counts.kinds.get(value) ?? 0}
                   onClick={() => setKind(value)}
                 />
@@ -226,10 +244,10 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
           )}
 
           {trackOptions.length > 1 && (
-            <FilterRow title="Track">
+            <FilterRow title={t("reports.track")}>
               <FilterChip
                 active={track === "all"}
-                label="All"
+                label={t("reports.all")}
                 count={files.length}
                 onClick={() => setTrack("all")}
               />
@@ -237,7 +255,7 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
                 <FilterChip
                   key={value}
                   active={track === value}
-                  label={REPORT_TRACK_LABELS[value]}
+                  label={trackLabel(value)}
                   count={counts.tracks.get(value) ?? 0}
                   onClick={() => setTrack(value)}
                 />
@@ -246,10 +264,10 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
           )}
 
           {extensionOptions.length > 1 && (
-            <FilterRow title="Format">
+            <FilterRow title={t("reports.format")}>
               <FilterChip
                 active={extension === "all"}
-                label="All"
+                label={t("reports.all")}
                 count={files.length}
                 onClick={() => setExtension("all")}
               />
@@ -276,7 +294,7 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
               onClick={resetFilters}
             >
               <X className="h-3.5 w-3.5" />
-              Clear filters
+              {t("reports.clearFilters")}
             </Button>
           </div>
         )}
@@ -284,9 +302,9 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="text-muted-foreground mb-3">No report files match these filters.</p>
+          <p className="mb-3 text-muted-foreground">{t("reports.noMatches")}</p>
           <Button type="button" variant="outline" size="sm" onClick={resetFilters}>
-            Reset filters
+            {t("reports.resetFilters")}
           </Button>
         </div>
       ) : (
@@ -335,17 +353,17 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
                             </Badge>
                           )}
                           <Badge variant="outline" className="bg-secondary/50">
-                            {REPORT_LEVEL_LABELS[meta.level]}
+                            {levelLabel(meta.level)}
                           </Badge>
                           <Badge
                             variant="outline"
                             className="bg-blue-500/10 text-blue-700 dark:text-blue-400"
                           >
-                            {REPORT_KIND_LABELS[meta.kind]}
+                            {kindLabel(meta.kind)}
                           </Badge>
                           {meta.track !== "general" && (
                             <Badge variant="outline" className="bg-secondary/50">
-                              {REPORT_TRACK_LABELS[meta.track]}
+                              {trackLabel(meta.track)}
                             </Badge>
                           )}
                           {file.language && (
@@ -361,8 +379,8 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
                         asChild
                       >
                         <a href={file.file_path} target="_blank" rel="noreferrer">
-                          <Download className="mr-2 h-4 w-4" />
-                          Download
+                          <Download className="me-2 h-4 w-4" />
+                          {t("reports.download")}
                         </a>
                       </Button>
                     </div>

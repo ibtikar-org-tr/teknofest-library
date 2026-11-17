@@ -237,30 +237,6 @@ const detectTrack = (haystack: string): ReportTrack => {
   return "general";
 };
 
-export const REPORT_LEVEL_LABELS: Record<ReportLevel, string> = {
-  "high-school": "High school",
-  university: "University",
-  "middle-school": "Middle school",
-  "all-levels": "All levels",
-};
-
-export const REPORT_KIND_LABELS: Record<ReportKind, string> = {
-  template: "Templates",
-  finalist: "Finalists",
-  ranking: "Rankings",
-  preliminary: "Preliminary (ODR)",
-  detail: "Detail (PDR)",
-  presentation: "Presentations",
-  technical: "Technical reports",
-  other: "Other",
-};
-
-export const REPORT_TRACK_LABELS: Record<ReportTrack, string> = {
-  idea: "Idea",
-  project: "Project",
-  general: "General",
-};
-
 export const getReportFileMeta = (
   filePath: string,
   fallbackLabel = "Report",
