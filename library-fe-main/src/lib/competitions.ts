@@ -135,14 +135,25 @@ export const getReportFileLabel = (filePath: string, fallback = "Report") => {
   }
 };
 
-export const getFileExtension = (filePath: string) => {
+export const getFileNameFromPath = (filePath: string) => {
   try {
     const pathname = filePath.includes("://")
       ? new URL(filePath).pathname
       : filePath;
-    const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
-    return match?.[1]?.toUpperCase() ?? null;
+    const parts = pathname.split("/").filter(Boolean);
+    const raw = parts[parts.length - 1] ?? "";
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
   } catch {
-    return null;
+    return "";
   }
+};
+
+export const getFileExtension = (filePath: string) => {
+  const name = getFileNameFromPath(filePath);
+  const match = name.match(/\.([a-zA-Z0-9]+)$/);
+  return match?.[1]?.toUpperCase() ?? null;
 };

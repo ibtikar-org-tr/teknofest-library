@@ -10,6 +10,7 @@ import {
     buildApiUrl,
     formatTeamSize,
     getFileExtension,
+    getFileNameFromPath,
     getReportFileLabel,
     pickLocalizedField,
     type CompetitionApi,
@@ -170,6 +171,7 @@ export default function CompetitionDetail() {
                                                     file.file_path,
                                                     file.year ? `Report ${file.year}` : "Report",
                                                 );
+                                                const fileName = getFileNameFromPath(file.file_path);
                                                 const extension = getFileExtension(file.file_path);
 
                                                 return (
@@ -187,7 +189,15 @@ export default function CompetitionDetail() {
                                                                     <div className="font-semibold text-base md:text-lg leading-snug break-words">
                                                                         {label}
                                                                     </div>
-                                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                                    {fileName && (
+                                                                        <div
+                                                                            className="text-xs text-muted-foreground mt-1 font-mono break-all"
+                                                                            title={fileName}
+                                                                        >
+                                                                            {fileName}
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="text-xs text-muted-foreground/80 mt-1">
                                                                         {[file.year, file.stage, file.rank]
                                                                             .filter(Boolean)
                                                                             .join(" · ")}
