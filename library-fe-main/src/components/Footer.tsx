@@ -1,6 +1,6 @@
 import { Rocket, Instagram } from "lucide-react";
-import { Link } from "wouter";
 import { useLanguage } from "@/lib/LanguageContext";
+import LangLink from "@/components/LangLink";
 import { PiTelegramLogo } from "react-icons/pi";
 
 export default function Footer() {
@@ -12,14 +12,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-6 group">
+            <LangLink href="/" className="flex items-center gap-2 mb-6 group">
               <div className="w-8 h-8 flex items-center justify-center bg-primary rounded-lg">
                 <Rocket className="text-white w-5 h-5" />
               </div>
               <span className="text-xl font-bold font-display tracking-wider">
                 TK<span className="text-primary">Library</span>
               </span>
-            </Link>
+            </LangLink>
             <p className="text-muted-foreground text-sm leading-relaxed mb-6">
               {t('footer.description')}
             </p>
@@ -40,7 +40,7 @@ export default function Footer() {
           <div>
             <h4 className="font-display font-bold text-lg mb-6">{t('footer.quickLinks')}</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">{t('footer.links.competitions')}</a></li>
+              <li><LangLink href="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">{t('footer.links.competitions')}</LangLink></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">{t('footer.links.announcements')}</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">{t('footer.links.results')}</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">{t('footer.links.faq')}</a></li>

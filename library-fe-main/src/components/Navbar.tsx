@@ -1,9 +1,10 @@
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Rocket, MessageSquare, Globe } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/LanguageContext";
+import LangLink from "@/components/LangLink";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +56,7 @@ export default function Navbar() {
       transition={{ duration: 0.45 }}
     >
       <div className="container mx-auto px-4 h-full flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <LangLink href="/" className="flex items-center gap-2.5 group">
           <div
             className={cn(
               "relative w-9 h-9 flex items-center justify-center rounded-md overflow-hidden transition-transform duration-300 group-hover:scale-105",
@@ -72,11 +73,11 @@ export default function Navbar() {
           >
             TK<span className="text-primary">Library</span>
           </span>
-        </Link>
+        </LangLink>
 
         <div className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
-            <Link
+            <LangLink
               key={link.href}
               href={link.href}
               className={cn(
@@ -95,7 +96,7 @@ export default function Navbar() {
                   className="absolute left-0 right-0 -bottom-1 h-0.5 bg-primary"
                 />
               )}
-            </Link>
+            </LangLink>
           ))}
 
           <div
@@ -132,12 +133,12 @@ export default function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href="/chatbot">
+          <LangLink href="/chatbot">
             <Button className="bg-primary hover:bg-primary/90 text-white font-semibold tracking-wide uppercase gap-2 rounded-sm">
               <MessageSquare className="w-4 h-4" />
               {t("nav.askAi")}
             </Button>
-          </Link>
+          </LangLink>
         </div>
 
         <div className="flex items-center gap-3 md:hidden">
@@ -184,7 +185,7 @@ export default function Navbar() {
           >
             <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
               {navLinks.map((link) => (
-                <Link
+                <LangLink
                   key={link.href}
                   href={link.href}
                   className={cn(
@@ -194,13 +195,13 @@ export default function Navbar() {
                   onClick={() => setIsOpen(false)}
                 >
                   {link.name}
-                </Link>
+                </LangLink>
               ))}
-              <Link href="/chatbot" onClick={() => setIsOpen(false)}>
+              <LangLink href="/chatbot" onClick={() => setIsOpen(false)}>
                 <Button className="w-full bg-primary text-white uppercase font-bold rounded-sm">
                   {t("nav.askAi")}
                 </Button>
-              </Link>
+              </LangLink>
             </div>
           </motion.div>
         )}

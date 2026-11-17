@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { translations, type Language, type Direction } from './translations';
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { useSearchParams } from "wouter";
+import { translations, type Language, type Direction } from "./translations";
+import { DEFAULT_LANGUAGE, isLanguage, LANG_PARAM } from "./lang";
 
 interface LanguageContextType {
   language: Language;
@@ -10,37 +12,45 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const STORAGE_KEY = "tk-library-lang";
-
-const isLanguage = (value: string): value is Language =>
-  value === "en" || value === "tr" || value === "ar";
-
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === "undefined") return "en";
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved && isLanguage(saved) ? saved : "en";
-  });
-  const [direction, setDirection] = useState<Direction>(
-    language === "ar" ? "rtl" : "ltr",
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const langParam = searchParams.get(LANG_PARAM);
+  const language: Language = isLanguage(langParam) ? langParam : DEFAULT_LANGUAGE;
+  const direction: Direction = language === "ar" ? "rtl" : "ltr";
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    window.localStorage.setItem(STORAGE_KEY, lang);
-  };
+  // Persist language in the URL (default Arabic when missing / invalid)
+  useEffect(() => {
+    if (isLanguage(langParam)) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set(LANG_PARAM, DEFAULT_LANGUAGE);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [langParam, setSearchParams]);
 
   useEffect(() => {
-    const newDir = language === "ar" ? "rtl" : "ltr";
-    setDirection(newDir);
-    document.documentElement.dir = newDir;
+    document.documentElement.dir = direction;
     document.documentElement.lang = language;
-  }, [language]);
+  }, [language, direction]);
+
+  const setLanguage = (lang: Language) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set(LANG_PARAM, lang);
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   const t = (path: string) => {
-    const keys = path.split('.');
+    const keys = path.split(".");
     let current: any = translations[language];
-    
+
     for (const key of keys) {
       if (current[key] === undefined) {
         console.warn(`Translation missing for key: ${path} in language: ${language}`);
@@ -48,7 +58,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }
       current = current[key];
     }
-    
+
     return current;
   };
 
@@ -62,7 +72,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 }

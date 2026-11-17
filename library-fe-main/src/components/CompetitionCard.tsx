@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import LangLink from "@/components/LangLink";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,7 +57,7 @@ export default function CompetitionCard({
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.3), ease: "easeOut" }}
       className="group h-full opacity-100"
     >
-      <Link href={`/competition/${competition.id}`} className="block h-full">
+      <LangLink href={`/competition/${competition.id}`} className="block h-full">
         <div className="relative h-full overflow-hidden border border-border/70 bg-card transition-colors duration-300 group-hover:border-primary/40">
           <div className="relative aspect-[16/10] overflow-hidden">
             <img
@@ -102,7 +102,7 @@ export default function CompetitionCard({
             </Button>
           </div>
         </div>
-      </Link>
+      </LangLink>
     </motion.article>
   );
 }
