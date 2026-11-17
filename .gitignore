@@ -2,6 +2,7 @@ kitchen-backend/uploads/
 
 # Local-only seed / env for offline VMS + Kitchen SSO testing
 kitchen-backend/wrangler.offline.jsonc
+library-be-main-hono/wrangler.offline.jsonc
 kitchen-backend/scripts/seed-staff.sql
 kitchen-backend/scripts/seed-kitchen-events.sql
 kitchen-backend/scripts/seed-*.sql

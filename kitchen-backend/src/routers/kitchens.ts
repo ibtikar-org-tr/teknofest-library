@@ -7,12 +7,13 @@ import { getEventKitchen, listEventKitchens } from '../repositories/event-kitche
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import { addMemberToTeam, createTeam, getTeam, listTeams } from '../repositories/teams'
 import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
+import { canManageVmsEvent } from '../repositories/vms-event-permissions'
 import {
   getVmsEvent,
   getVmsEventsByIds,
   isMemberRegisteredForEvent,
 } from '../repositories/vms-events'
-import type { AppBindings, Environment, KitchenMember, KitchenStaffSession } from '../types/env'
+import type { AppBindings, Environment, KitchenMember } from '../types/env'
 import type { KitchenEventView } from '../types/models'
 
 const kitchensRouter = new Hono<AppBindings>()
@@ -41,7 +42,6 @@ async function buildKitchenViews(
   env: Environment,
   kitchens: Awaited<ReturnType<typeof listEventKitchens>>,
   member: KitchenMember | undefined,
-  staff: KitchenStaffSession | undefined,
 ): Promise<KitchenEventView[]> {
   const events = await getVmsEventsByIds(
     env,
@@ -54,13 +54,13 @@ async function buildKitchenViews(
     const event = byId.get(kitchen.event_id)
     if (!event) continue
 
-    let canAccess = Boolean(staff)
-    if (!canAccess && member) {
-      canAccess = await isMemberRegisteredForEvent(
-        env,
-        kitchen.event_id,
-        member.membership_number,
-      )
+    let canManage = false
+    let canAccess = false
+    if (member) {
+      canManage = await canManageVmsEvent(env, kitchen.event_id, member.membership_number)
+      canAccess =
+        canManage ||
+        (await isMemberRegisteredForEvent(env, kitchen.event_id, member.membership_number))
     }
 
     views.push({
@@ -68,6 +68,7 @@ async function buildKitchenViews(
       kitchen_enabled: kitchen.enabled,
       kitchen,
       can_access: canAccess,
+      can_manage: canManage,
     })
   }
   return views
@@ -75,11 +76,10 @@ async function buildKitchenViews(
 
 const withEventAccess = [memberAuthMiddleware, requireEventKitchenAccess] as const
 
-/** Enabled kitchens on the platform (members: registered only; staff: all). */
+/** Enabled kitchens (registered members + VMS event managers). */
 kitchensRouter.get('/', memberAuthMiddleware, async (c) => {
   const kitchens = await listEventKitchens(c.env, { enabledOnly: true })
-  const views = await buildKitchenViews(c.env, kitchens, c.get('member'), c.get('staff'))
-  if (c.get('staff')) return c.json(views)
+  const views = await buildKitchenViews(c.env, kitchens, c.get('member'))
   return c.json(views.filter((v) => v.can_access))
 })
 
@@ -344,26 +344,40 @@ kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {
 })
 
 kitchensRouter.get('/:eventId/teams', ...withEventAccess, async (c) => {
-  if (!c.get('staff')) return c.json({ message: 'Staff only' }, 403)
-  return c.json(await listTeams(c.env, c.req.param('eventId')))
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can list teams' }, 403)
+  }
+  return c.json(await listTeams(c.env, eventId))
 })
 
 kitchensRouter.get('/:eventId/individuals', ...withEventAccess, async (c) => {
-  if (!c.get('staff')) return c.json({ message: 'Staff only' }, 403)
   const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can list individuals' }, 403)
+  }
   const unassignedOnly = c.req.query('unassigned_only') === 'true'
   const individuals = await listIndividuals(c.env, eventId)
   return c.json(unassignedOnly ? individuals.filter((i) => !i.is_assigned) : individuals)
 })
 
 kitchensRouter.get('/:eventId/projects', ...withEventAccess, async (c) => {
-  if (!c.get('staff')) return c.json({ message: 'Staff only' }, 403)
-  return c.json(await listProjects(c.env, c.req.param('eventId')))
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can list projects' }, 403)
+  }
+  return c.json(await listProjects(c.env, eventId))
 })
 
 kitchensRouter.get('/:eventId/stats', ...withEventAccess, async (c) => {
-  if (!c.get('staff')) return c.json({ message: 'Staff only' }, 403)
   const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can view stats' }, 403)
+  }
   const [teams, individuals, projects] = await Promise.all([
     listTeams(c.env, eventId),
     listIndividuals(c.env, eventId),
@@ -387,12 +401,13 @@ kitchensRouter.get('/:eventId', memberAuthMiddleware, async (c) => {
   const event = await getVmsEvent(c.env, eventId)
   if (!event) return c.json({ message: 'Event not found in VMS' }, 404)
 
-  const staff = c.get('staff')
   const member = c.get('member')
-  let canAccess = Boolean(staff)
-  if (!canAccess && member) {
-    canAccess = await isMemberRegisteredForEvent(c.env, eventId, member.membership_number)
-  }
+  const canManage = await canManageVmsEvent(c.env, eventId, member?.membership_number)
+  const canAccess =
+    canManage ||
+    (member
+      ? await isMemberRegisteredForEvent(c.env, eventId, member.membership_number)
+      : false)
   if (!canAccess) {
     return c.json(
       { message: 'You must be registered for this VMS event to enter its kitchen' },
@@ -405,6 +420,7 @@ kitchensRouter.get('/:eventId', memberAuthMiddleware, async (c) => {
     kitchen_enabled: true,
     kitchen,
     can_access: true,
+    can_manage: canManage,
   }
   return c.json(view)
 })

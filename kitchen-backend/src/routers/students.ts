@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
-import { memberAuthMiddleware, staffAuthMiddleware } from '../middleware/staff-auth'
+import { memberAuthMiddleware } from '../middleware/staff-auth'
+import { requireEventManager } from '../middleware/event-manager'
+import { canManageVmsEvent } from '../repositories/vms-event-permissions'
 import {
   createIndividual,
   getIndividual,
@@ -113,37 +115,45 @@ studentsRouter.get('/verify-membership-number/:membership_number', memberAuthMid
   })
 })
 
-studentsRouter.get('/teams', staffAuthMiddleware, async (c) => {
-  const eventId = c.req.query('event_id')
-  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+studentsRouter.get('/teams', memberAuthMiddleware, requireEventManager, async (c) => {
+  const eventId = c.req.query('event_id')!
   return c.json(await listTeams(c.env, eventId))
 })
 
-studentsRouter.get('/team/:team_id', staffAuthMiddleware, async (c) => {
+studentsRouter.get('/team/:team_id', memberAuthMiddleware, async (c) => {
   const teamId = Number(c.req.param('team_id'))
   const team = await getTeam(c.env, teamId)
   if (!team) return c.json({ message: 'Team not found' }, 404)
+  const member = c.get('member')
+  if (!team.event_id || !(await canManageVmsEvent(c.env, team.event_id, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can view this team' }, 403)
+  }
   return c.json(team)
 })
 
-studentsRouter.get('/individuals', staffAuthMiddleware, async (c) => {
-  const eventId = c.req.query('event_id')
-  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+studentsRouter.get('/individuals', memberAuthMiddleware, requireEventManager, async (c) => {
+  const eventId = c.req.query('event_id')!
   const unassignedOnly = c.req.query('unassigned_only') === 'true'
   const individuals = await listIndividuals(c.env, eventId)
   return c.json(unassignedOnly ? individuals.filter((i) => !i.is_assigned) : individuals)
 })
 
-studentsRouter.get('/individual/:individual_id', staffAuthMiddleware, async (c) => {
+studentsRouter.get('/individual/:individual_id', memberAuthMiddleware, async (c) => {
   const id = Number(c.req.param('individual_id'))
   const individual = await getIndividual(c.env, id)
   if (!individual) return c.json({ message: 'Individual not found' }, 404)
+  const member = c.get('member')
+  if (
+    !individual.event_id ||
+    !(await canManageVmsEvent(c.env, individual.event_id, member?.membership_number))
+  ) {
+    return c.json({ message: 'Only VMS event managers can view this individual' }, 403)
+  }
   return c.json(individual)
 })
 
-studentsRouter.get('/stats', staffAuthMiddleware, async (c) => {
-  const eventId = c.req.query('event_id')
-  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+studentsRouter.get('/stats', memberAuthMiddleware, requireEventManager, async (c) => {
+  const eventId = c.req.query('event_id')!
   const teams = await listTeams(c.env, eventId)
   const individuals = await listIndividuals(c.env, eventId)
   return c.json({

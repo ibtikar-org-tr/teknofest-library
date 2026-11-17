@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -10,14 +10,10 @@ import {
   Menu,
   X,
   ChevronLeft,
-  Shield,
   Calendar,
 } from 'lucide-react'
 import Logo from './Logo'
-import { adminService } from '../services/api'
 import { clearSession } from '../lib/auth-session'
-
-const superAdminLink = { to: '/admin/management', label: 'إدارة الإداريين', icon: Shield }
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -25,7 +21,6 @@ interface AdminLayoutProps {
 
 interface SidebarContentProps {
   sidebarOpen: boolean
-  isSuperAdmin: boolean
   pathname: string
   eventId?: string
   onLogout: () => void
@@ -33,7 +28,6 @@ interface SidebarContentProps {
 
 function SidebarContent({
   sidebarOpen,
-  isSuperAdmin,
   pathname,
   eventId,
   onLogout,
@@ -92,21 +86,6 @@ function SidebarContent({
               </li>
             )
           })}
-          {isSuperAdmin && (
-            <li>
-              <Link
-                to={superAdminLink.to}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                  pathname === superAdminLink.to
-                    ? 'bg-teknofest-orange text-white'
-                    : 'text-gray-300 hover:bg-teknofest-medium-blue'
-                }`}
-              >
-                <superAdminLink.icon className="w-5 h-5 flex-shrink-0" />
-                {sidebarOpen && <span className="font-medium">{superAdminLink.label}</span>}
-              </Link>
-            </li>
-          )}
         </ul>
       </nav>
 
@@ -134,22 +113,9 @@ function SidebarContent({
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const eventId = location.pathname.match(/\/admin\/events\/([^/]+)/)?.[1]
-
-  useEffect(() => {
-    const checkSuperAdmin = async () => {
-      try {
-        const response = await adminService.checkSuperAdmin()
-        setIsSuperAdmin(response.is_super_admin)
-      } catch {
-        setIsSuperAdmin(false)
-      }
-    }
-    checkSuperAdmin()
-  }, [])
 
   const handleLogout = () => {
     clearSession()
@@ -159,19 +125,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pageTitle =
     location.pathname === '/admin/kitchens'
       ? 'المطابخ / الفعاليات'
-      : location.pathname === superAdminLink.to
-        ? superAdminLink.label
-        : location.pathname.includes('/teams')
-          ? 'الفرق'
-          : location.pathname.includes('/individuals')
-            ? 'الأفراد'
-            : location.pathname.includes('/projects')
-              ? 'المشاريع'
-              : location.pathname.includes('/evaluations')
-                ? 'التقييمات'
-                : eventId
-                  ? 'لوحة التحكم'
-                  : 'لوحة الإدارة'
+      : location.pathname.includes('/teams')
+        ? 'الفرق'
+        : location.pathname.includes('/individuals')
+          ? 'الأفراد'
+          : location.pathname.includes('/projects')
+            ? 'المشاريع'
+            : location.pathname.includes('/evaluations')
+              ? 'التقييمات'
+              : eventId
+                ? 'لوحة التحكم'
+                : 'لوحة الإدارة'
 
   return (
     <div className="min-h-screen bg-teknofest-dark-blue flex">
@@ -182,7 +146,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         <SidebarContent
           sidebarOpen={sidebarOpen}
-          isSuperAdmin={isSuperAdmin}
           pathname={location.pathname}
           eventId={eventId}
           onLogout={handleLogout}
@@ -198,7 +161,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <aside className="absolute right-0 top-0 h-full w-64 bg-teknofest-blue flex flex-col">
             <SidebarContent
               sidebarOpen={true}
-              isSuperAdmin={isSuperAdmin}
               pathname={location.pathname}
               eventId={eventId}
               onLogout={handleLogout}

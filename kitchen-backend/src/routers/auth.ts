@@ -1,8 +1,7 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
 import { memberAuthMiddleware } from '../middleware/staff-auth'
-import { getStaffByMembershipNumber } from '../repositories/staff'
-import { staffToAdminView } from '../utils/mappers'
+import { memberManagesAnyEvent } from '../repositories/vms-event-permissions'
 
 const authRouter = new Hono<AppBindings>()
 
@@ -51,15 +50,19 @@ authRouter.post('/vms/exchange', async (c) => {
     return c.json({ message: 'Could not reach VMS' }, 502)
   }
 
-  const staff = await getStaffByMembershipNumber(c.env, exchangePayload.membershipNumber)
-  const isStaff = Boolean(staff?.is_active)
+  const canManageKitchens = await memberManagesAnyEvent(
+    c.env,
+    exchangePayload.membershipNumber,
+  )
 
   return c.json({
     access_token: exchangePayload.accessToken,
     token_type: 'bearer',
-    is_staff: isStaff,
-    is_superadmin: Boolean(staff?.is_superadmin),
-    admin: isStaff && staff ? staffToAdminView(staff) : null,
+    /** True when the member can manage at least one VMS event (enable kitchens / admin that event). */
+    is_staff: canManageKitchens,
+    is_event_manager: canManageKitchens,
+    is_superadmin: false,
+    admin: null,
     user: {
       membershipNumber: exchangePayload.membershipNumber,
       email: exchangePayload.email,
@@ -70,16 +73,17 @@ authRouter.post('/vms/exchange', async (c) => {
 
 authRouter.get('/me', memberAuthMiddleware, async (c) => {
   const member = c.get('member')
-  const staff = c.get('staff')
+  const canManageKitchens = await memberManagesAnyEvent(c.env, member.membership_number)
   return c.json({
     user: {
       membershipNumber: member.membership_number,
       email: member.email,
       role: member.vms_role,
     },
-    is_staff: Boolean(staff),
-    is_superadmin: Boolean(staff?.is_superadmin),
-    admin: staff ? staffToAdminView(staff) : null,
+    is_staff: canManageKitchens,
+    is_event_manager: canManageKitchens,
+    is_superadmin: false,
+    admin: null,
   })
 })
 

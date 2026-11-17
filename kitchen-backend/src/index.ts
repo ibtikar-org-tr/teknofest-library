@@ -8,7 +8,8 @@ import evaluationRouter from './routers/evaluation'
 import emailRouter from './routers/email'
 import authRouter from './routers/auth'
 import kitchensRouter from './routers/kitchens'
-import { staffAuthMiddleware } from './middleware/staff-auth'
+import { memberAuthMiddleware } from './middleware/staff-auth'
+import { memberManagesAnyEvent } from './repositories/vms-event-permissions'
 
 const app = new Hono<AppBindings>()
 
@@ -50,9 +51,16 @@ app.route('/api/projects', projectsRouter)
 app.route('/api/admin', adminRouter)
 app.route('/api/evaluation', evaluationRouter)
 
-// Protect email mutations with staff auth
+// Protect email mutations — any VMS event manager
 const securedEmail = new Hono<AppBindings>()
-securedEmail.use('*', staffAuthMiddleware)
+securedEmail.use('*', memberAuthMiddleware)
+securedEmail.use('*', async (c, next) => {
+  const member = c.get('member')
+  if (!member || !(await memberManagesAnyEvent(c.env, member.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can send kitchen emails' }, 403)
+  }
+  await next()
+})
 securedEmail.route('/', emailRouter)
 app.route('/api/email', securedEmail)
 

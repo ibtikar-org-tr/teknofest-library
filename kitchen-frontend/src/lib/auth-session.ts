@@ -10,7 +10,9 @@ export type KitchenSessionUser = {
 
 export type KitchenSession = {
   user: KitchenSessionUser
+  /** Can manage kitchens for at least one VMS event (event creator/admin/project manager). */
   is_staff: boolean
+  is_event_manager: boolean
   is_superadmin: boolean
 }
 
@@ -53,5 +55,10 @@ export function isLoggedIn(): boolean {
 }
 
 export function isStaffSession(): boolean {
-  return Boolean(getSession()?.is_staff)
+  const session = getSession()
+  return Boolean(session?.is_event_manager || session?.is_staff)
+}
+
+export function isEventManagerSession(): boolean {
+  return isStaffSession()
 }

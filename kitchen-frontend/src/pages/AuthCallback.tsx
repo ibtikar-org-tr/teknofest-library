@@ -42,19 +42,18 @@ export default function AuthCallback() {
           throw new Error('missing user')
         }
 
+        const canManage = Boolean(response.is_event_manager ?? response.is_staff)
         setSession(response.access_token, {
           user: response.user,
-          is_staff: Boolean(response.is_staff),
-          is_superadmin: Boolean(response.is_superadmin),
+          is_staff: canManage,
+          is_event_manager: canManage,
+          is_superadmin: false,
         })
 
         toast.success('تم تسجيل الدخول بنجاح')
 
         let destination = next
-        if (destination.startsWith('/admin') && !response.is_staff) {
-          destination = '/'
-        } else if (destination === '/' && response.is_staff && next === '/') {
-          // keep home for members; staff landing on bare callback without next stays home
+        if (destination.startsWith('/admin') && !canManage) {
           destination = '/'
         }
 

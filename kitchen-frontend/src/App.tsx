@@ -12,7 +12,6 @@ import AdminTeams from './pages/admin/AdminTeams'
 import AdminIndividuals from './pages/admin/AdminIndividuals'
 import AdminProjects from './pages/admin/AdminProjects'
 import AdminEvaluations from './pages/admin/AdminEvaluations'
-import AdminManagement from './pages/admin/AdminManagement'
 import AdminKitchens from './pages/admin/AdminKitchens'
 import AuthCallback from './pages/AuthCallback'
 import TopTeams from './pages/TopTeams'
@@ -55,7 +54,7 @@ function App() {
           <Route path="events/:eventId/individuals" element={<AdminIndividuals />} />
           <Route path="events/:eventId/projects" element={<AdminProjects />} />
           <Route path="events/:eventId/evaluations" element={<AdminEvaluations />} />
-          <Route path="management" element={<AdminManagement />} />
+          <Route path="management" element={<Navigate to="/admin/kitchens" replace />} />
           <Route path="teams" element={<Navigate to="/admin/kitchens" replace />} />
           <Route path="individuals" element={<Navigate to="/admin/kitchens" replace />} />
           <Route path="projects" element={<Navigate to="/admin/kitchens" replace />} />

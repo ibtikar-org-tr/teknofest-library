@@ -54,12 +54,14 @@ export interface VmsEventSummary {
   status: string
   image_url: string | null
   project_id: string | null
+  created_by: string | null
 }
 
 export interface KitchenEventView extends VmsEventSummary {
   kitchen_enabled: boolean
   kitchen?: EventKitchen | null
   can_access?: boolean
+  can_manage?: boolean
 }
 
 export interface Team {

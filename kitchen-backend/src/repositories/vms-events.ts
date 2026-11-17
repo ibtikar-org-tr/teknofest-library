@@ -1,7 +1,7 @@
 import type { Environment } from '../types/env'
 import type { VmsEventSummary } from '../types/models'
 
-interface VmsEventRow {
+export interface VmsEventRow {
   id: string
   name: string
   description: string | null
@@ -10,9 +10,10 @@ interface VmsEventRow {
   status: string
   image_url: string | null
   project_id: string | null
+  created_by: string | null
 }
 
-const EVENT_SELECT = `SELECT id, name, description, start_time, end_time, status, image_url, project_id
+const EVENT_SELECT = `SELECT id, name, description, start_time, end_time, status, image_url, project_id, created_by
   FROM events`
 
 function mapEvent(row: VmsEventRow): VmsEventSummary {
@@ -25,6 +26,7 @@ function mapEvent(row: VmsEventRow): VmsEventSummary {
     status: row.status,
     image_url: row.image_url,
     project_id: row.project_id,
+    created_by: row.created_by,
   }
 }
 

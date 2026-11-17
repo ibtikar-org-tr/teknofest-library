@@ -91,7 +91,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 px-4 py-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg hover:bg-teknofest-cyan hover:text-teknofest-dark-blue transition-all duration-300"
               >
                 <Shield className="w-4 h-4" />
-                <span>لوحة الإدارة</span>
+                <span>إدارة المطابخ</span>
               </Link>
             ) : null}
 
@@ -142,6 +142,16 @@ export default function Navbar() {
               </Link>
             )
           })}
+          {staff ? (
+            <Link
+              to="/admin/kitchens"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-teknofest-cyan hover:bg-teknofest-medium-blue"
+            >
+              <Shield className="w-4 h-4" />
+              إدارة المطابخ
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </nav>

@@ -49,6 +49,7 @@ api.interceptors.response.use(
 
 export type VmsExchangeResponse = AuthToken & {
   is_staff: boolean
+  is_event_manager?: boolean
   is_superadmin: boolean
   admin?: Admin | null
   user: {

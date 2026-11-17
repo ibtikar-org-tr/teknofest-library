@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
-import { memberAuthMiddleware, staffAuthMiddleware } from '../middleware/staff-auth'
+import { memberAuthMiddleware } from '../middleware/staff-auth'
+import { requireEventManager } from '../middleware/event-manager'
+import { canManageVmsEvent } from '../repositories/vms-event-permissions'
 import {
   createProject,
   getProject,
@@ -57,15 +59,13 @@ projectsRouter.post('/submit', memberAuthMiddleware, async (c) => {
   return c.json(project, 201)
 })
 
-projectsRouter.get('/', staffAuthMiddleware, async (c) => {
-  const eventId = c.req.query('event_id')
-  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+projectsRouter.get('/', memberAuthMiddleware, requireEventManager, async (c) => {
+  const eventId = c.req.query('event_id')!
   return c.json(await listProjects(c.env, eventId))
 })
 
-projectsRouter.get('/stats/summary', staffAuthMiddleware, async (c) => {
-  const eventId = c.req.query('event_id')
-  if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+projectsRouter.get('/stats/summary', memberAuthMiddleware, requireEventManager, async (c) => {
+  const eventId = c.req.query('event_id')!
   const projects = await listProjects(c.env, eventId)
   return c.json({
     total: projects.length,
@@ -75,18 +75,31 @@ projectsRouter.get('/stats/summary', staffAuthMiddleware, async (c) => {
   })
 })
 
-projectsRouter.get('/team/:team_id', staffAuthMiddleware, async (c) => {
+projectsRouter.get('/team/:team_id', memberAuthMiddleware, async (c) => {
   const teamId = Number(c.req.param('team_id'))
+  const team = await getTeam(c.env, teamId)
+  if (!team) return c.json({ message: 'Team not found' }, 404)
+  const member = c.get('member')
+  if (!team.event_id || !(await canManageVmsEvent(c.env, team.event_id, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can view team projects' }, 403)
+  }
   const projects = await listProjectsByTeam(c.env, teamId)
   return c.json(projects)
 })
 
-projectsRouter.get('/:project_id', staffAuthMiddleware, async (c) => {
+projectsRouter.get('/:project_id', memberAuthMiddleware, async (c) => {
   const projectId = Number(c.req.param('project_id'))
   const project = await getProject(c.env, projectId)
   if (!project) return c.json({ message: 'Project not found' }, 404)
 
   const team = await getTeam(c.env, project.team_id)
+  const member = c.get('member')
+  if (
+    !team?.event_id ||
+    !(await canManageVmsEvent(c.env, team.event_id, member?.membership_number))
+  ) {
+    return c.json({ message: 'Only VMS event managers can view this project' }, 403)
+  }
   return c.json({ ...project, team })
 })
 

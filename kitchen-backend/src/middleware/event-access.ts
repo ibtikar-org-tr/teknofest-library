@@ -1,9 +1,10 @@
 import type { MiddlewareHandler } from 'hono'
 import { getEventKitchen } from '../repositories/event-kitchens'
+import { canManageVmsEvent } from '../repositories/vms-event-permissions'
 import { isMemberRegisteredForEvent } from '../repositories/vms-events'
 import type { AppBindings } from '../types/env'
 
-/** Requires member auth already run; checks kitchen exists + registration (staff bypass). */
+/** Requires member auth already run; checks kitchen exists + registration (event managers bypass). */
 export const requireEventKitchenAccess: MiddlewareHandler<AppBindings> = async (c, next) => {
   const eventId = c.req.param('eventId')
   if (!eventId) {
@@ -15,15 +16,14 @@ export const requireEventKitchenAccess: MiddlewareHandler<AppBindings> = async (
     return c.json({ message: 'Kitchen not available for this event' }, 404)
   }
 
-  const staff = c.get('staff')
-  if (staff) {
-    await next()
-    return
-  }
-
   const member = c.get('member')
   if (!member) {
     return c.json({ message: 'Unauthorized' }, 401)
+  }
+
+  if (await canManageVmsEvent(c.env, eventId, member.membership_number)) {
+    await next()
+    return
   }
 
   const registered = await isMemberRegisteredForEvent(

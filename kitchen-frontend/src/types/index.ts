@@ -68,8 +68,10 @@ export interface KitchenEvent {
   status: string
   image_url: string | null
   project_id: string | null
+  created_by?: string | null
   kitchen_enabled: boolean
   can_access?: boolean
+  can_manage?: boolean
   kitchen?: {
     event_id: string
     enabled: boolean

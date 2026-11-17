@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
-import type { AppBindings } from '../types/env'
-import { staffAuthMiddleware } from '../middleware/staff-auth'
+import type { AppBindings, Environment } from '../types/env'
+import { memberAuthMiddleware } from '../middleware/staff-auth'
+import { canManageVmsEvent } from '../repositories/vms-event-permissions'
 import { createEvaluation, listEvaluationsByProject } from '../repositories/evaluations'
 import { getProject, listFeaturedProjects } from '../repositories/projects'
 import { getTeam } from '../repositories/teams'
@@ -57,21 +58,45 @@ evaluationRouter.get('/project/:project_id/score', async (c) => {
   })
 })
 
-// Authenticated write endpoints
-evaluationRouter.post('/admin', staffAuthMiddleware, async (c) => {
+async function assertCanEvaluateProject(
+  env: Environment,
+  projectId: number,
+  membershipNumber: string | undefined,
+) {
+  const project = await getProject(env, projectId)
+  if (!project) return { error: 'Project not found' as const, status: 404 as const }
+  const team = await getTeam(env, project.team_id)
+  if (!team?.event_id) return { error: 'Team/event not found' as const, status: 404 as const }
+  if (!(await canManageVmsEvent(env, team.event_id, membershipNumber))) {
+    return { error: 'Only VMS event managers can evaluate' as const, status: 403 as const }
+  }
+  return { project, team }
+}
+
+// Authenticated write endpoints — VMS event managers only
+evaluationRouter.post('/admin', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
-  const staff = c.get('staff')
+  const member = c.get('member')
+  const projectId = Number(body.project_id)
+  const gate = await assertCanEvaluateProject(c.env, projectId, member?.membership_number)
+  if ('error' in gate) return c.json({ message: gate.error }, gate.status)
+
   const evaluation = await createEvaluation(c.env, {
     ...body,
-    evaluator_membership_number: staff.membership_number,
+    evaluator_membership_number: member!.membership_number,
     admin_id: null,
     is_ai_evaluation: false,
   })
   return c.json(evaluation, 201)
 })
 
-evaluationRouter.post('/ai', staffAuthMiddleware, async (c) => {
+evaluationRouter.post('/ai', memberAuthMiddleware, async (c) => {
   const body = await c.req.json()
+  const member = c.get('member')
+  const projectId = Number(body.project_id)
+  const gate = await assertCanEvaluateProject(c.env, projectId, member?.membership_number)
+  if ('error' in gate) return c.json({ message: gate.error }, gate.status)
+
   const evaluation = await createEvaluation(c.env, {
     ...body,
     is_ai_evaluation: true,
