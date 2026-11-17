@@ -9,6 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
     buildApiUrl,
     formatTeamSize,
+    getFileExtension,
+    getReportFileLabel,
     pickLocalizedField,
     type CompetitionApi,
     type CompetitionDataApi,
@@ -163,26 +165,46 @@ export default function CompetitionDetail() {
                                             </Badge>
                                         </div>
                                         <div className="grid gap-4">
-                                            {reportFiles?.map((file) => (
+                                            {reportFiles?.map((file) => {
+                                                const label = getReportFileLabel(
+                                                    file.file_path,
+                                                    file.year ? `Report ${file.year}` : "Report",
+                                                );
+                                                const extension = getFileExtension(file.file_path);
+
+                                                return (
                                                 <div
                                                     key={file.id}
                                                     className="group relative p-6 border border-border rounded-xl bg-linear-to-br from-card to-card/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
                                                 >
                                                     <div className="flex items-start justify-between gap-4">
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-3 mb-3">
-                                                                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors shrink-0">
-                                                                    <Download className="w-4 h-4 text-primary" />
+                                                            <div className="flex items-start gap-3 mb-3">
+                                                                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors shrink-0 mt-0.5">
+                                                                    <FileText className="w-4 h-4 text-primary" />
                                                                 </div>
-                                                                <div>
-                                                                    <div className="font-semibold text-lg">{file.year}</div>
-                                                                    <div className="text-xs text-muted-foreground">
-                                                                        {file.stage && <span className="inline-block mr-3">📋 {file.stage}</span>}
-                                                                        {file.rank && <span className="inline-block">🏆 {file.rank}</span>}
+                                                                <div className="min-w-0">
+                                                                    <div className="font-semibold text-base md:text-lg leading-snug break-words">
+                                                                        {label}
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                                        {[file.year, file.stage, file.rank]
+                                                                            .filter(Boolean)
+                                                                            .join(" · ")}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-wrap gap-2">
+                                                                {extension && (
+                                                                    <Badge variant="outline" className="bg-secondary/50">
+                                                                        {extension}
+                                                                    </Badge>
+                                                                )}
+                                                                {file.year && (
+                                                                    <Badge variant="outline" className="bg-secondary/50">
+                                                                        {file.year}
+                                                                    </Badge>
+                                                                )}
                                                                 {file.language && (
                                                                     <Badge variant="outline" className="bg-secondary/50">
                                                                         {file.language.toUpperCase()}
@@ -207,7 +229,8 @@ export default function CompetitionDetail() {
                                                         </Button>
                                                     </div>
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}

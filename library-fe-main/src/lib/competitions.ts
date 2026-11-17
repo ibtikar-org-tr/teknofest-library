@@ -82,3 +82,67 @@ export const formatTeamSize = (
   if (!minMember && maxMember) return `≤${maxMember} ${membersLabel}`;
   return fallback;
 };
+
+const looksLikeOpaqueId = (name: string) => {
+  if (!name) return true;
+  if (/^[A-Za-z0-9]{16,}$/.test(name)) return true;
+  if (name.length >= 20 && (name.match(/_/g) ?? []).length < 2) return true;
+  return false;
+};
+
+const humanizePathSegment = (raw: string) =>
+  raw
+    .replace(/\.[^.]+$/, "")
+    .replace(/^\d{4}[_-]/, "")
+    .replace(/[_-]+[A-Za-z0-9]{4,8}$/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** Prefer a readable filename; fall back to parent folder when the file is a hash/id. */
+export const getReportFileLabel = (filePath: string, fallback = "Report") => {
+  try {
+    const pathname = filePath.includes("://")
+      ? new URL(filePath).pathname
+      : filePath;
+    const parts = pathname
+      .split("/")
+      .filter(Boolean)
+      .map((part) => {
+        try {
+          return decodeURIComponent(part);
+        } catch {
+          return part;
+        }
+      });
+
+    const filename = parts[parts.length - 1] ?? "";
+    const folder = parts[parts.length - 2] ?? "";
+    const stem = filename.replace(/\.[^.]+$/, "");
+
+    if (!looksLikeOpaqueId(stem)) {
+      return humanizePathSegment(stem) || fallback;
+    }
+
+    const folderLabel = humanizePathSegment(folder);
+    if (folderLabel) {
+      return `${folderLabel} · ${stem.slice(0, 8)}`;
+    }
+
+    return stem.slice(0, 12) || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+export const getFileExtension = (filePath: string) => {
+  try {
+    const pathname = filePath.includes("://")
+      ? new URL(filePath).pathname
+      : filePath;
+    const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
+    return match?.[1]?.toUpperCase() ?? null;
+  } catch {
+    return null;
+  }
+};
