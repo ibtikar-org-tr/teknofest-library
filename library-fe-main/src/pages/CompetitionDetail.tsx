@@ -9,9 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
     buildApiUrl,
     formatTeamSize,
-    getFileExtension,
-    getFileNameFromPath,
-    getReportFileLabel,
     pickLocalizedField,
     type CompetitionApi,
     type CompetitionDataApi,
@@ -20,6 +17,7 @@ import { useLanguage } from "@/lib/LanguageContext";
 import heroBg from "@assets/generated_images/rocket_competition.png";
 import CompetitionTimeline from "@/components/CompetitionTimeline";
 import CompetitionAwards from "@/components/CompetitionAwards";
+import ReportFilesPanel from "@/components/ReportFilesPanel";
 
 export default function CompetitionDetail() {
   const [match, params] = useRoute("/competition/:id");
@@ -153,96 +151,8 @@ export default function CompetitionDetail() {
                             </div>
                         ) : (
                             <>
-                                {/* Report Files Section */}
                                 {(reportFiles?.length ?? 0) > 0 && (
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="p-2 bg-primary/10 rounded-lg">
-                                                <FileText className="w-6 h-6 text-primary" />
-                                            </div>
-                                            <h3 className="text-2xl font-bold font-display">Report Files</h3>
-                                            <Badge className="ml-auto bg-primary/20 text-primary hover:bg-primary/30">
-                                                {reportFiles?.length ?? 0}
-                                            </Badge>
-                                        </div>
-                                        <div className="grid gap-4">
-                                            {reportFiles?.map((file) => {
-                                                const label = getReportFileLabel(
-                                                    file.file_path,
-                                                    file.year ? `Report ${file.year}` : "Report",
-                                                );
-                                                const fileName = getFileNameFromPath(file.file_path);
-                                                const extension = getFileExtension(file.file_path);
-
-                                                return (
-                                                <div
-                                                    key={file.id}
-                                                    className="group relative p-6 border border-border rounded-xl bg-linear-to-br from-card to-card/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
-                                                >
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-start gap-3 mb-3">
-                                                                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors shrink-0 mt-0.5">
-                                                                    <FileText className="w-4 h-4 text-primary" />
-                                                                </div>
-                                                                <div className="min-w-0">
-                                                                    <div className="font-semibold text-base md:text-lg leading-snug break-words">
-                                                                        {label}
-                                                                    </div>
-                                                                    {fileName && (
-                                                                        <div
-                                                                            className="text-xs text-muted-foreground mt-1 font-mono break-all"
-                                                                            title={fileName}
-                                                                        >
-                                                                            {fileName}
-                                                                        </div>
-                                                                    )}
-                                                                    <div className="text-xs text-muted-foreground/80 mt-1">
-                                                                        {[file.year, file.stage, file.rank]
-                                                                            .filter(Boolean)
-                                                                            .join(" · ")}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {extension && (
-                                                                    <Badge variant="outline" className="bg-secondary/50">
-                                                                        {extension}
-                                                                    </Badge>
-                                                                )}
-                                                                {file.year && (
-                                                                    <Badge variant="outline" className="bg-secondary/50">
-                                                                        {file.year}
-                                                                    </Badge>
-                                                                )}
-                                                                {file.language && (
-                                                                    <Badge variant="outline" className="bg-secondary/50">
-                                                                        {file.language.toUpperCase()}
-                                                                    </Badge>
-                                                                )}
-                                                                {file.stage && (
-                                                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                                                                        {file.stage}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <Button
-                                                            size="lg"
-                                                            className="bg-primary hover:bg-primary/90 text-white shrink-0"
-                                                            asChild
-                                                        >
-                                                            <a href={file.file_path} target="_blank" rel="noreferrer">
-                                                                <Download className="w-4 h-4 mr-2" />
-                                                                Download
-                                                            </a>
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
+                                    <ReportFilesPanel files={reportFiles ?? []} />
                                 )}
 
                                 {/* Resources Section */}

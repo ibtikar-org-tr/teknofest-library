@@ -157,3 +157,127 @@ export const getFileExtension = (filePath: string) => {
   const match = name.match(/\.([a-zA-Z0-9]+)$/);
   return match?.[1]?.toUpperCase() ?? null;
 };
+
+const getPathParts = (filePath: string) => {
+  try {
+    const pathname = filePath.includes("://")
+      ? new URL(filePath).pathname
+      : filePath;
+    return pathname
+      .split("/")
+      .filter(Boolean)
+      .map((part) => {
+        try {
+          return decodeURIComponent(part);
+        } catch {
+          return part;
+        }
+      });
+  } catch {
+    return [] as string[];
+  }
+};
+
+export type ReportLevel = "high-school" | "university" | "middle-school" | "all-levels";
+export type ReportKind =
+  | "template"
+  | "finalist"
+  | "ranking"
+  | "preliminary"
+  | "detail"
+  | "presentation"
+  | "technical"
+  | "other";
+export type ReportTrack = "idea" | "project" | "general";
+
+export interface ReportFileMeta {
+  folder: string;
+  folderLabel: string;
+  fileName: string;
+  label: string;
+  extension: string | null;
+  level: ReportLevel;
+  kind: ReportKind;
+  track: ReportTrack;
+}
+
+const detectLevel = (haystack: string): ReportLevel => {
+  if (/orta\s*okul|middle\s*school/.test(haystack)) return "middle-school";
+  if (/lise|high\s*school/.test(haystack)) return "high-school";
+  if (/universite|üniversite|university|uzeri|üzeri/.test(haystack)) return "university";
+  if (/tum\s*kategori|tüm\s*kategori|all\s*categor/.test(haystack)) return "all-levels";
+  return "all-levels";
+};
+
+const detectKind = (haystack: string): ReportKind => {
+  if (/sablon|şablon|template/.test(haystack)) {
+    if (/odr|on[_\s-]*degerlendirme|ön[_\s-]*değerlendirme|preliminary/.test(haystack)) {
+      return "preliminary";
+    }
+    if (/pdr|detay[_\s-]*rapor|detail/.test(haystack)) return "detail";
+    if (/sunum|presentation|pptx/.test(haystack)) return "presentation";
+    if (/teknik|technical/.test(haystack)) return "technical";
+    return "template";
+  }
+  if (/derece|ranking|award/.test(haystack)) return "ranking";
+  if (/basarili|başarılı|finalist/.test(haystack)) return "finalist";
+  if (/odr|on[_\s-]*degerlendirme|ön[_\s-]*değerlendirme/.test(haystack)) return "preliminary";
+  if (/pdr|detay[_\s-]*rapor/.test(haystack)) return "detail";
+  if (/sunum|presentation/.test(haystack)) return "presentation";
+  if (/teknik|technical/.test(haystack)) return "technical";
+  return "other";
+};
+
+const detectTrack = (haystack: string): ReportTrack => {
+  if (/fikir|idea/.test(haystack)) return "idea";
+  if (/proje|project/.test(haystack) && !/proje[_\s-]*on|proje[_\s-]*detay/.test(haystack)) {
+    return "project";
+  }
+  if (/proje[_\s-]*kategori/.test(haystack)) return "project";
+  return "general";
+};
+
+export const REPORT_LEVEL_LABELS: Record<ReportLevel, string> = {
+  "high-school": "High school",
+  university: "University",
+  "middle-school": "Middle school",
+  "all-levels": "All levels",
+};
+
+export const REPORT_KIND_LABELS: Record<ReportKind, string> = {
+  template: "Templates",
+  finalist: "Finalists",
+  ranking: "Rankings",
+  preliminary: "Preliminary (ODR)",
+  detail: "Detail (PDR)",
+  presentation: "Presentations",
+  technical: "Technical reports",
+  other: "Other",
+};
+
+export const REPORT_TRACK_LABELS: Record<ReportTrack, string> = {
+  idea: "Idea",
+  project: "Project",
+  general: "General",
+};
+
+export const getReportFileMeta = (
+  filePath: string,
+  fallbackLabel = "Report",
+): ReportFileMeta => {
+  const parts = getPathParts(filePath);
+  const fileName = parts[parts.length - 1] ?? "";
+  const folder = parts[parts.length - 2] ?? "";
+  const haystack = `${folder} ${fileName}`.toLocaleLowerCase("tr-TR");
+
+  return {
+    folder,
+    folderLabel: humanizePathSegment(folder) || "Reports",
+    fileName,
+    label: getReportFileLabel(filePath, fallbackLabel),
+    extension: getFileExtension(filePath),
+    level: detectLevel(haystack),
+    kind: detectKind(haystack),
+    track: detectTrack(haystack),
+  };
+};
