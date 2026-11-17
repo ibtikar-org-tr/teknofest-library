@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Download, ArrowRight, FileText, Link2, Cpu, Database, BookOpen } from "lucide-react";
-import { useRoute } from "wouter";
+import { useRoute, useSearchParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
     buildApiUrl,
@@ -19,10 +19,36 @@ import CompetitionTimeline from "@/components/CompetitionTimeline";
 import CompetitionAwards from "@/components/CompetitionAwards";
 import ReportFilesPanel from "@/components/ReportFilesPanel";
 
+const DETAIL_TABS = ["overview", "resources", "rules", "awards", "faq"] as const;
+type DetailTab = (typeof DETAIL_TABS)[number];
+
+const isDetailTab = (value: string | null): value is DetailTab =>
+  !!value && (DETAIL_TABS as readonly string[]).includes(value);
+
 export default function CompetitionDetail() {
   const [match, params] = useRoute("/competition/:id");
     const id = match ? params.id : "1";
     const { language, t } = useLanguage();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab: DetailTab = isDetailTab(searchParams.get("tab"))
+      ? (searchParams.get("tab") as DetailTab)
+      : "overview";
+
+    const setActiveTab = (tab: string) => {
+      if (!isDetailTab(tab)) return;
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (tab === "overview") {
+            next.delete("tab");
+          } else {
+            next.set("tab", tab);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    };
 
     const { data, isLoading, error } = useQuery<CompetitionApi>({
         queryKey: [buildApiUrl(`/api/competitions/${id}`)],
@@ -69,37 +95,53 @@ export default function CompetitionDetail() {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <Navbar />
       
-      {/* Hero Banner */}
-    <div className="relative h-[50vh] min-h-100 w-full overflow-hidden flex items-end">
+      {/* Hero — dark scrim keeps title readable on light competition images */}
+      <div className="relative h-[52vh] min-h-[22rem] w-full overflow-hidden flex items-end">
         <div className="absolute inset-0 z-0">
           <img
-                        src={image}
-                        alt={title}
-            className="w-full h-full object-cover"
+            src={image}
+            alt=""
+            className="h-full w-full object-cover scale-[1.02]"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,24,0.55)_0%,rgba(8,12,24,0.35)_38%,rgba(8,12,24,0.82)_78%,hsl(var(--background))_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(8,12,24,0.72)_0%,rgba(8,12,24,0.28)_48%,rgba(8,12,24,0.45)_100%)]" />
         </div>
-        
-        <div className="container mx-auto px-4 pb-12 relative z-10 flex flex-col md:flex-row justify-between items-end gap-6">
-          <div>
-            <div className="flex gap-2 mb-4">
-                            <Badge variant="outline" className="bg-background/20 backdrop-blur-md border-white/20 text-white">{t("detail.yearsLabel")}: {yearsText}</Badge>
+
+        <div className="container relative z-10 mx-auto flex flex-col items-start justify-between gap-6 px-4 pb-10 pt-28 md:flex-row md:items-end md:pb-12">
+          <div className="max-w-3xl">
+            <div className="mb-4 flex flex-wrap gap-2">
+              <Badge
+                variant="outline"
+                className="border-white/25 bg-black/35 text-white backdrop-blur-md"
+              >
+                {t("detail.yearsLabel")}: {yearsText}
+              </Badge>
             </div>
-                        <h1 className="text-4xl md:text-6xl font-bold font-display text-white mb-2">{title}</h1>
+            <h1 className="font-display text-3xl font-bold leading-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.55)] sm:text-4xl md:text-5xl lg:text-6xl">
+              {title}
+            </h1>
           </div>
-          
-          <div className="flex gap-4">
-                        {applicationLink ? (
-                            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 text-lg" asChild>
-                                <a href={applicationLink} target="_blank" rel="noreferrer">
-                                    {t("card.applyLink")} <ArrowRight className="ms-2 w-5 h-5" />
-                                </a>
-                            </Button>
-                        ) : (
-                            <Button size="lg" className="bg-secondary text-secondary-foreground font-bold h-14 px-8 text-lg" disabled>
-                                {t("card.applyLink")}
-                            </Button>
-                        )}
+
+          <div className="flex shrink-0 gap-3">
+            {applicationLink ? (
+              <Button
+                size="lg"
+                className="h-12 bg-primary px-7 text-base font-bold text-white hover:bg-primary/90 md:h-14 md:px-8 md:text-lg"
+                asChild
+              >
+                <a href={applicationLink} target="_blank" rel="noreferrer">
+                  {t("card.applyLink")} <ArrowRight className="ms-2 h-5 w-5" />
+                </a>
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                disabled
+                className="h-12 border border-white/20 bg-white/10 px-7 text-base font-bold text-white/80 backdrop-blur-sm md:h-14 md:px-8 md:text-lg"
+              >
+                {t("card.applyLink")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -108,7 +150,7 @@ export default function CompetitionDetail() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2">
-                <Tabs defaultValue="overview" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-5 bg-muted/50 p-1 mb-8">
                         <TabsTrigger value="overview">{t("detail.tabs.overview")}</TabsTrigger>
                         <TabsTrigger value="resources">{t("detail.tabs.resources")}</TabsTrigger>
