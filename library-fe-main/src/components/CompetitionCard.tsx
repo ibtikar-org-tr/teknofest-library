@@ -52,10 +52,10 @@ export default function CompetitionCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.4) }}
-      className="group h-full"
+      transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.3), ease: "easeOut" }}
+      className="group h-full opacity-100"
     >
       <Link href={`/competition/${competition.id}`} className="block h-full">
         <div className="relative h-full overflow-hidden border border-border/70 bg-card transition-colors duration-300 group-hover:border-primary/40">

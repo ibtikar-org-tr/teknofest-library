@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { useLanguage } from "@/lib/LanguageContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import {
   buildApiUrl,
@@ -122,60 +122,40 @@ export default function CompetitionsPage() {
               </div>
             </div>
 
-            <AnimatePresence mode="wait">
-              {isLoading ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-20 text-muted-foreground"
+            {isLoading ? (
+              <div className="text-center py-20 text-muted-foreground">
+                {t("filters.loading") ?? "Loading competitions..."}
+              </div>
+            ) : error ? (
+              <div className="text-center py-20 text-red-500">
+                {t("filters.error") ?? "Failed to load competitions."}
+              </div>
+            ) : filteredCompetitions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
+                {filteredCompetitions.map((competition, index) => (
+                  <CompetitionCard
+                    key={competition.id}
+                    competition={competition}
+                    index={index}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-md bg-muted mb-4">
+                  <Filter className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">{t("filters.noResults")}</h3>
+                <p className="text-muted-foreground">{t("filters.tryAdjusting")}</p>
+                <Button
+                  variant="link"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 text-primary"
                 >
-                  {t("filters.loading") ?? "Loading competitions..."}
-                </motion.div>
-              ) : error ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-20 text-red-500"
-                >
-                  {t("filters.error") ?? "Failed to load competitions."}
-                </motion.div>
-              ) : filteredCompetitions.length > 0 ? (
-                <motion.div
-                  layout
-                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6"
-                >
-                  {filteredCompetitions.map((competition, index) => (
-                    <CompetitionCard
-                      key={competition.id}
-                      competition={competition}
-                      index={index}
-                    />
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-20"
-                >
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-md bg-muted mb-4">
-                    <Filter className="w-7 h-7 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{t("filters.noResults")}</h3>
-                  <p className="text-muted-foreground">{t("filters.tryAdjusting")}</p>
-                  <Button
-                    variant="link"
-                    onClick={() => setSearchQuery("")}
-                    className="mt-4 text-primary"
-                  >
-                    {t("filters.reset")}
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {t("filters.reset")}
+                </Button>
+              </div>
+            )}
           </div>
         </section>
 
