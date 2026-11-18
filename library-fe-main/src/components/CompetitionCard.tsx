@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
 import { useLanguage } from "@/lib/LanguageContext";
+import type { CompetitionType } from "@/lib/competitions";
 
 export interface CompetitionProps {
   id: string;
@@ -18,6 +19,7 @@ export interface CompetitionProps {
   t3kysNumber?: string;
   years?: number[];
   applicationLink?: string;
+  type?: CompetitionType | null;
 }
 
 export default function CompetitionCard({
@@ -67,12 +69,24 @@ export default function CompetitionCard({
             />
             <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(8,12,24,0.92)_0%,rgba(8,12,24,0.35)_45%,rgba(8,12,24,0.15)_100%)]" />
 
-            <Badge
-              variant="outline"
-              className={`absolute top-3 right-3 rtl:left-3 rtl:right-auto z-10 backdrop-blur-sm border ${statusColors[competition.status]}`}
-            >
-              {statusText[competition.status]}
-            </Badge>
+            <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5 rtl:left-3 rtl:right-auto rtl:items-start">
+              <Badge
+                variant="outline"
+                className={`backdrop-blur-sm border ${statusColors[competition.status]}`}
+              >
+                {statusText[competition.status]}
+              </Badge>
+              {competition.type && (
+                <Badge
+                  variant="outline"
+                  className="border-white/30 bg-black/45 text-white backdrop-blur-sm"
+                >
+                  {competition.type === "innovative"
+                    ? t("card.innovative")
+                    : t("card.competitive")}
+                </Badge>
+              )}
+            </div>
 
             <div className="absolute inset-x-0 bottom-0 z-10 p-4 pt-10">
               <h3 className="text-white text-lg md:text-xl font-bold font-display leading-snug line-clamp-2">

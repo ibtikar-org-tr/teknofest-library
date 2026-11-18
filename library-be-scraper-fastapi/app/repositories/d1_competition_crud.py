@@ -56,8 +56,8 @@ class CompetitionCRUD:
             tr_name, tr_description, tr_link,
             en_name, en_description, en_link,
             ar_name, ar_description, ar_link,
-            years, min_member, max_member
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            years, min_member, max_member, type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         
         params = [
@@ -67,7 +67,8 @@ class CompetitionCRUD:
             competition.tr_name, competition.tr_description, competition.tr_link,
             competition.en_name, competition.en_description, competition.en_link,
             competition.ar_name, competition.ar_description, competition.ar_link,
-            json.dumps(competition.years), competition.min_member, competition.max_member
+            json.dumps(competition.years), competition.min_member, competition.max_member,
+            competition.type
         ]
         
         self.client.execute(sql, params)
@@ -88,7 +89,7 @@ class CompetitionCRUD:
             tr_name = ?, tr_description = ?, tr_link = ?,
             en_name = ?, en_description = ?, en_link = ?,
             ar_name = ?, ar_description = ?, ar_link = ?,
-            years = ?, min_member = ?, max_member = ?
+            years = ?, min_member = ?, max_member = ?, type = ?
         WHERE id = ?
         """
         
@@ -100,6 +101,7 @@ class CompetitionCRUD:
             competition.en_name, competition.en_description, competition.en_link,
             competition.ar_name, competition.ar_description, competition.ar_link,
             json.dumps(competition.years), competition.min_member, competition.max_member,
+            competition.type,
             str(competition_id)
         ]
         
@@ -264,7 +266,8 @@ class CompetitionCRUD:
             ar_link=row.get("ar_link"),
             years=json.loads(row.get("years", "[]")) if isinstance(row.get("years"), str) else row.get("years", []),
             min_member=row.get("min_member"),
-            max_member=row.get("max_member")
+            max_member=row.get("max_member"),
+            type=row.get("type"),
         )
 
 class CompetitionDataCRUD:

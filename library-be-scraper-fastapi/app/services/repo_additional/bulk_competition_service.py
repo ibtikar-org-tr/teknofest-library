@@ -18,7 +18,7 @@ from app.services.repo_additional.competition_crud_services import update_or_cre
 from app.services.unify.lists import (
     ar_names_list, tr_names_list, en_names_list, 
     tr_links_list, en_links_list, min_members_list, max_members_list,
-    tk_number_list, t3kys_number_list
+    tk_number_list, t3kys_number_list, type_list
 )
 from app.models.competition import Competition
 import random
@@ -227,6 +227,9 @@ def merge_competition_info(idx: int, tr_info: dict, en_info: dict):
         competition.min_member = min_members_list[idx]
     if idx < len(max_members_list) and max_members_list[idx] is not None:
         competition.max_member = max_members_list[idx]
+
+    if idx < len(type_list) and type_list[idx]:
+        competition.type = type_list[idx]
     
     # Add scraped descriptions if available
     if en_info.get('description'):

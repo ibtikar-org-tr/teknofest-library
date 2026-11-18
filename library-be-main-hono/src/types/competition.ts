@@ -1,3 +1,5 @@
+export type CompetitionType = "competitive" | "innovative";
+
 export interface Competition {
 	id: number;
 	created_at: string;
@@ -22,6 +24,7 @@ export interface Competition {
 	min_member: number | null;
 	max_member: number | null;
 	ggroup: string | null;
+	type: CompetitionType | null;
 }
 
 export interface TimelineEntry {
@@ -62,6 +65,7 @@ export interface CreateCompetitionPayload {
 	min_member?: number | null;
 	max_member?: number | null;
 	ggroup?: string | null;
+	type?: CompetitionType | null;
 }
 
 export type UpdateCompetitionPayload = Partial<CreateCompetitionPayload>;
@@ -97,6 +101,7 @@ export const mapCompetitionRow = (row: any): Competition => {
 		min_member: row.min_member != null ? Number(row.min_member) : null,
 		max_member: row.max_member != null ? Number(row.max_member) : null,
 		ggroup: row.ggroup ?? null,
+		type: row.type === "competitive" || row.type === "innovative" ? row.type : null,
 	};
 };
 

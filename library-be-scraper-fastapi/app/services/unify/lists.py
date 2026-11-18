@@ -17,6 +17,7 @@ min_members_list = []
 max_members_list = []
 tk_number_list = []
 t3kys_number_list = []
+type_list = []
 other_names_list = []
 other_slugs_list = []
 
@@ -58,6 +59,9 @@ try:
             max_members = row.get('max_member', '').strip()
             tk_number = row.get('tk_number', '').strip()
             t3kys_number = row.get('t3kys_number', '').strip()
+            competition_type = row.get('type', '').strip().lower()
+            if competition_type not in ('competitive', 'innovative'):
+                competition_type = ''
             
             # Only add if we have at least TR and EN links
             if tr_link and en_link:
@@ -74,6 +78,7 @@ try:
                 max_members_list.append(int(max_members) if max_members else None)
                 tk_number_list.append(int(tk_number) if tk_number else None)
                 t3kys_number_list.append(int(t3kys_number) if t3kys_number else None)
+                type_list.append(competition_type or None)
 
                 _register_slug(tr_slug, en_slug)
                 _register_slug(en_slug, en_slug)

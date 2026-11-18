@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS competitions (
     years TEXT, -- JSON array of years
     min_member INTEGER,
     max_member INTEGER,
-    ggroup TEXT
+    ggroup TEXT,
+    type TEXT -- 'competitive' | 'innovative'
 );
 
 CREATE TABLE IF NOT EXISTS competition_data (
@@ -48,6 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_competitions_t3kys_number ON competitions(t3kys_n
 CREATE INDEX IF NOT EXISTS idx_competitions_tr_name ON competitions(tr_name);
 CREATE INDEX IF NOT EXISTS idx_competitions_en_name ON competitions(en_name);
 CREATE INDEX IF NOT EXISTS idx_competitions_ar_name ON competitions(ar_name);
+CREATE INDEX IF NOT EXISTS idx_competitions_type ON competitions(type);
 
 -- Teams Table
 CREATE TABLE IF NOT EXISTS teams (

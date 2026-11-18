@@ -14,6 +14,7 @@ import {
   formatTeamSize,
   pickLocalizedField,
   type CompetitionApi,
+  type CompetitionType,
 } from "@/lib/competitions";
 
 import rocketImg from "@assets/generated_images/rocket_competition.png";
@@ -54,12 +55,14 @@ const mapCompetitionToCard = (
     t3kysNumber: competition.t3kys_number ?? undefined,
     years: competition.years ?? [],
     applicationLink,
+    type: competition.type ?? null,
   };
 };
 
 export default function CompetitionsPage() {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<CompetitionType | "all">("all");
 
   const {
     data: apiCompetitions,
@@ -77,9 +80,11 @@ export default function CompetitionsPage() {
     [apiCompetitions, language, t],
   );
 
-  const filteredCompetitions = competitions.filter((comp) =>
-    comp.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredCompetitions = competitions.filter((comp) => {
+    const matchesSearch = comp.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = typeFilter === "all" || comp.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
 
   const countLabel = (t("filters.count") ?? "{count} competitions").replace(
     "{count}",
@@ -120,6 +125,29 @@ export default function CompetitionsPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="mb-8 flex flex-wrap items-center gap-2">
+              {(
+                [
+                  { value: "all" as const, label: t("filters.typeAll") },
+                  { value: "competitive" as const, label: t("filters.competitive") },
+                  { value: "innovative" as const, label: t("filters.innovative") },
+                ]
+              ).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setTypeFilter(option.value)}
+                  className={
+                    typeFilter === option.value
+                      ? "rounded-sm border border-primary bg-primary px-3 py-1.5 text-xs font-medium text-white"
+                      : "rounded-sm border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
 
             {isLoading ? (

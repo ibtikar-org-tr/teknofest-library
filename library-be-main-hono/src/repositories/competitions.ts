@@ -52,7 +52,8 @@ export const createCompetition = async (
     "years",
     "min_member",
     "max_member",
-    "ggroup"
+    "ggroup",
+    "type"
   ];
   const placeholders = cols.map(() => "?").join(", ");
   const params = [
@@ -74,7 +75,8 @@ export const createCompetition = async (
     yearsText,
     payload.min_member ?? null,
     payload.max_member ?? null,
-    payload.ggroup ?? null
+    payload.ggroup ?? null,
+    payload.type ?? null
   ];
 
   await env.D1_DB

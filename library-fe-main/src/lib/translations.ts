@@ -36,12 +36,18 @@ export const translations = {
       tryAdjusting: "Try adjusting your search or category filter.",
       reset: "Reset Filters",
       loading: "Loading competitions...",
-      error: "Unable to load competitions."
+      error: "Unable to load competitions.",
+      type: "Type",
+      typeAll: "All types",
+      competitive: "Competitive",
+      innovative: "Innovative"
     },
     card: {
       applicationsOpen: "Applications Open",
       applicationsClosed: "Applications Closed",
       comingSoon: "Coming Soon",
+      competitive: "Competitive",
+      innovative: "Innovative",
       deadline: "Deadline",
       teamSize: "Team Size",
       prizePool: "Prize Pool",
@@ -191,12 +197,18 @@ export const translations = {
       tryAdjusting: "Aramanızı veya kategori filtrenizi değiştirmeyi deneyin.",
       reset: "Filtreleri Sıfırla",
       loading: "Yarışmalar yükleniyor...",
-      error: "Yarışmalar yüklenemedi."
+      error: "Yarışmalar yüklenemedi.",
+      type: "Tür",
+      typeAll: "Tüm türler",
+      competitive: "Rekabetçi",
+      innovative: "Yenilikçi"
     },
     card: {
       applicationsOpen: "Başvurular Açık",
       applicationsClosed: "Başvurular Kapandı",
       comingSoon: "Yakında",
+      competitive: "Rekabetçi",
+      innovative: "Yenilikçi",
       deadline: "Son Başvuru",
       teamSize: "Takım Boyutu",
       prizePool: "Ödül Havuzu",
@@ -346,12 +358,18 @@ export const translations = {
       tryAdjusting: "حاول تعديل البحث أو تصفية الفئات.",
       reset: "إعادة تعيين المرشحات",
       loading: "جارٍ تحميل المسابقات...",
-      error: "تعذر تحميل المسابقات."
+      error: "تعذر تحميل المسابقات.",
+      type: "النوع",
+      typeAll: "كل الأنواع",
+      competitive: "تنافسية",
+      innovative: "ابتكارية"
     },
     card: {
       applicationsOpen: "التقديم مفتوح",
       applicationsClosed: "التقديم مغلق",
       comingSoon: "قريباً",
+      competitive: "تنافسية",
+      innovative: "ابتكارية",
       deadline: "الموعد النهائي",
       teamSize: "حجم الفريق",
       prizePool: "مجموع الجوائز",

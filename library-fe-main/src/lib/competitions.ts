@@ -1,5 +1,7 @@
 import { type Language } from "@/lib/translations";
 
+export type CompetitionType = "competitive" | "innovative";
+
 export interface CompetitionApi {
   id: number;
   created_at: string;
@@ -23,6 +25,7 @@ export interface CompetitionApi {
   years: number[];
   min_member: number | null;
   max_member: number | null;
+  type?: CompetitionType | null;
 }
 
 export interface TimelineEntry {

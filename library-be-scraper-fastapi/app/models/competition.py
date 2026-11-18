@@ -30,6 +30,7 @@ class Competition(SQLModel, table=True):
     min_member: Optional[int] = None # Minimum number of members in a team
     max_member: Optional[int] = None # Maximum number of members in a team
     ggroup: Optional[str] = None # competition google group link
+    type: Optional[str] = None # "competitive" | "innovative"
     # comments: list[uuid.UUID]
 
 class CompetitionData(SQLModel, table=True):
