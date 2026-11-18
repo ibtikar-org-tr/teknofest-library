@@ -10,6 +10,8 @@ type ExchangeResult = Awaited<ReturnType<typeof authService.exchangeVmsCode>>
 
 /** Deduplicate one-time code exchange across React Strict Mode remounts. */
 const exchangeByCode = new Map<string, Promise<ExchangeResult>>()
+/** Prevent toast/navigate loops if the callback effect re-runs after success. */
+const completedCodes = new Set<string>()
 
 function exchangeVmsCodeOnce(code: string): Promise<ExchangeResult> {
   const existing = exchangeByCode.get(code)
@@ -42,6 +44,11 @@ export default function AuthCallback() {
       return
     }
 
+    if (completedCodes.has(code)) {
+      navigate(next, { replace: true })
+      return
+    }
+
     let cancelled = false
 
     ;(async () => {
@@ -50,7 +57,8 @@ export default function AuthCallback() {
         if (!response.user) {
           throw new Error('missing user')
         }
-        if (cancelled) return
+        if (cancelled || completedCodes.has(code)) return
+        completedCodes.add(code)
 
         const canManage = Boolean(response.is_event_manager ?? response.is_staff)
         setSession(response.access_token, {
