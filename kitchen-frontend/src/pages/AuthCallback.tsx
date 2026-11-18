@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -10,7 +10,6 @@ type ExchangeResult = Awaited<ReturnType<typeof authService.exchangeVmsCode>>
 
 /** Deduplicate one-time code exchange across React Strict Mode remounts. */
 const exchangeByCode = new Map<string, Promise<ExchangeResult>>()
-/** Prevent toast/navigate loops if the callback effect re-runs after success. */
 const completedCodes = new Set<string>()
 
 function exchangeVmsCodeOnce(code: string): Promise<ExchangeResult> {
@@ -34,6 +33,7 @@ export default function AuthCallback() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
+  const startedRef = useRef(false)
 
   useEffect(() => {
     const code = searchParams.get('code')?.trim()
@@ -49,15 +49,20 @@ export default function AuthCallback() {
       return
     }
 
-    let cancelled = false
+    // Guard against React Strict Mode double-invoking the effect in the same mount cycle.
+    if (startedRef.current) return
+    startedRef.current = true
 
-    ;(async () => {
+    void (async () => {
       try {
         const response = await exchangeVmsCodeOnce(code)
         if (!response.user) {
           throw new Error('missing user')
         }
-        if (cancelled || completedCodes.has(code)) return
+        if (completedCodes.has(code)) {
+          navigate(next, { replace: true })
+          return
+        }
         completedCodes.add(code)
 
         const canManage = Boolean(response.is_event_manager ?? response.is_staff)
@@ -77,7 +82,9 @@ export default function AuthCallback() {
 
         navigate(destination, { replace: true })
       } catch (err: unknown) {
-        if (cancelled) return
+        startedRef.current = false
+        exchangeByCode.delete(code)
+        completedCodes.delete(code)
         const axiosError = err as {
           response?: { data?: { message?: string }; status?: number }
         }
@@ -86,10 +93,6 @@ export default function AuthCallback() {
         toast.error(message)
       }
     })()
-
-    return () => {
-      cancelled = true
-    }
   }, [navigate, searchParams])
 
   return (

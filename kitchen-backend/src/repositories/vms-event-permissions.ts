@@ -97,6 +97,10 @@ export async function canManageVmsEvent(
   return false
 }
 
+/**
+ * Fast path for login/exchange: a few indexed lookups only.
+ * Avoids listing every VMS event (that was making SSO feel hung).
+ */
 export async function memberManagesAnyEvent(
   env: Environment,
   membershipNumber: string,
@@ -122,6 +126,8 @@ export async function memberManagesAnyEvent(
     // ignore missing table
   }
 
+  // Project owner/manager is enough for kitchen staff UI at login.
+  // Full event/ancestor walks belong on /me or admin pages — not the SSO hot path.
   const managedProjects = await env.VMS_DB.prepare(
     `SELECT id FROM projects
      WHERE owner = ?
@@ -133,15 +139,7 @@ export async function memberManagesAnyEvent(
   )
     .bind(membership, membership)
     .first()
-  if (!managedProjects) return false
-
-  // At least one manageable project exists — check if any event points at those projects
-  // (including ancestors would require graph walk; fall back to full filter for accuracy).
-  const events = await listVmsEvents(env)
-  for (const event of events) {
-    if (await canManageVmsEvent(env, event.id, membership)) return true
-  }
-  return false
+  return Boolean(managedProjects)
 }
 
 export async function listManagedVmsEvents(
