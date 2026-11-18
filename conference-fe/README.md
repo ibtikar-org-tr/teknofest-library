@@ -1,6 +1,6 @@
 # TEKNOFEST in Arabic 2026
 
-Public landing page for the Ibtikar conference in Istanbul (21–22 November 2026).
+Public landing page for the Ibtikar conference at Al-Huda International Schools (21–22 November 2026).
 
 ## Scripts
 
