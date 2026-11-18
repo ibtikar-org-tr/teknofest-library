@@ -19,7 +19,7 @@ export default function Resources() {
     {
       category: "Technical Assets",
       items: [
-        { title: "Teknofest 2025 Logo Pack", type: "ZIP", size: "15 MB", icon: Download },
+        { title: "TEKNOFEST 2025 Logo Pack", type: "ZIP", size: "15 MB", icon: Download },
         { title: "Sample Dataset for AI Challenge", type: "CSV", size: "450 MB", icon: FileCode },
         { title: "3D Models for Simulation", type: "OBJ", size: "120 MB", icon: FileCode },
       ]

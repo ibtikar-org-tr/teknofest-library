@@ -13,7 +13,7 @@ export const translations = {
       askAi: "Ask AI"
     },
     hero: {
-      tag: "#Teknofest2026",
+      tag: "#TEKNOFEST2026",
       title_start: "THE FUTURE IS",
       title_end: "IN THE SKIES",
       description: "Reports, guides, and competition files for TEKNOFEST — one library for every season.",
@@ -150,7 +150,7 @@ export const translations = {
       contact: "Contact Us",
       privacy: "Privacy Policy",
       terms: "Terms of Service",
-      rights: "© 2026 Teknofest Arabic Platform - the Library.",
+      rights: "© 2026 TEKNOFEST Arabic Platform - the Library.",
       links: {
         competitions: "Competitions",
         announcements: "Announcements",
@@ -174,7 +174,7 @@ export const translations = {
       askAi: "AI'ya Sor"
     },
     hero: {
-      tag: "#Teknofest2026",
+      tag: "#TEKNOFEST2026",
       title_start: "GELECEK",
       title_end: "GÖKLERDE",
       description: "TEKNOFEST raporları, kılavuzları ve yarışma dosyaları — her sezon için tek kütüphane.",
@@ -311,7 +311,7 @@ export const translations = {
       contact: "İletişim",
       privacy: "Gizlilik Politikası",
       terms: "Kullanım Şartları",
-      rights: "© 2026 Teknofest Arapça Platformu - Kütüphane.",
+      rights: "© 2026 TEKNOFEST Arapça Platformu - Kütüphane.",
       links: {
         competitions: "Yarışmalar",
         announcements: "Duyurular",

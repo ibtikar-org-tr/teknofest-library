@@ -64,7 +64,7 @@ export default function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-sm text-muted-foreground">
                 <MapPin className="w-5 h-5 text-primary shrink-0" />
-                <span>Teknofest Avenue, Innovation District, Istanbul, Turkey</span>
+                <span>TEKNOFEST Avenue, Innovation District, Istanbul, Turkey</span>
               </li>
               <li className="flex items-center gap-3 text-sm text-muted-foreground">
                 <Phone className="w-5 h-5 text-primary shrink-0" />
