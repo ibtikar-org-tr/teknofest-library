@@ -6,8 +6,22 @@ import { authService } from '../services/api'
 import { startVmsSsoLogin } from '../lib/vms-sso'
 import { setSession } from '../lib/auth-session'
 
-/** Prevents React Strict Mode double-mount from consuming the one-time code twice. */
-const inFlightCodes = new Set<string>()
+type ExchangeResult = Awaited<ReturnType<typeof authService.exchangeVmsCode>>
+
+/** Deduplicate one-time code exchange across React Strict Mode remounts. */
+const exchangeByCode = new Map<string, Promise<ExchangeResult>>()
+
+function exchangeVmsCodeOnce(code: string): Promise<ExchangeResult> {
+  const existing = exchangeByCode.get(code)
+  if (existing) return existing
+
+  const pending = authService.exchangeVmsCode(code).catch((error) => {
+    exchangeByCode.delete(code)
+    throw error
+  })
+  exchangeByCode.set(code, pending)
+  return pending
+}
 
 function safeNext(raw: string | null): string {
   if (!raw?.startsWith('/') || raw.startsWith('//')) return '/'
@@ -28,19 +42,15 @@ export default function AuthCallback() {
       return
     }
 
-    if (inFlightCodes.has(code)) {
-      return
-    }
-    inFlightCodes.add(code)
-
     let cancelled = false
 
     ;(async () => {
       try {
-        const response = await authService.exchangeVmsCode(code)
+        const response = await exchangeVmsCodeOnce(code)
         if (!response.user) {
           throw new Error('missing user')
         }
+        if (cancelled) return
 
         const canManage = Boolean(response.is_event_manager ?? response.is_staff)
         setSession(response.access_token, {
@@ -59,7 +69,6 @@ export default function AuthCallback() {
 
         navigate(destination, { replace: true })
       } catch (err: unknown) {
-        inFlightCodes.delete(code)
         if (cancelled) return
         const axiosError = err as {
           response?: { data?: { message?: string }; status?: number }
