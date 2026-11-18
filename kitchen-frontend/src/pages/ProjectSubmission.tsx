@@ -12,7 +12,8 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react'
-import { PROJECT_FIELDS, type ProjectField, type Team } from '../types'
+import type { ProjectField, Team } from '../types'
+import { useProjectFields } from '../hooks/useProjectFields'
 import { kitchensService, projectsService } from '../services/api'
 import { getSession } from '../lib/auth-session'
 
@@ -27,6 +28,7 @@ interface ProjectFormData {
 export default function ProjectSubmission() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
+  const { fields: projectFields, loading: fieldsLoading } = useProjectFields(eventId)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [checkingTeam, setCheckingTeam] = useState(true)
   const [myTeam, setMyTeam] = useState<Team | null>(null)
@@ -212,10 +214,13 @@ export default function ProjectSubmission() {
                 <select
                   {...register('field', { required: 'يرجى اختيار مجال المسابقة' })}
                   className="input-field"
+                  disabled={fieldsLoading || projectFields.length === 0}
                 >
-                  <option value="">اختر المسابقة</option>
-                  {PROJECT_FIELDS.map((field) => (
-                    <option key={field.value} value={field.value}>
+                  <option value="">
+                    {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
+                  </option>
+                  {projectFields.map((field) => (
+                    <option key={field.id} value={field.value}>
                       {field.label}
                     </option>
                   ))}

@@ -20,7 +20,8 @@ import {
   Undo
 } from 'lucide-react'
 import { individualsService } from '../../services/api'
-import { PROJECT_FIELDS, type Individual, type TeamWithSpace } from '../../types'
+import { useProjectFields } from '../../hooks/useProjectFields'
+import type { Individual, TeamWithSpace } from '../../types'
 
 type AssignMode = 'new' | 'existing'
 const GENDER_LABELS = {
@@ -29,6 +30,7 @@ const GENDER_LABELS = {
 }
 export default function AdminIndividuals() {
   const { eventId = '' } = useParams()
+  const { fields: projectFields, loading: fieldsLoading } = useProjectFields(eventId)
   const [individuals, setIndividuals] = useState<Individual[]>([])
   const [teamsWithSpace, setTeamsWithSpace] = useState<TeamWithSpace[]>([])
   const [loading, setLoading] = useState(true)
@@ -606,10 +608,13 @@ export default function AdminIndividuals() {
                       value={newTeamField}
                       onChange={(e) => setNewTeamField(e.target.value)}
                       className="input-field"
+                      disabled={fieldsLoading || projectFields.length === 0}
                     >
-                      <option value="">اختر المسابقة</option>
-                      {PROJECT_FIELDS.map((field) => (
-                        <option key={field.value} value={field.value}>
+                      <option value="">
+                        {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
+                      </option>
+                      {projectFields.map((field) => (
+                        <option key={field.id} value={field.value}>
                           {field.label}
                         </option>
                       ))}

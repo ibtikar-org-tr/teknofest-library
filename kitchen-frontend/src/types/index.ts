@@ -5,47 +5,22 @@ export type RegistrationType =
   | 'individual_no_idea'
   | 'team_no_idea'
 
-// Project Field / Competition Types
-export type ProjectField =
-  | 'مسابقة التنقل الذكي'
-  | 'مسابقة ابتكار التكنولوجيا الحيوية'
-  | 'مسابقة تقنيات البيئة والطاقة'
-  | 'مسابقة تقنيات التعليم'
-  | 'مسابقة تقنيات المعيشة الخالية من العوائق'
-  | 'مسابقة أفكار التكنولوجيا المالية'
-  | 'مسابقة التكنولوجيا لصالح البشرية'
-  | 'مسابقة تطبيقات التكنولوجيا في علم النفس'
-  | 'مسابقة الذكاء الاصطناعي في الصحة'
-  | 'مسابقة التقنيات الصناعية'
-  | 'مسابقة التكنولوجيا الزراعية'
-  | 'مسابقة هاكاثون السفر'
-  | 'مسابقة تقنيات السياحة'
-  | 'مسابقة معالجة اللغة التركية'
-  | 'مسابقة الذكاء الاصطناعي في النقل'
-  | 'مسابقة تطبيقات نماذج اللغة الضخمة'
-  | 'مسابقة تقنيات أنظمة الدفاع الجويّة'
+/** Competition field value stored on teams / individuals / projects (from library). */
+export type ProjectField = string
+
+export type CompetitionType = 'competitive' | 'innovative'
+
+/** Dropdown option sourced from library via kitchen `GET /kitchens/:eventId/fields`. */
+export type ProjectFieldOption = {
+  id: number
+  value: string
+  label: string
+  labelEn: string
+  labelTr: string
+  type: CompetitionType | null
+}
 
 export type Gender = 'male' | 'female'
-
-export const PROJECT_FIELDS: { value: ProjectField; label: string; labelEn: string }[] = [
-  { value: 'مسابقة التنقل الذكي', label: 'مسابقة التنقل الذكي', labelEn: 'Smart Mobility Competition' },
-  { value: 'مسابقة ابتكار التكنولوجيا الحيوية', label: 'مسابقة ابتكار التكنولوجيا الحيوية', labelEn: 'Biotechnology Innovation Competition' },
-  { value: 'مسابقة تقنيات البيئة والطاقة', label: 'مسابقة تقنيات البيئة والطاقة', labelEn: 'Environment and Energy Technologies Competition' },
-  { value: 'مسابقة تقنيات التعليم', label: 'مسابقة تقنيات التعليم', labelEn: 'Education Technologies Competition' },
-  { value: 'مسابقة تقنيات المعيشة الخالية من العوائق', label: 'مسابقة تقنيات المعيشة الخالية من العوائق', labelEn: 'Barrier-Free Living Technologies Competition' },
-  { value: 'مسابقة أفكار التكنولوجيا المالية', label: 'مسابقة أفكار التكنولوجيا المالية', labelEn: 'Financial Technologies (FinTech) Ideas Competition' },
-  { value: 'مسابقة التكنولوجيا لصالح البشرية', label: 'مسابقة التكنولوجيا لصالح البشرية', labelEn: 'Technology for Humanity Competition' },
-  { value: 'مسابقة تطبيقات التكنولوجيا في علم النفس', label: 'مسابقة تطبيقات التكنولوجيا في علم النفس', labelEn: 'Technological Applications in Psychology Competition' },
-  { value: 'مسابقة الذكاء الاصطناعي في الصحة', label: 'مسابقة الذكاء الاصطناعي في الصحة', labelEn: 'Artificial Intelligence in Healthcare Competition' },
-  { value: 'مسابقة التقنيات الصناعية', label: 'مسابقة التقنيات الصناعية', labelEn: 'Industrial Digital Technologies Competition' },
-  { value: 'مسابقة التكنولوجيا الزراعية', label: 'مسابقة التكنولوجيا الزراعية', labelEn: 'Agricultural Technologies Competition' },
-  { value: 'مسابقة هاكاثون السفر', label: 'مسابقة هاكاثون السفر', labelEn: 'Travel Hackathon Competition' },
-  { value: 'مسابقة تقنيات السياحة', label: 'مسابقة تقنيات السياحة', labelEn: 'Tourism Technologies Competition' },
-  { value: 'مسابقة معالجة اللغة التركية', label: 'مسابقة معالجة اللغة التركية', labelEn: 'Turkish Natural Language Processing Competition' },
-  { value: 'مسابقة الذكاء الاصطناعي في النقل', label: 'مسابقة الذكاء الاصطناعي في النقل', labelEn: 'Artificial Intelligence in Transportation Competition' },
-  { value: 'مسابقة تطبيقات نماذج اللغة الضخمة', label: 'مسابقة تطبيقات نماذج اللغة الضخمة', labelEn: 'Large Language Model Applications – T3 AI Hackathon' },
-  { value: 'مسابقة تقنيات أنظمة الدفاع الجويّة', label: 'مسابقة تقنيات أنظمة الدفاع الجويّة', labelEn: 'Air Defense Systems Technologies Competition' },
-]
 
 // Team Member
 export interface TeamMember {

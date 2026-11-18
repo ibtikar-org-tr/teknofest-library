@@ -10,6 +10,7 @@ import type {
   Admin,
   TeamWithSpace,
   KitchenEvent,
+  ProjectFieldOption,
 } from '../types'
 import { clearSession, getAccessToken } from '../lib/auth-session'
 
@@ -88,6 +89,12 @@ export const kitchensService = {
 
   get: async (eventId: string): Promise<KitchenEvent> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}`)
+    return response.data
+  },
+
+  /** Competitions from the library app (proxied by kitchen). */
+  getFields: async (eventId: string): Promise<ProjectFieldOption[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/fields`)
     return response.data
   },
 

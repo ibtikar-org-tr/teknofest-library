@@ -2,6 +2,8 @@ export interface Environment {
   D1_DB: D1Database
   /** Shared Cloudflare D1: VMS events + registrations (read-only from Kitchen) */
   VMS_DB: D1Database
+  /** Worker-to-worker binding to teknofest-library-be-main (preferred in Cloudflare). */
+  LIBRARY?: Fetcher
   APP_NAME: string
   /** Shared with VMS — used to verify VMS access JWTs */
   JWT_SECRET?: string
@@ -9,6 +11,8 @@ export interface Environment {
   VMS_API_BASE?: string
   /** Same as VMS INTERNAL_SECRET — used for /external-exchange */
   VMS_INTERNAL_SECRET?: string
+  /** Local/dev fallback when LIBRARY binding is unavailable, e.g. http://localhost:9671 */
+  LIBRARY_API_BASE?: string
   SMTP_HOST?: string
   SMTP_PORT?: string
   SMTP_USER?: string

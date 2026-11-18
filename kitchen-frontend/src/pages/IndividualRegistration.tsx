@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { User, Lightbulb, Users, Check, ChevronRight, ExternalLink } from 'lucide-react'
-import { PROJECT_FIELDS, type Individual, type RegistrationType } from '../types'
+import type { Individual, RegistrationType } from '../types'
+import { useProjectFields } from '../hooks/useProjectFields'
 import { individualsService, kitchensService } from '../services/api'
 import { getSession } from '../lib/auth-session'
 import { getVmsProfileUrl } from '../lib/vms-sso'
@@ -22,6 +23,7 @@ type VmsSkillsSnapshot = {
 export default function IndividualRegistration() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
+  const { fields: projectFields, loading: fieldsLoading } = useProjectFields(eventId)
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -243,10 +245,13 @@ export default function IndividualRegistration() {
                   <select
                     {...register('preferred_field', { required: 'يرجى اختيار المجال المفضل' })}
                     className="input-field"
+                    disabled={fieldsLoading || projectFields.length === 0}
                   >
-                    <option value="">اختر المسابقة المفضلة</option>
-                    {PROJECT_FIELDS.map((field) => (
-                      <option key={field.value} value={field.value}>
+                    <option value="">
+                      {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة المفضلة'}
+                    </option>
+                    {projectFields.map((field) => (
+                      <option key={field.id} value={field.value}>
                         {field.label}
                       </option>
                     ))}

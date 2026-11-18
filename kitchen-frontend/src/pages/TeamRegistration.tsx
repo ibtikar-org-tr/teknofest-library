@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react'
-import { PROJECT_FIELDS, type TeamMember, type RegistrationType, type Gender} from '../types'
+import type { TeamMember, RegistrationType, Gender } from '../types'
+import { useProjectFields } from '../hooks/useProjectFields'
 import { iForgotService, teamsService } from '../services/api'
 import { getSession } from '../lib/auth-session'
 
@@ -34,6 +35,7 @@ const GENDER_LABELS: Record<Gender, string> = {
 export default function TeamRegistration() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
+  const { fields: projectFields, loading: fieldsLoading } = useProjectFields(eventId)
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -477,10 +479,13 @@ export default function TeamRegistration() {
                   <select
                     {...register('field', { required: 'يرجى اختيار مجال المسابقة' })}
                     className="input-field"
+                    disabled={fieldsLoading || projectFields.length === 0}
                   >
-                    <option value="">اختر المسابقة</option>
-                    {PROJECT_FIELDS.map((field) => (
-                      <option key={field.value} value={field.value}>
+                    <option value="">
+                      {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
+                    </option>
+                    {projectFields.map((field) => (
+                      <option key={field.id} value={field.value}>
                         {field.label}
                       </option>
                     ))}

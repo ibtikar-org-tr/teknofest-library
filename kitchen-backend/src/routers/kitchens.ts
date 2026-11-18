@@ -6,6 +6,7 @@ import { createProject, listProjects } from '../repositories/projects'
 import { getEventKitchen, listEventKitchens } from '../repositories/event-kitchens'
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import { addMemberToTeam, createTeam, getTeam, listTeams } from '../repositories/teams'
+import { listLibraryCompetitionFields } from '../repositories/library-competitions'
 import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
 import { canManageVmsEvent } from '../repositories/vms-event-permissions'
 import {
@@ -17,26 +18,6 @@ import type { AppBindings, Environment, KitchenMember } from '../types/env'
 import type { KitchenEventView } from '../types/models'
 
 const kitchensRouter = new Hono<AppBindings>()
-
-const PROJECT_FIELDS = [
-  'مسابقة التنقل الذكي',
-  'مسابقة ابتكار التكنولوجيا الحيوية',
-  'مسابقة تقنيات البيئة والطاقة',
-  'مسابقة تقنيات التعليم',
-  'مسابقة تقنيات المعيشة الخالية من العوائق',
-  'مسابقة أفكار التكنولوجيا المالية',
-  'مسابقة التكنولوجيا لصالح البشرية',
-  'مسابقة تطبيقات التكنولوجيا في علم النفس',
-  'مسابقة الذكاء الاصطناعي في الصحة',
-  'مسابقة التقنيات الصناعية',
-  'مسابقة التكنولوجيا الزراعية',
-  'مسابقة هاكاثون السفر',
-  'مسابقة تقنيات السياحة',
-  'مسابقة معالجة اللغة التركية',
-  'مسابقة الذكاء الاصطناعي في النقل',
-  'مسابقة تطبيقات نماذج اللغة الضخمة',
-  'مسابقة تقنيات أنظمة الدفاع الجويّة',
-]
 
 async function buildKitchenViews(
   env: Environment,
@@ -83,7 +64,15 @@ kitchensRouter.get('/', memberAuthMiddleware, async (c) => {
   return c.json(views.filter((v) => v.can_access))
 })
 
-kitchensRouter.get('/:eventId/fields', ...withEventAccess, (c) => c.json(PROJECT_FIELDS))
+/** Competition fields from the library app (kitchen does not store competition catalog). */
+kitchensRouter.get('/:eventId/fields', ...withEventAccess, async (c) => {
+  try {
+    return c.json(await listLibraryCompetitionFields(c.env))
+  } catch (error) {
+    console.error('Failed to load library competitions', error)
+    return c.json({ message: 'Could not load competitions from library' }, 502)
+  }
+})
 
 /** Snapshot of the caller's VMS identity + skills/interests (read-only; edit on VMS /profile). */
 kitchensRouter.get('/:eventId/my-vms-profile', ...withEventAccess, async (c) => {

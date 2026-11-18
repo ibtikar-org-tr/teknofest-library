@@ -12,6 +12,12 @@
     "JWT_SECRET": "delete-on-deployment",
     "VMS_INTERNAL_SECRET": "ibtikAR2023Demo"
   },
+  "services": [
+    {
+      "binding": "LIBRARY",
+      "service": "teknofest-library-be-main"
+    }
+  ],
   "d1_databases": [
     {
       "binding": "D1_DB",
