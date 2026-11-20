@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Loader2, Plus, PowerOff } from 'lucide-react'
+import { ExternalLink, Loader2, Plus, PowerOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminService } from '../../services/api'
+import { getVmsEventUrl } from '../../lib/vms-sso'
 import type { KitchenEvent } from '../../types'
 
 export default function AdminKitchens() {
@@ -80,7 +81,16 @@ export default function AdminKitchens() {
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-semibold text-white">{event.name}</h2>
+                  <a
+                    href={getVmsEventUrl(event.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-1.5 text-lg font-semibold text-white hover:text-teknofest-orange transition-colors"
+                    title="فتح الفعالية في VMS"
+                  >
+                    <span className="truncate">{event.name}</span>
+                    <ExternalLink className="w-4 h-4 shrink-0 opacity-60 group-hover:opacity-100" />
+                  </a>
                   <span
                     className={`text-xs px-2 py-0.5 rounded ${
                       event.kitchen_enabled
