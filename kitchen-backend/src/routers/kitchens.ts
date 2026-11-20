@@ -13,7 +13,13 @@ import {
   setJuryTeamAssignments,
 } from '../repositories/juries'
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
-import { addMemberToTeam, createTeam, getTeam, listTeams } from '../repositories/teams'
+import {
+  addMemberToTeam,
+  createTeam,
+  getTeam,
+  listLeaderboardTeams,
+  listTeams,
+} from '../repositories/teams'
 import { listLibraryCompetitionFields } from '../repositories/library-competitions'
 import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
 import { canManageVmsEvent } from '../repositories/vms-event-permissions'
@@ -69,6 +75,20 @@ async function buildKitchenViews(
 }
 
 const withEventAccess = [memberAuthMiddleware, requireEventKitchenAccess] as const
+
+/**
+ * Public leaderboard — no auth. Team name + member count only.
+ * Available when the event kitchen is enabled.
+ */
+kitchensRouter.get('/:eventId/leaderboard', async (c) => {
+  const eventId = c.req.param('eventId')
+  const kitchen = await getEventKitchen(c.env, eventId)
+  if (!kitchen?.enabled) {
+    return c.json({ message: 'Kitchen not available for this event' }, 404)
+  }
+  const teams = await listLeaderboardTeams(c.env, eventId)
+  return c.json({ event_id: eventId, teams })
+})
 
 /** Enabled kitchens (registered members + VMS event managers). */
 kitchensRouter.get('/', memberAuthMiddleware, async (c) => {

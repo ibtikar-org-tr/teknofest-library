@@ -160,17 +160,9 @@ export interface AuthToken {
   token_type: string
 }
 
-// Top Team
-export interface TopTeam {
-  rank: number
-  project_title: string
-  project_description: string
-  field: ProjectField
+export interface LeaderboardTeam {
   team_name: string
-  team_members: string[]
-  total_score: number
-  admin_score: number
-  ai_score: number
+  member_count: number
 }
 
 // Team with available space

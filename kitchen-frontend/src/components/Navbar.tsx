@@ -47,7 +47,7 @@ export default function Navbar() {
         ...(isJury
           ? [{ to: `/events/${eventId}/jury`, label: 'تحكيم', icon: Star }]
           : []),
-        { to: `/events/${eventId}/top-teams`, label: 'أفضل الفرق', icon: Trophy },
+        { to: `/events/${eventId}/leaderboard`, label: 'لوحة المتصدرين', icon: Trophy },
       ]
     : [{ to: '/', label: 'الرئيسية', icon: Home }]
 

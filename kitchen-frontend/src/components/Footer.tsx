@@ -39,11 +39,6 @@ export default function Footer() {
                   تسجيل فردي
                 </Link>
               </li>
-              <li>
-                <Link to="/top-teams" className="text-gray-400 hover:text-teknofest-orange transition-colors">
-                  أفضل الفرق
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

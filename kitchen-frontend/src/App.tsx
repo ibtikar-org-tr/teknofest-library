@@ -1,4 +1,4 @@
-import { Navigate, Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route, useParams } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import EventKitchen from './pages/EventKitchen'
@@ -16,9 +16,14 @@ import AdminJuries from './pages/admin/AdminJuries'
 import AdminKitchens from './pages/admin/AdminKitchens'
 import AuthCallback from './pages/AuthCallback'
 import JuryScoring from './pages/JuryScoring'
-import TopTeams from './pages/TopTeams'
+import Leaderboard from './pages/Leaderboard'
 import MemberRoute from './components/MemberRoute'
 import ProtectedRoute from './components/ProtectedRoute'
+
+function LegacyTopTeamsRedirect() {
+  const { eventId } = useParams()
+  return <Navigate to={`/events/${eventId}/leaderboard`} replace />
+}
 
 function App() {
   return (
@@ -32,6 +37,9 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="top-teams" element={<Navigate to="/" replace />} />
+          {/* Public leaderboard — no login */}
+          <Route path="events/:eventId/leaderboard" element={<Leaderboard />} />
+          <Route path="events/:eventId/top-teams" element={<LegacyTopTeamsRedirect />} />
 
           <Route element={<MemberRoute />}>
             <Route path="events/:eventId" element={<EventKitchen />} />
@@ -39,7 +47,6 @@ function App() {
             <Route path="events/:eventId/join-team" element={<JoinTeam />} />
             <Route path="events/:eventId/register/individual" element={<IndividualRegistration />} />
             <Route path="events/:eventId/project/submit" element={<ProjectSubmission />} />
-            <Route path="events/:eventId/top-teams" element={<TopTeams />} />
             <Route path="events/:eventId/jury" element={<JuryScoring />} />
           </Route>
 

@@ -6,7 +6,6 @@ import type {
   ProjectSubmissionCreate,
   Evaluation,
   AuthToken,
-  TopTeam,
   Admin,
   TeamWithSpace,
   KitchenEvent,
@@ -83,6 +82,11 @@ export type JuryAssignmentItem = {
   team_id: number
   team_name: string
   projects: ProjectSubmission[]
+}
+
+export type LeaderboardTeam = {
+  team_name: string
+  member_count: number
 }
 
 // ==================== Auth ====================
@@ -205,6 +209,14 @@ export const kitchensService = {
 
   getStats: async (eventId: string) => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/stats`)
+    return response.data
+  },
+
+  /** Public — no login required. Team name + member count only. */
+  getLeaderboard: async (
+    eventId: string,
+  ): Promise<{ event_id: string; teams: LeaderboardTeam[] }> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/leaderboard`)
     return response.data
   },
 
@@ -440,21 +452,6 @@ export const evaluationsService = {
 
   getProjectEvaluationsWithDetails: async (projectId: number): Promise<ProjectEvaluationsDetails> => {
     const response = await api.get(`/evaluation/project/${projectId}/details`)
-    return response.data
-  },
-
-  getTopTeams: async (limit: number = 5): Promise<TopTeam[]> => {
-    const response = await api.get(`/evaluation/top-teams?limit=${limit}`)
-    return response.data
-  },
-
-  toggleFeatured: async (projectId: number): Promise<{ project_id: number; is_featured: boolean; message: string }> => {
-    const response = await api.post(`/evaluation/feature/${projectId}`)
-    return response.data
-  },
-
-  getFeaturedProjects: async (): Promise<{ id: number; title: string; team_name: string; field: string; is_featured: boolean }[]> => {
-    const response = await api.get('/evaluation/featured-projects')
     return response.data
   },
 }

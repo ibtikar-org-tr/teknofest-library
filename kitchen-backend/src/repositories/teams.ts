@@ -19,6 +19,35 @@ export const listTeams = async (
   return (results ?? []).map((row) => mapTeam(row as Record<string, unknown>))
 }
 
+export type LeaderboardTeam = {
+  team_name: string
+  member_count: number
+}
+
+/** Public leaderboard rows: active teams for an event (name + member count only). */
+export const listLeaderboardTeams = async (
+  env: Environment,
+  eventId: string,
+): Promise<LeaderboardTeam[]> => {
+  const { results } = await env.D1_DB.prepare(
+    `SELECT t.team_name AS team_name,
+            (
+              SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id
+            ) AS member_count
+     FROM teams t
+     WHERE t.event_id = ?
+       AND t.is_active = 1
+     ORDER BY t.team_name ASC`,
+  )
+    .bind(eventId)
+    .all<{ team_name: string; member_count: number }>()
+
+  return (results ?? []).map((row) => ({
+    team_name: row.team_name,
+    member_count: Number(row.member_count) || 0,
+  }))
+}
+
 export const getTeam = async (env: Environment, id: number): Promise<Team | null> => {
   const row = await env.D1_DB.prepare('SELECT * FROM teams WHERE id = ?').bind(id).first()
   if (!row) return null

@@ -92,36 +92,3 @@ export const createProject = async (
   return mapProject(row as Record<string, unknown>)
 }
 
-export const listFeaturedProjects = async (
-  env: Environment,
-  eventId?: string,
-): Promise<ProjectSubmission[]> => {
-  if (eventId) {
-    const { results } = await env.D1_DB.prepare(
-      'SELECT * FROM project_submissions WHERE event_id = ? AND is_featured = 1 ORDER BY id DESC',
-    )
-      .bind(eventId)
-      .all()
-    return (results ?? []).map((row) => mapProject(row as Record<string, unknown>))
-  }
-  const { results } = await env.D1_DB.prepare(
-    'SELECT * FROM project_submissions WHERE is_featured = 1 ORDER BY id DESC',
-  ).all()
-  return (results ?? []).map((row) => mapProject(row as Record<string, unknown>))
-}
-
-export const setProjectFeatured = async (
-  env: Environment,
-  id: number,
-  featured: boolean,
-): Promise<ProjectSubmission | null> => {
-  const row = await env.D1_DB.prepare(
-    `UPDATE project_submissions
-     SET is_featured = ?, updated_at = datetime('now')
-     WHERE id = ?
-     RETURNING *`,
-  )
-    .bind(boolToInt(featured), id)
-    .first()
-  return row ? mapProject(row as Record<string, unknown>) : null
-}

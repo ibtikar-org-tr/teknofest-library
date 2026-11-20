@@ -9,42 +9,11 @@ import {
   listEvaluationsByProject,
   upsertJuryEvaluation,
 } from '../repositories/evaluations'
-import {
-  canEvaluateTeam,
-  listJuryMembershipNumbers,
-} from '../repositories/juries'
-import { getProject, listFeaturedProjects } from '../repositories/projects'
+import { canEvaluateTeam, listJuryMembershipNumbers } from '../repositories/juries'
+import { getProject } from '../repositories/projects'
 import { getTeam } from '../repositories/teams'
 
 const evaluationRouter = new Hono<AppBindings>()
-
-evaluationRouter.get('/featured-projects', async (c) => {
-  const projects = await listFeaturedProjects(c.env)
-  return c.json(projects)
-})
-
-evaluationRouter.get('/top-teams', async (c) => {
-  const featured = await listFeaturedProjects(c.env)
-  const results = []
-  for (const project of featured) {
-    const team = await getTeam(c.env, project.team_id)
-    const evaluations = await listEvaluationsByProject(c.env, project.id)
-    const jurySet = team?.event_id
-      ? await listJuryMembershipNumbers(c.env, team.event_id)
-      : new Set<string>()
-    const { jury_average, jury_count } = averageJuryScores(evaluations, jurySet)
-    results.push({
-      project,
-      team,
-      final_score: jury_average,
-      jury_average,
-      jury_count,
-      total_score: jury_average ?? 0,
-    })
-  }
-  results.sort((a, b) => (b.final_score ?? -1) - (a.final_score ?? -1))
-  return c.json(results)
-})
 
 evaluationRouter.get('/project/:project_id', async (c) => {
   const projectId = Number(c.req.param('project_id'))

@@ -70,7 +70,6 @@ projectsRouter.get('/stats/summary', memberAuthMiddleware, requireEventManager, 
   return c.json({
     total: projects.length,
     complete: projects.filter((p) => p.is_complete).length,
-    featured: projects.filter((p) => p.is_featured).length,
     with_attachments: projects.filter((p) => p.has_attachments).length,
   })
 })
