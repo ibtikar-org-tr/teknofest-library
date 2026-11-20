@@ -43,4 +43,4 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           cd library-be-main-hono
-          wrangler deploy
+          wrangler deploy --name ${{ vars.LIBRARY_BE_NAME }}
