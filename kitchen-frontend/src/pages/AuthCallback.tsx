@@ -12,7 +12,6 @@ type ExchangeResult = Awaited<ReturnType<typeof authService.exchangeVmsCode>>
 const exchangeByCode = new Map<string, Promise<ExchangeResult>>()
 const completedCodes = new Set<string>()
 
-/** Handoff redirectUri without the one-time `code` (must match what VMS stored). */
 function handoffRedirectUri(): string {
   const url = new URL(window.location.href)
   url.searchParams.delete('code')

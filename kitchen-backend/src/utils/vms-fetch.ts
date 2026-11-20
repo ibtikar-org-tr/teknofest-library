@@ -1,6 +1,5 @@
 import type { Environment } from '../types/env'
 
-/** Call the membership-app API over HTTP (`VMS_API_BASE`). */
 export async function fetchVmsApi(
   env: Environment,
   path: string,

@@ -1,13 +1,9 @@
 export interface Environment {
   D1_DB: D1Database
-  /** Shared Cloudflare D1: VMS events + registrations (read-only from Kitchen) */
   VMS_DB: D1Database
-  /** Worker-to-worker binding to library backend. */
   LIBRARY?: Fetcher
   APP_NAME: string
-  /** VMS membership API base, e.g. https://vms.ibtikar.tr/ms/membership-app/api */
   VMS_API_BASE?: string
-  /** Local/dev fallback when LIBRARY binding is unavailable, e.g. http://localhost:9671 */
   LIBRARY_API_BASE?: string
   SMTP_HOST?: string
   SMTP_PORT?: string

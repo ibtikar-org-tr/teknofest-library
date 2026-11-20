@@ -62,7 +62,6 @@ authRouter.post('/vms/exchange', async (c) => {
   return c.json({
     access_token: exchangePayload.accessToken,
     token_type: 'bearer',
-    /** True when the member can manage at least one VMS event (enable kitchens / admin that event). */
     is_staff: canManageKitchens,
     is_event_manager: canManageKitchens,
     is_superadmin: false,
