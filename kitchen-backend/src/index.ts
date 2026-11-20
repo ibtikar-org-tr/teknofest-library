@@ -12,6 +12,7 @@ import { memberAuthMiddleware } from './middleware/staff-auth'
 import { memberManagesAnyEvent } from './repositories/vms-event-permissions'
 
 const app = new Hono<AppBindings>()
+const MS_BASE = '/ms/kitchen'
 
 app.use(
   '*',
@@ -23,33 +24,36 @@ app.use(
   }),
 )
 
-app.get('/', (c) =>
+app.get('/', (c) => c.redirect(MS_BASE))
+
+app.get(MS_BASE, (c) =>
   c.json({
     message: 'مرحباً بك في منصة مسابقات تكنوفيست! 🏆',
     version: '2.2.0',
     runtime: 'Cloudflare Workers + Hono + D1',
     endpoints: {
-      auth: '/api/auth',
-      kitchens: '/api/kitchens',
-      students: '/api/students',
-      projects: '/api/projects',
-      admin: '/api/admin',
-      evaluation: '/api/evaluation',
-      email: '/api/email',
+      health: `GET ${MS_BASE}/health`,
+      auth: `${MS_BASE}/api/auth`,
+      kitchens: `${MS_BASE}/api/kitchens`,
+      students: `${MS_BASE}/api/students`,
+      projects: `${MS_BASE}/api/projects`,
+      admin: `${MS_BASE}/api/admin`,
+      evaluation: `${MS_BASE}/api/evaluation`,
+      email: `${MS_BASE}/api/email`,
     },
   }),
 )
 
-app.get('/health', (c) =>
+app.get(`${MS_BASE}/health`, (c) =>
   c.json({ status: 'healthy', message: 'التطبيق يعمل بشكل سليم', app: c.env.APP_NAME }),
 )
 
-app.route('/api/auth', authRouter)
-app.route('/api/kitchens', kitchensRouter)
-app.route('/api/students', studentsRouter)
-app.route('/api/projects', projectsRouter)
-app.route('/api/admin', adminRouter)
-app.route('/api/evaluation', evaluationRouter)
+app.route(`${MS_BASE}/api/auth`, authRouter)
+app.route(`${MS_BASE}/api/kitchens`, kitchensRouter)
+app.route(`${MS_BASE}/api/students`, studentsRouter)
+app.route(`${MS_BASE}/api/projects`, projectsRouter)
+app.route(`${MS_BASE}/api/admin`, adminRouter)
+app.route(`${MS_BASE}/api/evaluation`, evaluationRouter)
 
 // Protect email mutations — any VMS event manager
 const securedEmail = new Hono<AppBindings>()
@@ -62,6 +66,8 @@ securedEmail.use('*', async (c, next) => {
   await next()
 })
 securedEmail.route('/', emailRouter)
-app.route('/api/email', securedEmail)
+app.route(`${MS_BASE}/api/email`, securedEmail)
+
+app.notFound((c) => c.json({ message: 'Not found' }, 404))
 
 export default app

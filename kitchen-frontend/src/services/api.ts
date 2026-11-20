@@ -14,7 +14,8 @@ import type {
 } from '../types'
 import { clearSession, getAccessToken } from '../lib/auth-session'
 
-const API_BASE_URL = import.meta.env.VITE_API_TARGET || 'http://localhost:9680'
+export const API_BASE_URL =
+  import.meta.env.VITE_API_TARGET || 'http://localhost:9680/ms/kitchen'
 
 // Create axios instance
 const api = axios.create({

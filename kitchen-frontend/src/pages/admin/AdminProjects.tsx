@@ -17,7 +17,7 @@ import {
   Paperclip,
   ExternalLink,
 } from 'lucide-react'
-import { projectsService, evaluationsService } from '../../services/api'
+import { API_BASE_URL, projectsService, evaluationsService } from '../../services/api'
 import type { ProjectSubmission } from '../../types'
 
 export default function AdminProjects() {
@@ -362,7 +362,7 @@ export default function AdminProjects() {
                         </div>
                         <div className="flex gap-2">
                           <a
-                            href={`/api/projects/attachment/${selectedProject.image_path}`}
+                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.image_path}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
@@ -371,7 +371,7 @@ export default function AdminProjects() {
                             عرض
                           </a>
                           <a
-                            href={`/api/projects/attachment/${selectedProject.image_path}`}
+                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.image_path}`}
                             download
                             className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
                           >
@@ -395,7 +395,7 @@ export default function AdminProjects() {
                         </div>
                         <div className="flex gap-2">
                           <a
-                            href={`/api/projects/attachment/${selectedProject.diagram_path}`}
+                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.diagram_path}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors text-sm"
@@ -404,7 +404,7 @@ export default function AdminProjects() {
                             عرض
                           </a>
                           <a
-                            href={`/api/projects/attachment/${selectedProject.diagram_path}`}
+                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.diagram_path}`}
                             download
                             className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
                           >
@@ -428,7 +428,7 @@ export default function AdminProjects() {
                         </div>
                         <div className="flex gap-2">
                           <a
-                            href={`/api/projects/attachment/${selectedProject.design_path}`}
+                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.design_path}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors text-sm"
@@ -437,7 +437,7 @@ export default function AdminProjects() {
                             عرض
                           </a>
                           <a
-                            href={`/api/projects/attachment/${selectedProject.design_path}`}
+                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.design_path}`}
                             download
                             className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
                           >
