@@ -13,14 +13,13 @@ export function getVmsProfileUrl(): string {
   return login.toString()
 }
 
-export function getKitchenAuthCallbackUrl(nextPath?: string): string {
+export function getKitchenAuthCallbackUrl(nextPath = '/'): string {
   if (typeof window === 'undefined') {
     return '/auth/callback'
   }
   const url = new URL('/auth/callback', window.location.origin)
-  if (nextPath?.startsWith('/') && !nextPath.startsWith('//')) {
-    url.searchParams.set('next', nextPath)
-  }
+  const next = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '/'
+  url.searchParams.set('next', next)
   return url.toString()
 }
 
