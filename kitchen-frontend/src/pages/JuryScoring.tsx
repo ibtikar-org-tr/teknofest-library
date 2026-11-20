@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Star, ArrowRight } from 'lucide-react'
+import { Loader2, Save, Star, ArrowRight, FileText, AlertCircle, BookOpen, X } from 'lucide-react'
 import {
   evaluationsService,
   kitchensService,
@@ -15,6 +15,7 @@ export default function JuryScoring() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<ProjectSubmission | null>(null)
+  const [viewing, setViewing] = useState<ProjectSubmission | null>(null)
   const [score, setScore] = useState(50)
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -55,6 +56,7 @@ export default function JuryScoring() {
   }, [load])
 
   const openScore = (project: ProjectSubmission) => {
+    setViewing(null)
     setSelected(project)
     setScore(myScores[project.id!] ?? 50)
     setNotes('')
@@ -103,6 +105,8 @@ export default function JuryScoring() {
     )
   }
 
+  const detailProject = selected ?? viewing
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -111,7 +115,9 @@ export default function JuryScoring() {
             <Star className="w-7 h-7 text-teknofest-orange" />
             تحكيم المشاريع
           </h1>
-          <p className="text-gray-400 mt-1">قيّم فقط الفرق المعيّنة لك. الدرجة النهائية = متوسط المحكمين.</p>
+          <p className="text-gray-400 mt-1">
+            اطّلع على محتوى المشروع كاملاً ثم ضع درجتك. الدرجة النهائية = متوسط المحكمين.
+          </p>
         </div>
         <Link
           to={`/events/${eventId}`}
@@ -134,28 +140,45 @@ export default function JuryScoring() {
               {item.projects.length === 0 ? (
                 <p className="text-sm text-gray-500">لا يوجد مشروع مقدّم لهذا الفريق بعد.</p>
               ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {item.projects.map((project) => (
                     <li
                       key={project.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-teknofest-medium-blue/40"
+                      className="p-4 rounded-lg bg-teknofest-medium-blue/40 space-y-3"
                     >
-                      <div>
-                        <p className="text-white font-medium">{project.title}</p>
-                        <p className="text-xs text-gray-400">{project.field}</p>
-                        {myScores[project.id!] != null && (
-                          <p className="text-sm text-green-400 mt-1">
-                            درجتك: {myScores[project.id!].toFixed(1)}
-                          </p>
-                        )}
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-white font-medium text-lg">{project.title}</p>
+                          <p className="text-xs text-gray-400 mt-1">{project.field}</p>
+                          {project.problem_statement ? (
+                            <p className="text-sm text-gray-300 mt-2 line-clamp-2">
+                              {project.problem_statement}
+                            </p>
+                          ) : null}
+                          {myScores[project.id!] != null && (
+                            <p className="text-sm text-green-400 mt-2">
+                              درجتك: {myScores[project.id!].toFixed(1)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setViewing(project)}
+                            className="btn-secondary text-sm py-2 flex items-center justify-center gap-1"
+                          >
+                            <FileText className="w-4 h-4" />
+                            عرض المشروع
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openScore(project)}
+                            className="btn-primary text-sm py-2"
+                          >
+                            {myScores[project.id!] != null ? 'تعديل تقييمي' : 'تقييم'}
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => openScore(project)}
-                        className="btn-primary text-sm py-2"
-                      >
-                        {myScores[project.id!] != null ? 'تعديل تقييمي' : 'تقييم'}
-                      </button>
                     </li>
                   ))}
                 </ul>
@@ -165,48 +188,119 @@ export default function JuryScoring() {
         </div>
       )}
 
-      {selected && (
+      {detailProject && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-md space-y-4">
-            <h3 className="text-xl font-bold text-white">تقييم: {selected.title}</h3>
-            <label className="block text-sm text-gray-300">
-              الدرجة (0–100)
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={0.5}
-                value={score}
-                onChange={(e) => setScore(Number(e.target.value))}
-                className="input-field mt-1"
-              />
-            </label>
-            <label className="block text-sm text-gray-300">
-              ملاحظات (اختياري)
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="input-field mt-1 min-h-[100px]"
-              />
-            </label>
-            <div className="flex gap-2 justify-end">
+          <div className="card w-full max-w-3xl max-h-[90vh] overflow-y-auto space-y-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-white">{detailProject.title}</h3>
+                <p className="text-sm text-gray-400 mt-1">{detailProject.field}</p>
+              </div>
               <button
                 type="button"
-                onClick={() => setSelected(null)}
-                className="btn-secondary"
+                onClick={() => {
+                  setSelected(null)
+                  setViewing(null)
+                }}
+                className="p-2 text-gray-400 hover:text-white"
               >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSave()}
-                disabled={saving}
-                className="btn-primary flex items-center gap-2 disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                حفظ
+                <X className="w-5 h-5" />
               </button>
             </div>
+
+            <div>
+              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-yellow-400" />
+                المشكلة
+              </h4>
+              <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap">
+                {detailProject.problem_statement || '—'}
+              </p>
+            </div>
+
+            <div>
+              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-teknofest-cyan" />
+                الوصف التقني
+              </h4>
+              <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap">
+                {detailProject.technical_description || '—'}
+              </p>
+            </div>
+
+            <div>
+              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-purple-400" />
+                المرجع العلمي
+              </h4>
+              <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap">
+                {detailProject.scientific_reference || '—'}
+              </p>
+            </div>
+
+            {selected ? (
+              <div className="border-t border-teknofest-light-blue/20 pt-4 space-y-4">
+                <label className="block text-sm text-gray-300">
+                  الدرجة (0–100)
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    value={score}
+                    onChange={(e) => setScore(Number(e.target.value))}
+                    className="input-field mt-1"
+                  />
+                </label>
+                <label className="block text-sm text-gray-300">
+                  ملاحظات (اختياري)
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="input-field mt-1 min-h-[100px]"
+                  />
+                </label>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setSelected(null)}
+                    className="btn-secondary"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSave()}
+                    disabled={saving}
+                    className="btn-primary flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    حفظ التقييم
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2 justify-end border-t border-teknofest-light-blue/20 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setViewing(null)}
+                  className="btn-secondary"
+                >
+                  إغلاق
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openScore(detailProject)}
+                  className="btn-primary"
+                >
+                  تقييم هذا المشروع
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
