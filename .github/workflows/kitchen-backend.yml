@@ -40,7 +40,10 @@ jobs:
           | .d1_databases[1].remote = true
           | .vars.APP_NAME = $appName
           | .vars.VMS_API_BASE = $vmsApiBase
-          | .services = [{binding: "LIBRARY", service: $libraryServiceName, remote: true}]
+          | .services = [
+              {binding: "LIBRARY", service: $libraryServiceName, remote: true},
+              {binding: "VMS_SERVICE", service: $vmsServiceName, remote: true}
+            ]
           | .account_id = $accountId
           | del(.vars.LIBRARY_API_BASE)'
 
@@ -52,6 +55,7 @@ jobs:
             --arg appName "${{ vars.KITCHEN_BE_NAME }}" \
             --arg vmsApiBase "${{ vars.VMS_URL }}/ms/membership-app/api" \
             --arg libraryServiceName "${{ vars.LIBRARY_BE_NAME }}" \
+            --arg vmsServiceName "${{ vars.VMS_SERVICE_NAME }}" \
             --arg accountId "${{ vars.CLOUDFLARE_ACCOUNT_ID }}" \
             "$jq_filter" \
             wrangler.jsonc > wrangler.local.jsonc

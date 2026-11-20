@@ -32,7 +32,10 @@ export async function fetchVmsMemberProfile(
   membershipNumber: string,
   authorizationHeader: string | undefined,
 ): Promise<VmsMemberProfile | null> {
-  if (!env.VMS_API_BASE?.trim() || !authorizationHeader?.startsWith('Bearer ')) {
+  if (
+    (!env.VMS_SERVICE && !env.VMS_API_BASE?.trim()) ||
+    !authorizationHeader?.startsWith('Bearer ')
+  ) {
     return null
   }
 

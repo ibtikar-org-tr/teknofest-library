@@ -21,10 +21,13 @@ No shared JWT private key and no `INTERNAL_SECRET` in Kitchen.
 
 Config:
 
-- `VMS_API_BASE` — e.g. `https://vms.ibtikar.tr/ms/membership-app/api` (CI: from `VMS_URL`)
-- `VMS_DB` — read-only D1 binding for events / registrations / manager checks
+- `VMS_SERVICE` — Worker service binding to the VMS membership Worker (required in production when Kitchen shares the VMS host; same-zone `fetch(VMS_URL)` often misses the Worker)
+- `VMS_API_BASE` — HTTP fallback for local/dev (`VMS_URL` + `/ms/membership-app/api`)
+- `VMS_DB` — read-only D1 for events / registrations / manager checks
 - `D1_DB` — kitchen data
-- `LIBRARY` — service binding to library worker for competitions list
+- `LIBRARY` — service binding to library worker for competitions
+
+CI var `VMS_SERVICE_NAME` must be the VMS membership Worker name (same value Career uses as `THIS_APP_NAME_BE`).
 
 ## Competitions
 

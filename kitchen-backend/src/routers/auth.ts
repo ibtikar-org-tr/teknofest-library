@@ -27,8 +27,8 @@ authRouter.post('/vms/exchange', async (c) => {
     return c.json({ message: 'redirectUri is required' }, 400)
   }
 
-  if (!c.env.VMS_API_BASE?.trim()) {
-    console.error('VMS_API_BASE not configured')
+  if (!c.env.VMS_SERVICE && !c.env.VMS_API_BASE?.trim()) {
+    console.error('VMS_SERVICE / VMS_API_BASE not configured')
     return c.json({ message: 'VMS exchange not configured' }, 500)
   }
 

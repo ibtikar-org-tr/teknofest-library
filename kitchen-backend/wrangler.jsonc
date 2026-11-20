@@ -14,6 +14,10 @@
     {
       "binding": "LIBRARY",
       "service": "teknofest-library-be-main"
+    },
+    {
+      "binding": "VMS_SERVICE",
+      "service": "ibtikar-membership-be"
     }
   ],
   "d1_databases": [

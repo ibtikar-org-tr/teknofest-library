@@ -2,6 +2,7 @@ export interface Environment {
   D1_DB: D1Database
   VMS_DB: D1Database
   LIBRARY?: Fetcher
+  VMS_SERVICE?: Fetcher
   APP_NAME: string
   VMS_API_BASE?: string
   LIBRARY_API_BASE?: string

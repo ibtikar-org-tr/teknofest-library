@@ -14,8 +14,8 @@ async function authenticateMember(c: Parameters<MiddlewareHandler<AppBindings>>[
     return c.json({ message: 'Unauthorized' }, 401)
   }
 
-  if (!c.env.VMS_API_BASE?.trim()) {
-    console.error('VMS_API_BASE not configured on kitchen-backend')
+  if (!c.env.VMS_SERVICE && !c.env.VMS_API_BASE?.trim()) {
+    console.error('VMS_SERVICE / VMS_API_BASE not configured on kitchen-backend')
     return c.json({ message: 'Auth not configured' }, 500)
   }
 
