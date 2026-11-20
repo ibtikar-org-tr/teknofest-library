@@ -312,18 +312,21 @@ export default function TeamRegistration() {
   }
 
   // Debounce function
-  const useDebounce = (callback: (...args: never[]) => void, delay: number) => {
+  const useDebounce = <Args extends unknown[]>(
+    callback: (...args: Args) => void,
+    delay: number,
+  ) => {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    
+
     useEffect(() => {
       return () => {
         if (timeoutRef.current !== null) {
           clearTimeout(timeoutRef.current)
         }
       }
-    }, [])    
+    }, [])
 
-    return (...args: any[]) => {
+    return (...args: Args) => {
       if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
       timeoutRef.current = setTimeout(() => callback(...args), delay)
     }
