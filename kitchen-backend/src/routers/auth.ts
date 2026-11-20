@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
 import { memberAuthMiddleware } from '../middleware/staff-auth'
 import { memberManagesAnyEvent } from '../repositories/vms-event-permissions'
+import { fetchVmsApi } from '../utils/vms-fetch'
 
 const authRouter = new Hono<AppBindings>()
 
@@ -13,29 +14,32 @@ interface VmsExchangeResponse {
 }
 
 authRouter.post('/vms/exchange', async (c) => {
-  const body = await c.req.json<{ code?: string }>().catch(() => ({} as { code?: string }))
+  const body = await c
+    .req
+    .json<{ code?: string; redirectUri?: string }>()
+    .catch(() => ({} as { code?: string; redirectUri?: string }))
   const code = body.code?.trim()
+  const redirectUri = body.redirectUri?.trim()
   if (!code) {
     return c.json({ message: 'code is required' }, 400)
   }
+  if (!redirectUri) {
+    return c.json({ message: 'redirectUri is required' }, 400)
+  }
 
-  const apiBase = c.env.VMS_API_BASE?.trim().replace(/\/+$/, '')
-  const internalSecret = c.env.VMS_INTERNAL_SECRET?.trim()
-  if (!apiBase || !internalSecret) {
-    console.error('VMS_API_BASE / VMS_INTERNAL_SECRET not configured')
+  if (!c.env.VMS_API_BASE?.trim()) {
+    console.error('VMS_API_BASE not configured')
     return c.json({ message: 'VMS exchange not configured' }, 500)
   }
 
-  const exchangeUrl = `${apiBase}/external-exchange`
   let exchangePayload: VmsExchangeResponse
   try {
-    const response = await fetch(exchangeUrl, {
+    const response = await fetchVmsApi(c.env, '/external-exchange', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': internalSecret,
       },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code, redirectUri, client: 'kitchen' }),
     })
 
     if (!response.ok) {

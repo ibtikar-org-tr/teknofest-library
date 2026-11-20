@@ -12,11 +12,18 @@ type ExchangeResult = Awaited<ReturnType<typeof authService.exchangeVmsCode>>
 const exchangeByCode = new Map<string, Promise<ExchangeResult>>()
 const completedCodes = new Set<string>()
 
-function exchangeVmsCodeOnce(code: string): Promise<ExchangeResult> {
+/** Handoff redirectUri without the one-time `code` (must match what VMS stored). */
+function handoffRedirectUri(): string {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('code')
+  return url.toString()
+}
+
+function exchangeVmsCodeOnce(code: string, redirectUri: string): Promise<ExchangeResult> {
   const existing = exchangeByCode.get(code)
   if (existing) return existing
 
-  const pending = authService.exchangeVmsCode(code).catch((error) => {
+  const pending = authService.exchangeVmsCode(code, redirectUri).catch((error) => {
     exchangeByCode.delete(code)
     throw error
   })
@@ -55,7 +62,7 @@ export default function AuthCallback() {
 
     void (async () => {
       try {
-        const response = await exchangeVmsCodeOnce(code)
+        const response = await exchangeVmsCodeOnce(code, handoffRedirectUri())
         if (!response.user) {
           throw new Error('missing user')
         }

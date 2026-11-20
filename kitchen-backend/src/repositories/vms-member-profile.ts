@@ -1,4 +1,5 @@
 import type { Environment } from '../types/env'
+import { fetchVmsApi } from '../utils/vms-fetch'
 
 export type VmsMemberProfile = {
   membership_number: string
@@ -31,22 +32,18 @@ export async function fetchVmsMemberProfile(
   membershipNumber: string,
   authorizationHeader: string | undefined,
 ): Promise<VmsMemberProfile | null> {
-  const apiBase = env.VMS_API_BASE?.trim().replace(/\/+$/, '')
-  if (!apiBase || !authorizationHeader?.startsWith('Bearer ')) {
+  if (!env.VMS_API_BASE?.trim() || !authorizationHeader?.startsWith('Bearer ')) {
     return null
   }
 
   try {
-    const response = await fetch(
-      `${apiBase}/profile/${encodeURIComponent(membershipNumber)}`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: authorizationHeader,
-          Accept: 'application/json',
-        },
+    const response = await fetchVmsApi(env, `/profile/${encodeURIComponent(membershipNumber)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: authorizationHeader,
+        Accept: 'application/json',
       },
-    )
+    })
     if (!response.ok) {
       console.error('VMS profile fetch failed', response.status, await response.text().catch(() => ''))
       return null

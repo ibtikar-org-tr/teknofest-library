@@ -8,9 +8,7 @@
   },
   "vars": {
     "APP_NAME": "teknofest-kitchen",
-    "VMS_API_BASE": "http://localhost:5931/ms/membership-app/api",
-    "JWT_SECRET": "delete-on-deployment",
-    "VMS_INTERNAL_SECRET": "ibtikAR2023Demo"
+    "VMS_API_BASE": "http://localhost:5931/ms/membership-app/api"
   },
   "services": [
     {

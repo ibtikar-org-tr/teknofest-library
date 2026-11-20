@@ -64,8 +64,8 @@ export type VmsExchangeResponse = AuthToken & {
 // ==================== Auth ====================
 
 export const authService = {
-  exchangeVmsCode: async (code: string): Promise<VmsExchangeResponse> => {
-    const response = await api.post('/auth/vms/exchange', { code })
+  exchangeVmsCode: async (code: string, redirectUri: string): Promise<VmsExchangeResponse> => {
+    const response = await api.post('/auth/vms/exchange', { code, redirectUri })
     return response.data
   },
 
