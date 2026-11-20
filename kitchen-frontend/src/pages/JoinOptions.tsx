@@ -7,11 +7,11 @@ export default function JoinOptions() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
       <Link
-        to={`/events/${eventId}/my-team`}
+        to={`/events/${eventId}/dashboard`}
         className="inline-flex items-center gap-2 text-gray-400 hover:text-white"
       >
         <ArrowRight className="w-4 h-4" />
-        فريقي
+        لوحتي
       </Link>
 
       <div>

@@ -44,8 +44,8 @@ export default function MyTeam() {
     return (
       <div className="max-w-xl mx-auto px-4 py-24 text-center">
         <p className="text-red-400 mb-6">{error}</p>
-        <Link to={`/events/${eventId}`} className="text-teknofest-cyan hover:underline">
-          العودة للمطبخ
+        <Link to={`/events/${eventId}/dashboard`} className="text-teknofest-cyan hover:underline">
+          لوحتي
         </Link>
       </div>
     )
@@ -55,16 +55,16 @@ export default function MyTeam() {
     const members = team.members ?? []
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
-        <Link
-          to={`/events/${eventId}`}
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white"
-        >
-          <ArrowRight className="w-4 h-4" />
-          المطبخ
-        </Link>
+      <Link
+        to={`/events/${eventId}`}
+        className="inline-flex items-center gap-2 text-gray-400 hover:text-white"
+      >
+        <ArrowRight className="w-4 h-4" />
+        المطبخ
+      </Link>
 
-        <div>
-          <p className="text-teknofest-cyan text-sm mb-2">فريقي</p>
+      <div>
+        <p className="text-teknofest-cyan text-sm mb-2">لوحتي · فريقي</p>
           <h1 className="text-3xl font-bold text-white mb-2">{team.team_name}</h1>
           <p className="text-gray-400 text-sm">{team.field}</p>
         </div>
@@ -117,7 +117,7 @@ export default function MyTeam() {
       </Link>
 
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">فريقي</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">لوحتي</h1>
         <p className="text-gray-400">لست في فريق بعد. أنشئ فريقاً أو انضم لأحد المسارين.</p>
       </div>
 

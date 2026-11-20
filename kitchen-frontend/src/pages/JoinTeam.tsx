@@ -41,7 +41,7 @@ export default function JoinTeam() {
     try {
       await kitchensService.joinTeam(eventId, teamId)
       toast.success('تم الانضمام للفريق بنجاح')
-      navigate(`/events/${eventId}/my-team`)
+      navigate(`/events/${eventId}/dashboard`)
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'تعذر الانضمام للفريق')
     } finally {

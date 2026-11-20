@@ -100,7 +100,7 @@ export default function IndividualRegistration() {
 
       await individualsService.create(individualData)
       toast.success('تم التسجيل في القائمة — سيتم توزيعك على فريق قريباً')
-      navigate(`/events/${eventId}/my-team`)
+      navigate(`/events/${eventId}/dashboard`)
     } catch (error: any) {
       toast.error(
         error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء التسجيل',

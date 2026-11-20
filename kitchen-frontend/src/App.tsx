@@ -6,7 +6,7 @@ import TeamRegistration from './pages/TeamRegistration'
 import IndividualRegistration from './pages/IndividualRegistration'
 import JoinTeam from './pages/JoinTeam'
 import JoinOptions from './pages/JoinOptions'
-import MyTeam from './pages/MyTeam'
+import MemberDashboard from './pages/MemberDashboard'
 import ProjectSubmission from './pages/ProjectSubmission'
 import Login from './pages/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -17,7 +17,6 @@ import AdminEvaluations from './pages/admin/AdminEvaluations'
 import AdminJuries from './pages/admin/AdminJuries'
 import AdminKitchens from './pages/admin/AdminKitchens'
 import AuthCallback from './pages/AuthCallback'
-import JuryScoring from './pages/JuryScoring'
 import Leaderboard from './pages/Leaderboard'
 import MemberRoute from './components/MemberRoute'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -35,6 +34,11 @@ function RedirectToJoin() {
 function RedirectToPool() {
   const { eventId } = useParams()
   return <Navigate to={`/events/${eventId}/join/pool`} replace />
+}
+
+function RedirectToDashboard() {
+  const { eventId } = useParams()
+  return <Navigate to={`/events/${eventId}/dashboard`} replace />
 }
 
 function App() {
@@ -55,7 +59,9 @@ function App() {
 
           <Route element={<MemberRoute />}>
             <Route path="events/:eventId" element={<EventKitchen />} />
-            <Route path="events/:eventId/my-team" element={<MyTeam />} />
+            <Route path="events/:eventId/dashboard" element={<MemberDashboard />} />
+            <Route path="events/:eventId/my-team" element={<RedirectToDashboard />} />
+            <Route path="events/:eventId/jury" element={<RedirectToDashboard />} />
             <Route path="events/:eventId/register/team" element={<TeamRegistration />} />
             <Route path="events/:eventId/join" element={<JoinOptions />} />
             <Route path="events/:eventId/join/team" element={<JoinTeam />} />
@@ -63,7 +69,6 @@ function App() {
             <Route path="events/:eventId/join-team" element={<RedirectToJoin />} />
             <Route path="events/:eventId/register/individual" element={<RedirectToPool />} />
             <Route path="events/:eventId/project/submit" element={<ProjectSubmission />} />
-            <Route path="events/:eventId/jury" element={<JuryScoring />} />
           </Route>
 
           {/* Legacy global form URLs → home (kitchens are event-scoped) */}

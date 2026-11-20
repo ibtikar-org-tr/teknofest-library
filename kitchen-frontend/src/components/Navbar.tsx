@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Menu, X, Users, Trophy, LogIn, LogOut, Shield, Star } from 'lucide-react'
+import { Menu, X, LayoutDashboard, Trophy, LogIn, LogOut, Shield } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession, isLoggedIn, isStaffSession, getSession } from '../lib/auth-session'
-import { kitchensService } from '../services/api'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
-  const [isJury, setIsJury] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { eventId } = useParams()
@@ -15,33 +13,11 @@ export default function Navbar() {
   const staff = isStaffSession()
   const session = getSession()
 
-  useEffect(() => {
-    if (!eventId || !loggedIn) {
-      setIsJury(false)
-      return
-    }
-    let cancelled = false
-    kitchensService
-      .get(eventId)
-      .then((kitchen) => {
-        if (!cancelled) setIsJury(Boolean(kitchen?.is_jury))
-      })
-      .catch(() => {
-        if (!cancelled) setIsJury(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [eventId, loggedIn, location.pathname])
-
   const navLinks = eventId
     ? [
         { to: `/events/${eventId}/leaderboard`, label: 'لوحة المتصدرين', icon: Trophy },
         ...(loggedIn
-          ? [{ to: `/events/${eventId}/my-team`, label: 'فريقي', icon: Users }]
-          : []),
-        ...(loggedIn && isJury
-          ? [{ to: `/events/${eventId}/jury`, label: 'تحكيم', icon: Star }]
+          ? [{ to: `/events/${eventId}/dashboard`, label: 'لوحتي', icon: LayoutDashboard }]
           : []),
       ]
     : []
@@ -108,7 +84,11 @@ export default function Navbar() {
               </button>
             ) : (
               <Link
-                to={eventId ? `/login?next=${encodeURIComponent(`/events/${eventId}/my-team`)}` : '/login'}
+                to={
+                  eventId
+                    ? `/login?next=${encodeURIComponent(`/events/${eventId}/dashboard`)}`
+                    : '/login'
+                }
                 className="flex items-center gap-2 px-4 py-2 bg-teknofest-orange text-white rounded-lg hover:opacity-90 transition-all"
               >
                 <LogIn className="w-4 h-4" />

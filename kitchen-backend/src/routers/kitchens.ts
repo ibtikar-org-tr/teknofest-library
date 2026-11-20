@@ -136,6 +136,10 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
   const sessionEmail = member?.email?.trim().toLowerCase()
   const sessionMembership = member?.membership_number?.trim()
 
+  if (sessionMembership && (await isEventJury(c.env, eventId, sessionMembership))) {
+    return c.json({ message: 'Juries cannot create or join teams' }, 403)
+  }
+
   const members = Array.isArray(body.members)
     ? body.members.map(
         (m: {
@@ -176,6 +180,10 @@ kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
   const member = c.get('member')
   if (!member?.membership_number || !member.email) {
     return c.json({ message: 'Authenticated VMS member required' }, 401)
+  }
+
+  if (await isEventJury(c.env, eventId, member.membership_number)) {
+    return c.json({ message: 'Juries cannot enter the team pool' }, 403)
   }
 
   const profile = await fetchVmsMemberProfile(
@@ -243,6 +251,10 @@ kitchensRouter.post('/:eventId/teams/:teamId/join', ...withEventAccess, async (c
   }
   if (!Number.isFinite(teamId) || teamId <= 0) {
     return c.json({ message: 'Invalid team id' }, 400)
+  }
+
+  if (await isEventJury(c.env, eventId, member.membership_number)) {
+    return c.json({ message: 'Juries cannot create or join teams' }, 403)
   }
 
   const existing = await findTeamForMemberInEvent(
@@ -470,6 +482,22 @@ kitchensRouter.post('/:eventId/juries', ...withEventAccess, async (c) => {
     const match = registrants.find((r) => r.membership_number === membershipNumber)
     fullName = fullName || match?.full_name || membershipNumber
     email = email || match?.email || null
+  }
+
+  const onTeam = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    membershipNumber,
+    email ?? undefined,
+  )
+  if (onTeam) {
+    return c.json(
+      {
+        message: 'Cannot appoint a team member as jury — remove them from teams first',
+        team_id: onTeam.id,
+      },
+      409,
+    )
   }
 
   const jury = await addEventJury(c.env, {
