@@ -1,14 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, FileText, Loader2, UserPlus, Users } from 'lucide-react'
+import toast from 'react-hot-toast'
+import {
+  ArrowRight,
+  Check,
+  FileText,
+  Loader2,
+  Trophy,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 import { kitchensService } from '../services/api'
-import type { Team } from '../types'
+import { useProjectFields } from '../hooks/useProjectFields'
+import type { ProjectSubmission, Team } from '../types'
 
 export default function MyTeam() {
   const { eventId = '' } = useParams()
+  const { fields: competitions, loading: competitionsLoading } = useProjectFields(eventId)
   const [team, setTeam] = useState<Team | null>(null)
+  const [projects, setProjects] = useState<ProjectSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedCompetition, setSelectedCompetition] = useState('')
+  const [savingCompetition, setSavingCompetition] = useState(false)
 
   useEffect(() => {
     if (!eventId) return
@@ -16,8 +30,18 @@ export default function MyTeam() {
     setLoading(true)
     kitchensService
       .getMyTeam(eventId)
-      .then((data) => {
-        if (!cancelled) setTeam(data)
+      .then(async (data) => {
+        if (cancelled) return
+        setTeam(data)
+        if (data?.field) setSelectedCompetition(data.field)
+        if (data) {
+          try {
+            const res = await kitchensService.getMyProjects(eventId)
+            if (!cancelled) setProjects(res.projects ?? [])
+          } catch {
+            if (!cancelled) setProjects([])
+          }
+        }
       })
       .catch((err) => {
         if (!cancelled && err.response?.status !== 404) {
@@ -31,6 +55,27 @@ export default function MyTeam() {
       cancelled = true
     }
   }, [eventId])
+
+  const hasCompetition = Boolean(team?.field?.trim())
+  const hasPrimary = useMemo(() => projects.some((p) => p.stage === 'primary'), [projects])
+  const hasFinal = useMemo(() => projects.some((p) => p.stage === 'final'), [projects])
+
+  const saveCompetition = async () => {
+    if (!eventId || !selectedCompetition.trim()) {
+      toast.error('اختر المسابقة أولاً')
+      return
+    }
+    setSavingCompetition(true)
+    try {
+      const updated = await kitchensService.setMyTeamCompetition(eventId, selectedCompetition.trim())
+      setTeam(updated)
+      toast.success('تم اختيار المسابقة')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'تعذر حفظ المسابقة')
+    } finally {
+      setSavingCompetition(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -55,18 +100,17 @@ export default function MyTeam() {
     const members = team.members ?? []
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
-      <Link
-        to={`/events/${eventId}`}
-        className="inline-flex items-center gap-2 text-gray-400 hover:text-white"
-      >
-        <ArrowRight className="w-4 h-4" />
-        المطبخ
-      </Link>
+        <Link
+          to={`/events/${eventId}`}
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-white"
+        >
+          <ArrowRight className="w-4 h-4" />
+          المطبخ
+        </Link>
 
-      <div>
-        <p className="text-teknofest-cyan text-sm mb-2">لوحتي · فريقي</p>
+        <div>
+          <p className="text-teknofest-cyan text-sm mb-2">لوحتي · فريقي</p>
           <h1 className="text-3xl font-bold text-white mb-2">{team.team_name}</h1>
-          <p className="text-gray-400 text-sm">{team.field}</p>
         </div>
 
         <div className="card space-y-3">
@@ -92,16 +136,123 @@ export default function MyTeam() {
           </ul>
         </div>
 
-        <Link
-          to={`/events/${eventId}/project/submit`}
-          className="card flex items-center gap-4 hover:border-teknofest-orange/40 border border-transparent transition-all"
-        >
-          <FileText className="w-10 h-10 text-teknofest-orange shrink-0" />
-          <div>
-            <h2 className="text-xl font-bold text-white">تقديم مشروع الفريق</h2>
-            <p className="text-gray-400 text-sm">أرسل أو حدّث مشروع «{team.team_name}»</p>
-          </div>
-        </Link>
+        <div className="space-y-4">
+          <h2 className="text-white font-semibold">مسار التقديم</h2>
+          <p className="text-gray-400 text-sm">
+            ثلاث خطوات في لوحتي: اختيار المسابقة، ثم المرحلة الأولية، ثم النهائية. التحكيم على
+            مرحلتين فقط (أولية 40% + نهائية 60%).
+          </p>
+
+          {/* Step 1 — competition (FE only; not a jury stage) */}
+          {hasCompetition ? (
+            <div className="card flex items-center gap-4 border border-green-500/30">
+              <Check className="w-10 h-10 text-green-400 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs text-green-400 mb-1">الخطوة 1</p>
+                <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
+                <p className="text-gray-400 text-sm truncate">{team.field}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="card space-y-4 border border-teknofest-orange/40">
+              <div className="flex items-center gap-4">
+                <Trophy className="w-10 h-10 text-teknofest-orange shrink-0" />
+                <div>
+                  <p className="text-xs text-teknofest-orange mb-1">الخطوة 1</p>
+                  <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
+                  <p className="text-gray-400 text-sm">يجب اختيار المسابقة قبل أي تقديم</p>
+                </div>
+              </div>
+              <select
+                className="input-field"
+                value={selectedCompetition}
+                disabled={competitionsLoading || competitions.length === 0}
+                onChange={(e) => setSelectedCompetition(e.target.value)}
+              >
+                <option value="">
+                  {competitionsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
+                </option>
+                {competitions.map((c) => (
+                  <option key={c.id} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => void saveCompetition()}
+                disabled={savingCompetition || !selectedCompetition}
+                className="btn-primary w-full disabled:opacity-50"
+              >
+                {savingCompetition ? 'جاري الحفظ...' : 'تأكيد المسابقة'}
+              </button>
+            </div>
+          )}
+
+          {/* Step 2 — primary */}
+          {!hasCompetition ? (
+            <div className="card opacity-50">
+              <p className="text-xs text-gray-500 mb-1">الخطوة 2</p>
+              <h3 className="text-lg font-bold text-white">المرحلة الأولية</h3>
+              <p className="text-gray-500 text-sm">متاحة بعد اختيار المسابقة</p>
+            </div>
+          ) : hasPrimary ? (
+            <div className="card flex items-center gap-4 border border-green-500/30">
+              <Check className="w-10 h-10 text-green-400 shrink-0" />
+              <div>
+                <p className="text-xs text-green-400 mb-1">الخطوة 2</p>
+                <h3 className="text-lg font-bold text-white">المرحلة الأولية</h3>
+                <p className="text-gray-400 text-sm">تم التقديم</p>
+              </div>
+            </div>
+          ) : (
+            <Link
+              to={`/events/${eventId}/project/submit?stage=primary`}
+              className="card flex items-center gap-4 hover:border-teknofest-orange/40 border border-transparent transition-all"
+            >
+              <FileText className="w-10 h-10 text-teknofest-orange shrink-0" />
+              <div>
+                <p className="text-xs text-teknofest-orange mb-1">الخطوة 2</p>
+                <h3 className="text-lg font-bold text-white">تقديم المرحلة الأولية</h3>
+                <p className="text-gray-400 text-sm">ملخص وملفات</p>
+              </div>
+            </Link>
+          )}
+
+          {/* Step 3 — final */}
+          {!hasCompetition || !hasPrimary ? (
+            <div className="card opacity-50">
+              <p className="text-xs text-gray-500 mb-1">الخطوة 3</p>
+              <h3 className="text-lg font-bold text-white">المرحلة النهائية</h3>
+              <p className="text-gray-500 text-sm">
+                {!hasCompetition
+                  ? 'متاحة بعد اختيار المسابقة والمرحلة الأولية'
+                  : 'متاحة بعد تقديم المرحلة الأولية'}
+              </p>
+            </div>
+          ) : hasFinal ? (
+            <div className="card flex items-center gap-4 border border-green-500/30">
+              <Check className="w-10 h-10 text-green-400 shrink-0" />
+              <div>
+                <p className="text-xs text-green-400 mb-1">الخطوة 3</p>
+                <h3 className="text-lg font-bold text-white">المرحلة النهائية</h3>
+                <p className="text-gray-400 text-sm">تم التقديم</p>
+              </div>
+            </div>
+          ) : (
+            <Link
+              to={`/events/${eventId}/project/submit?stage=final`}
+              className="card flex items-center gap-4 hover:border-teknofest-cyan/40 border border-transparent transition-all"
+            >
+              <FileText className="w-10 h-10 text-teknofest-cyan shrink-0" />
+              <div>
+                <p className="text-xs text-teknofest-cyan mb-1">الخطوة 3</p>
+                <h3 className="text-lg font-bold text-white">تقديم المرحلة النهائية</h3>
+                <p className="text-gray-400 text-sm">ملخص وملفات للمرحلة الثانية</p>
+              </div>
+            </Link>
+          )}
+        </div>
       </div>
     )
   }

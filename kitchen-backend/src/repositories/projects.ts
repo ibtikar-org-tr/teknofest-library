@@ -1,7 +1,11 @@
 import type { Environment } from '../types/env'
-import type { ProjectSubmission } from '../types/models'
+import type { ApplicationStage, ProjectSubmission } from '../types/models'
 import { mapProject } from '../utils/mappers'
 import { boolToInt } from '../utils/sql'
+import { getTeam } from './teams'
+
+export const isApplicationStage = (value: unknown): value is ApplicationStage =>
+  value === 'primary' || value === 'final'
 
 export const listProjects = async (
   env: Environment,
@@ -9,14 +13,17 @@ export const listProjects = async (
 ): Promise<ProjectSubmission[]> => {
   if (eventId) {
     const { results } = await env.D1_DB.prepare(
-      'SELECT * FROM project_submissions WHERE event_id = ? ORDER BY id DESC',
+      `SELECT * FROM project_submissions
+       WHERE event_id = ?
+       ORDER BY CASE stage WHEN 'primary' THEN 0 ELSE 1 END, id DESC`,
     )
       .bind(eventId)
       .all()
     return (results ?? []).map((row) => mapProject(row as Record<string, unknown>))
   }
   const { results } = await env.D1_DB.prepare(
-    'SELECT * FROM project_submissions ORDER BY id DESC',
+    `SELECT * FROM project_submissions
+     ORDER BY CASE stage WHEN 'primary' THEN 0 ELSE 1 END, id DESC`,
   ).all()
   return (results ?? []).map((row) => mapProject(row as Record<string, unknown>))
 }
@@ -36,12 +43,31 @@ export const listProjectsByTeam = async (
   teamId: number,
 ): Promise<ProjectSubmission[]> => {
   const { results } = await env.D1_DB.prepare(
-    'SELECT * FROM project_submissions WHERE team_id = ? ORDER BY id DESC',
+    `SELECT * FROM project_submissions
+     WHERE team_id = ?
+     ORDER BY CASE stage WHEN 'primary' THEN 0 ELSE 1 END, id DESC`,
   )
     .bind(teamId)
     .all()
   return (results ?? []).map((row) => mapProject(row as Record<string, unknown>))
 }
+
+export const getProjectByTeamStage = async (
+  env: Environment,
+  teamId: number,
+  stage: ApplicationStage,
+): Promise<ProjectSubmission | null> => {
+  const row = await env.D1_DB.prepare(
+    'SELECT * FROM project_submissions WHERE team_id = ? AND stage = ? LIMIT 1',
+  )
+    .bind(teamId, stage)
+    .first()
+  return row ? mapProject(row as Record<string, unknown>) : null
+}
+
+export type CreateProjectResult =
+  | { ok: true; project: ProjectSubmission }
+  | { ok: false; status: 400 | 404 | 409; message: string }
 
 export const createProject = async (
   env: Environment,
@@ -49,46 +75,94 @@ export const createProject = async (
     event_id: string
     team_id: number
     program_version_id: number
-    submission_version?: number
-    title: string
-    problem_statement: string
-    technical_description: string
-    scientific_reference: string
-    field: string
+    stage?: ApplicationStage | string
+    summary: string
     image_path?: string | null
     diagram_path?: string | null
     design_path?: string | null
     has_attachments?: boolean
   },
-): Promise<ProjectSubmission> => {
-  const characterCount = payload.technical_description.length
+): Promise<CreateProjectResult> => {
+  const stageRaw = payload.stage ?? 'primary'
+  if (!isApplicationStage(stageRaw)) {
+    return { ok: false, status: 400, message: 'stage must be primary or final' }
+  }
+  const stage = stageRaw
+
+  const summary = String(payload.summary ?? '').trim()
+  if (!summary) {
+    return { ok: false, status: 400, message: 'summary is required' }
+  }
+
+  const team = await getTeam(env, payload.team_id)
+  if (!team || team.event_id !== payload.event_id) {
+    return { ok: false, status: 404, message: 'Team not found in this event kitchen' }
+  }
+
+  if (!team.field?.trim()) {
+    return {
+      ok: false,
+      status: 400,
+      message: 'Choose a competition before submitting an application',
+    }
+  }
+
+  if (stage === 'final') {
+    const primary = await getProjectByTeamStage(env, payload.team_id, 'primary')
+    if (!primary) {
+      return {
+        ok: false,
+        status: 400,
+        message: 'Submit the primary stage application before the final stage',
+      }
+    }
+  }
+
+  const existing = await getProjectByTeamStage(env, payload.team_id, stage)
+  if (existing) {
+    return {
+      ok: false,
+      status: 409,
+      message: `This team already submitted the ${stage} stage`,
+    }
+  }
+
+  const hasAttachments = Boolean(
+    payload.has_attachments || payload.image_path || payload.diagram_path || payload.design_path,
+  )
+  const title =
+    stage === 'primary'
+      ? `${team.team_name} — المرحلة الأولية`
+      : `${team.team_name} — المرحلة النهائية`
+
   const row = await env.D1_DB.prepare(
     `INSERT INTO project_submissions (
-      event_id, team_id, program_version_id, submission_version, title, problem_statement,
-      technical_description, scientific_reference, field, image_path, diagram_path,
-      design_path, has_attachments, is_complete, character_count
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      event_id, team_id, program_version_id, submission_version, stage, summary,
+      title, problem_statement, technical_description, scientific_reference, field,
+      image_path, diagram_path, design_path, has_attachments, is_complete, character_count
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING *`,
   )
     .bind(
       payload.event_id,
       payload.team_id,
       payload.program_version_id,
-      payload.submission_version ?? 1,
-      payload.title,
-      payload.problem_statement,
-      payload.technical_description,
-      payload.scientific_reference,
-      payload.field,
+      stage === 'primary' ? 1 : 2,
+      stage,
+      summary,
+      title,
+      summary,
+      '',
+      '',
+      team.field,
       payload.image_path ?? null,
       payload.diagram_path ?? null,
       payload.design_path ?? null,
-      boolToInt(payload.has_attachments ?? false),
-      characterCount >= 1000 ? 1 : 0,
-      characterCount,
+      boolToInt(hasAttachments),
+      1,
+      summary.length,
     )
     .first()
 
-  return mapProject(row as Record<string, unknown>)
+  return { ok: true, project: mapProject(row as Record<string, unknown>) }
 }
-

@@ -137,6 +137,20 @@ export const kitchensService = {
     }
   },
 
+  getMyProjects: async (
+    eventId: string,
+  ): Promise<{ team_id: number; projects: ProjectSubmission[] }> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/my-projects`)
+    return response.data
+  },
+
+  setMyTeamCompetition: async (eventId: string, field: string): Promise<Team> => {
+    const response = await api.put(`/kitchens/${encodeURIComponent(eventId)}/my-team/competition`, {
+      field,
+    })
+    return response.data
+  },
+
   getMyVmsProfile: async (
     eventId: string,
   ): Promise<{
@@ -441,8 +455,13 @@ export const evaluationsService = {
     projectId: number,
   ): Promise<{
     project_id: number
+    stage?: 'primary' | 'final'
     jury_average: number | null
     jury_count: number
+    stage_score?: number | null
+    primary_average?: number | null
+    final_average?: number | null
+    overall_score?: number | null
     final_score: number | null
     ai_average: number | null
   }> => {

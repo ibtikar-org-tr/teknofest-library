@@ -128,6 +128,54 @@ export const createTeam = async (
   return team
 }
 
+export type SetTeamCompetitionResult =
+  | { ok: true; team: Team }
+  | { ok: false; status: 400 | 404 | 409; message: string }
+
+/** Set competition (`field`) before applications. Locked after primary stage is submitted. */
+export const setTeamCompetition = async (
+  env: Environment,
+  teamId: number,
+  field: string,
+): Promise<SetTeamCompetitionResult> => {
+  const trimmed = String(field ?? '').trim()
+  if (!trimmed) {
+    return { ok: false, status: 400, message: 'Competition field is required' }
+  }
+
+  const existing = await getTeam(env, teamId)
+  if (!existing) return { ok: false, status: 404, message: 'Team not found' }
+
+  const primary = await env.D1_DB.prepare(
+    `SELECT id FROM project_submissions
+     WHERE team_id = ? AND stage = 'primary'
+     LIMIT 1`,
+  )
+    .bind(teamId)
+    .first()
+  if (primary) {
+    return {
+      ok: false,
+      status: 409,
+      message: 'Competition cannot be changed after the primary application is submitted',
+    }
+  }
+
+  const row = await env.D1_DB.prepare(
+    `UPDATE teams
+     SET field = ?, updated_at = datetime('now')
+     WHERE id = ?
+     RETURNING *`,
+  )
+    .bind(trimmed, teamId)
+    .first()
+
+  if (!row) return { ok: false, status: 404, message: 'Team not found' }
+  const team = mapTeam(row as Record<string, unknown>)
+  team.members = existing.members
+  return { ok: true, team }
+}
+
 export const addMemberToTeam = async (
   env: Environment,
   teamId: number,

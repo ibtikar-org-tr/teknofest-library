@@ -17,6 +17,7 @@ import {
   addMemberToTeam,
   createTeam,
   getTeam,
+  setTeamCompetition,
   listLeaderboardTeams,
   listTeams,
 } from '../repositories/teams'
@@ -327,6 +328,25 @@ kitchensRouter.get('/:eventId/my-team', ...withEventAccess, async (c) => {
   return c.json(team)
 })
 
+/** Choose competition before primary/final applications (FE step 1; not a jury stage). */
+kitchensRouter.put('/:eventId/my-team/competition', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  const body = await c.req.json<{ field?: string }>()
+  const team = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    member?.membership_number,
+    member?.email,
+  )
+  if (!team) {
+    return c.json({ message: 'You are not on a team in this event kitchen' }, 404)
+  }
+  const result = await setTeamCompetition(c.env, team.id, body.field ?? '')
+  if (!result.ok) return c.json({ message: result.message }, result.status)
+  return c.json(result.team)
+})
+
 kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const body = await c.req.json()
@@ -368,13 +388,36 @@ kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {
   }
 
   const programVersionId = Number(body.program_version_id) || 1
-  const project = await createProject(c.env, {
-    ...body,
+  const result = await createProject(c.env, {
     event_id: eventId,
     team_id: team.id,
     program_version_id: programVersionId,
+    stage: body.stage,
+    summary: body.summary ?? body.problem_statement ?? '',
+    image_path: body.image_path,
+    diagram_path: body.diagram_path,
+    design_path: body.design_path,
+    has_attachments: body.has_attachments,
   })
-  return c.json(project, 201)
+  if (!result.ok) return c.json({ message: result.message }, result.status)
+  return c.json(result.project, 201)
+})
+
+/** Caller's team applications (primary / final) for this event. */
+kitchensRouter.get('/:eventId/my-projects', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  const team = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    member?.membership_number,
+    member?.email,
+  )
+  if (!team) {
+    return c.json({ message: 'You are not on a team in this event kitchen' }, 404)
+  }
+  const projects = await listProjectsByTeam(c.env, team.id)
+  return c.json({ team_id: team.id, projects })
 })
 
 kitchensRouter.get('/:eventId/teams', ...withEventAccess, async (c) => {

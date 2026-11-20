@@ -3,6 +3,7 @@
 TEKNOFEST Kitchen API (Hono + Cloudflare Workers + D1).
 
 - [docs/INTEGRATION.md](./docs/INTEGRATION.md) — VMS SSO, Library competitions, route prefix
+- [docs/APPLICATIONS.md](./docs/APPLICATIONS.md) — summary+files form, primary/final stages
 - [docs/JURIES.md](./docs/JURIES.md) — juries, team exclusion, scoring
 - [docs/LOCAL.md](./docs/LOCAL.md) — local Wrangler / demo seed (agents)
 

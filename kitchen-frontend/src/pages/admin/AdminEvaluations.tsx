@@ -12,8 +12,11 @@ import type { ProjectSubmission } from '../../types'
 type ProjectScore = {
   jury_average: number | null
   jury_count: number
+  stage_score?: number | null
+  overall_score?: number | null
   final_score: number | null
   ai_average: number | null
+  stage?: 'primary' | 'final'
 }
 
 export default function AdminEvaluations() {
@@ -93,7 +96,7 @@ export default function AdminEvaluations() {
         <div>
           <h1 className="text-2xl font-bold text-white">ملخص التقييمات</h1>
           <p className="text-gray-400">
-            عرض فقط — التقييم يتم عبر المحكمين المعيّنين. الدرجة النهائية = متوسط درجات المحكمين.
+            عرض فقط — كل مرحلة تُحكَّم على حدة. إجمالي الفريق = 40% أولية + 60% نهائية.
           </p>
           <Link
             to={`/admin/events/${eventId}/juries`}
@@ -132,11 +135,26 @@ export default function AdminEvaluations() {
               <div key={project.id} className="card">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-white mb-1">{project.title}</h3>
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs ${
+                          (project.stage ?? 'primary') === 'final'
+                            ? 'bg-teknofest-cyan/20 text-teknofest-cyan'
+                            : 'bg-teknofest-orange/20 text-teknofest-orange'
+                        }`}
+                      >
+                        {(project.stage ?? 'primary') === 'final'
+                          ? 'المرحلة النهائية'
+                          : 'المرحلة الأولية'}
+                      </span>
+                      <h3 className="text-lg font-bold text-white">{project.title}</h3>
+                    </div>
                     <p className="text-gray-400 text-sm mb-2">
                       {project.team?.team_name || `فريق ${project.team_id}`} | {project.field}
                     </p>
-                    <p className="text-gray-300 text-sm line-clamp-2">{project.problem_statement}</p>
+                    <p className="text-gray-300 text-sm line-clamp-2">
+                      {project.summary || project.problem_statement}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-4">
@@ -158,46 +176,27 @@ export default function AdminEvaluations() {
                           )}
                         </div>
                         <p className="text-xs text-gray-400">
-                          محكمون{score?.jury_count ? ` (${score.jury_count})` : ''}
+                          درجة المرحلة{score?.jury_count ? ` (${score.jury_count})` : ''}
                         </p>
                       </div>
 
                       <div className="text-center">
                         <div
                           className={`w-14 h-14 rounded-xl flex items-center justify-center mb-1 ${
-                            score?.ai_average != null
-                              ? 'bg-teknofest-cyan/20'
-                              : 'bg-teknofest-medium-blue'
-                          }`}
-                        >
-                          {score?.ai_average != null ? (
-                            <span className="text-lg font-bold text-teknofest-cyan">
-                              {score.ai_average.toFixed(0)}
-                            </span>
-                          ) : (
-                            <Bot className="w-6 h-6 text-gray-400" />
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-400">AI</p>
-                      </div>
-
-                      <div className="text-center">
-                        <div
-                          className={`w-14 h-14 rounded-xl flex items-center justify-center mb-1 ${
-                            score?.final_score != null
+                            score?.overall_score != null
                               ? 'bg-yellow-500/20'
                               : 'bg-teknofest-medium-blue'
                           }`}
                         >
-                          {score?.final_score != null ? (
+                          {score?.overall_score != null ? (
                             <span className="text-lg font-bold text-yellow-400">
-                              {score.final_score.toFixed(1)}
+                              {score.overall_score.toFixed(1)}
                             </span>
                           ) : (
                             <Star className="w-6 h-6 text-gray-400" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-400">النهائي</p>
+                        <p className="text-xs text-gray-400">إجمالي الفريق</p>
                       </div>
                     </div>
 
@@ -239,7 +238,7 @@ export default function AdminEvaluations() {
                     ? viewingEvaluations.final_score.toFixed(1)
                     : '—'}
                 </p>
-                <p className="text-sm text-gray-400">الدرجة النهائية (متوسط المحكمين)</p>
+                <p className="text-sm text-gray-400">درجة هذه المرحلة (متوسط المحكمين)</p>
               </div>
               <div className="p-4 bg-teknofest-cyan/10 rounded-xl text-center">
                 <p className="text-2xl font-bold text-teknofest-cyan">

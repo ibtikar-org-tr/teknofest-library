@@ -14,14 +14,13 @@ import {
   XCircle,
 } from 'lucide-react'
 import type { TeamMember, RegistrationType, Gender } from '../types'
-import { useProjectFields } from '../hooks/useProjectFields'
 import { iForgotService, teamsService } from '../services/api'
 import { getSession } from '../lib/auth-session'
 
 interface TeamFormData {
   team_name: string
   registration_type: RegistrationType
-  field: string
+  field?: string
   initial_idea?: string
   members: TeamMember[]
   gender: Gender
@@ -35,7 +34,6 @@ const GENDER_LABELS: Record<Gender, string> = {
 export default function TeamRegistration() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
-  const { fields: projectFields, loading: fieldsLoading } = useProjectFields(eventId)
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -139,7 +137,8 @@ export default function TeamRegistration() {
         event_id: eventId,
         team_name: data.team_name,
         registration_type: hasIdea ? 'team_with_idea' : 'team_no_idea',
-        field: data.field,
+        // Competition is chosen later on the team dashboard (step 1 before primary/final).
+        field: '',
         initial_idea: hasIdea ? data.initial_idea : null,
         members: membersWithLeader,
         gender: data.gender,
@@ -210,7 +209,7 @@ export default function TeamRegistration() {
 
   const handleNextStep = async () => {
     // Validate step 2 fields before proceeding
-    const fieldsToValidate: ('team_name' | 'field' | 'initial_idea')[] = ['team_name', 'field']
+    const fieldsToValidate: ('team_name' | 'initial_idea')[] = ['team_name']
     if (hasIdea) {
       fieldsToValidate.push('initial_idea')
     }
@@ -476,27 +475,9 @@ export default function TeamRegistration() {
                 </div>
 
 
-                {/* Competition Field */}
-                <div>
-                  <label className="block text-white font-medium mb-2">مجال المسابقة *</label>
-                  <select
-                    {...register('field', { required: 'يرجى اختيار مجال المسابقة' })}
-                    className="input-field"
-                    disabled={fieldsLoading || projectFields.length === 0}
-                  >
-                    <option value="">
-                      {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
-                    </option>
-                    {projectFields.map((field) => (
-                      <option key={field.id} value={field.value}>
-                        {field.label}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.field && (
-                    <p className="text-red-400 text-sm mt-1">{errors.field.message}</p>
-                  )}
-                </div>
+                <p className="text-sm text-gray-400 bg-teknofest-dark-blue/40 p-3 rounded-xl">
+                  اختيار المسابقة يتم لاحقاً من لوحتي (الخطوة الأولى قبل تقديم المرحلتين).
+                </p>
 
                 {/* Project Idea (if hasIdea) */}
                 {hasIdea && (

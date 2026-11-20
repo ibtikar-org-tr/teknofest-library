@@ -92,16 +92,15 @@ export interface Individual {
   gender: Gender
 }
 
+export type ApplicationStage = 'primary' | 'final'
+
 // Project Submission Create (team resolved from authenticated VMS session)
 export interface ProjectSubmissionCreate {
   event_id?: string
   team_id?: number
   member_email?: string
-  title: string
-  problem_statement: string
-  technical_description: string
-  scientific_reference: string
-  field: ProjectField
+  stage: ApplicationStage
+  summary: string
   program_version_id?: number
 }
 
@@ -111,10 +110,13 @@ export interface ProjectSubmission {
   team_id: number
   program_version_id?: number
   submission_version?: number
+  stage: ApplicationStage
+  summary: string
   title: string
-  problem_statement: string
-  technical_description: string
-  scientific_reference: string
+  /** @deprecated use summary */
+  problem_statement?: string
+  technical_description?: string
+  scientific_reference?: string
   field: ProjectField
   image_path?: string
   diagram_path?: string

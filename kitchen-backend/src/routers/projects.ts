@@ -51,12 +51,19 @@ projectsRouter.post('/submit', memberAuthMiddleware, async (c) => {
     team = requested
   }
 
-  const project = await createProject(c.env, {
-    ...body,
+  const result = await createProject(c.env, {
+    event_id: body.event_id,
     team_id: team.id,
     program_version_id: Number(body.program_version_id) || 1,
+    stage: body.stage,
+    summary: body.summary ?? body.problem_statement ?? '',
+    image_path: body.image_path,
+    diagram_path: body.diagram_path,
+    design_path: body.design_path,
+    has_attachments: body.has_attachments,
   })
-  return c.json(project, 201)
+  if (!result.ok) return c.json({ message: result.message }, result.status)
+  return c.json(result.project, 201)
 })
 
 projectsRouter.get('/', memberAuthMiddleware, requireEventManager, async (c) => {

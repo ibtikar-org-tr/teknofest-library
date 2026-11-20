@@ -86,27 +86,36 @@ export const mapIndividual = (row: Record<string, unknown>): Individual => ({
   updated_at: (row.updated_at as string) ?? null,
 })
 
-export const mapProject = (row: Record<string, unknown>): ProjectSubmission => ({
-  id: Number(row.id),
-  event_id: row.event_id == null ? null : String(row.event_id),
-  team_id: Number(row.team_id),
-  program_version_id: Number(row.program_version_id),
-  submission_version: Number(row.submission_version),
-  title: String(row.title),
-  problem_statement: String(row.problem_statement),
-  technical_description: String(row.technical_description),
-  scientific_reference: String(row.scientific_reference),
-  field: String(row.field),
-  image_path: (row.image_path as string) ?? null,
-  diagram_path: (row.diagram_path as string) ?? null,
-  design_path: (row.design_path as string) ?? null,
-  has_attachments: asBool(row.has_attachments),
-  is_complete: asBool(row.is_complete),
-  character_count: Number(row.character_count),
-  is_featured: asBool(row.is_featured),
-  created_at: String(row.created_at),
-  updated_at: (row.updated_at as string) ?? null,
-})
+export const mapProject = (row: Record<string, unknown>): ProjectSubmission => {
+  const problem = String(row.problem_statement ?? '')
+  const summaryRaw = row.summary == null ? '' : String(row.summary)
+  const summary = summaryRaw.trim() || problem
+  const stageRaw = row.stage == null ? 'primary' : String(row.stage)
+  const stage = stageRaw === 'final' ? 'final' : 'primary'
+  return {
+    id: Number(row.id),
+    event_id: row.event_id == null ? null : String(row.event_id),
+    team_id: Number(row.team_id),
+    program_version_id: Number(row.program_version_id),
+    submission_version: Number(row.submission_version),
+    stage,
+    summary,
+    title: String(row.title),
+    problem_statement: problem || summary,
+    technical_description: String(row.technical_description ?? ''),
+    scientific_reference: String(row.scientific_reference ?? ''),
+    field: String(row.field),
+    image_path: (row.image_path as string) ?? null,
+    diagram_path: (row.diagram_path as string) ?? null,
+    design_path: (row.design_path as string) ?? null,
+    has_attachments: asBool(row.has_attachments),
+    is_complete: asBool(row.is_complete),
+    character_count: Number(row.character_count),
+    is_featured: asBool(row.is_featured),
+    created_at: String(row.created_at),
+    updated_at: (row.updated_at as string) ?? null,
+  }
+}
 
 export const mapEvaluation = (row: Record<string, unknown>): Evaluation => {
   let detailed_scores: Record<string, number> | null = null

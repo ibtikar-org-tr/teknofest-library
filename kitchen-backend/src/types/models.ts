@@ -114,15 +114,25 @@ export interface Individual {
   updated_at: string | null
 }
 
+/** Application stage — juried separately; overall = 40% primary + 60% final. */
+export type ApplicationStage = 'primary' | 'final'
+
 export interface ProjectSubmission {
   id: number
   event_id: string | null
   team_id: number
   program_version_id: number
   submission_version: number
+  /** primary | final — one row per team per stage */
+  stage: ApplicationStage
+  /** Only free-text field on the application form */
+  summary: string
   title: string
+  /** @deprecated use summary — kept for older rows */
   problem_statement: string
+  /** @deprecated empty for new applications */
   technical_description: string
+  /** @deprecated empty for new applications */
   scientific_reference: string
   field: string
   image_path: string | null

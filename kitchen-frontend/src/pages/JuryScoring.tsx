@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Loader2, Save, Star, ArrowRight, FileText, AlertCircle, BookOpen, X } from 'lucide-react'
+import { Loader2, Save, Star, ArrowRight, FileText, X } from 'lucide-react'
 import {
   evaluationsService,
   kitchensService,
   type JuryAssignmentItem,
 } from '../services/api'
-import type { ProjectSubmission } from '../types'
+import type { ApplicationStage, ProjectSubmission } from '../types'
+
+const STAGE_LABEL: Record<ApplicationStage, string> = {
+  primary: 'المرحلة الأولية',
+  final: 'المرحلة النهائية',
+}
 
 export default function JuryScoring() {
   const { eventId = '' } = useParams()
@@ -116,7 +121,7 @@ export default function JuryScoring() {
             تحكيم المشاريع
           </h1>
           <p className="text-gray-400 mt-1">
-            لوحتي كمحكم — اطّلع على المشروع ثم ضع درجتك. الدرجة النهائية = متوسط المحكمين.
+            كل مرحلة تُحكَّم على حدة. الإجمالي = 40% أولية + 60% نهائية.
           </p>
         </div>
         <Link
@@ -138,49 +143,62 @@ export default function JuryScoring() {
             <div key={item.team_id} className="card space-y-3">
               <h2 className="text-lg font-bold text-white">{item.team_name}</h2>
               {item.projects.length === 0 ? (
-                <p className="text-sm text-gray-500">لا يوجد مشروع مقدّم لهذا الفريق بعد.</p>
+                <p className="text-sm text-gray-500">لا يوجد تقديم لهذا الفريق بعد.</p>
               ) : (
                 <ul className="space-y-3">
-                  {item.projects.map((project) => (
-                    <li
-                      key={project.id}
-                      className="p-4 rounded-lg bg-teknofest-medium-blue/40 space-y-3"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-white font-medium text-lg">{project.title}</p>
-                          <p className="text-xs text-gray-400 mt-1">{project.field}</p>
-                          {project.problem_statement ? (
-                            <p className="text-sm text-gray-300 mt-2 line-clamp-2">
-                              {project.problem_statement}
-                            </p>
-                          ) : null}
-                          {myScores[project.id!] != null && (
-                            <p className="text-sm text-green-400 mt-2">
-                              درجتك: {myScores[project.id!].toFixed(1)}
-                            </p>
-                          )}
+                  {item.projects.map((project) => {
+                    const stage = project.stage ?? 'primary'
+                    const summary = project.summary || project.problem_statement || ''
+                    return (
+                      <li
+                        key={project.id}
+                        className="p-4 rounded-lg bg-teknofest-medium-blue/40 space-y-3"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs ${
+                                  stage === 'final'
+                                    ? 'bg-teknofest-cyan/20 text-teknofest-cyan'
+                                    : 'bg-teknofest-orange/20 text-teknofest-orange'
+                                }`}
+                              >
+                                {STAGE_LABEL[stage]}
+                              </span>
+                              <p className="text-white font-medium">{project.title}</p>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">{project.field}</p>
+                            {summary ? (
+                              <p className="text-sm text-gray-300 mt-2 line-clamp-2">{summary}</p>
+                            ) : null}
+                            {myScores[project.id!] != null && (
+                              <p className="text-sm text-green-400 mt-2">
+                                درجتك: {myScores[project.id!].toFixed(1)}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setViewing(project)}
+                              className="btn-secondary text-sm py-2 flex items-center justify-center gap-1"
+                            >
+                              <FileText className="w-4 h-4" />
+                              عرض
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openScore(project)}
+                              className="btn-primary text-sm py-2"
+                            >
+                              {myScores[project.id!] != null ? 'تعديل تقييمي' : 'تقييم'}
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex flex-col gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setViewing(project)}
-                            className="btn-secondary text-sm py-2 flex items-center justify-center gap-1"
-                          >
-                            <FileText className="w-4 h-4" />
-                            عرض المشروع
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openScore(project)}
-                            className="btn-primary text-sm py-2"
-                          >
-                            {myScores[project.id!] != null ? 'تعديل تقييمي' : 'تقييم'}
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </div>
@@ -193,6 +211,15 @@ export default function JuryScoring() {
           <div className="card w-full max-w-3xl max-h-[90vh] overflow-y-auto space-y-5">
             <div className="flex items-start justify-between gap-3">
               <div>
+                <span
+                  className={`inline-block px-2 py-0.5 rounded text-xs mb-2 ${
+                    (detailProject.stage ?? 'primary') === 'final'
+                      ? 'bg-teknofest-cyan/20 text-teknofest-cyan'
+                      : 'bg-teknofest-orange/20 text-teknofest-orange'
+                  }`}
+                >
+                  {STAGE_LABEL[detailProject.stage ?? 'primary']}
+                </span>
                 <h3 className="text-xl font-bold text-white">{detailProject.title}</h3>
                 <p className="text-sm text-gray-400 mt-1">{detailProject.field}</p>
               </div>
@@ -209,39 +236,25 @@ export default function JuryScoring() {
             </div>
 
             <div>
-              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-yellow-400" />
-                المشكلة
-              </h4>
+              <h4 className="text-white font-medium mb-2">الملخص</h4>
               <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap">
-                {detailProject.problem_statement || '—'}
+                {detailProject.summary || detailProject.problem_statement || '—'}
               </p>
             </div>
 
             <div>
-              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-teknofest-cyan" />
-                الوصف التقني
-              </h4>
-              <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap">
-                {detailProject.technical_description || '—'}
-              </p>
-            </div>
-
-            <div>
-              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-purple-400" />
-                المرجع العلمي
-              </h4>
-              <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap">
-                {detailProject.scientific_reference || '—'}
-              </p>
+              <h4 className="text-white font-medium mb-2">الملفات</h4>
+              <ul className="text-sm text-gray-300 space-y-1 bg-teknofest-dark-blue/50 p-4 rounded-xl">
+                <li>صورة: {detailProject.image_path || '—'}</li>
+                <li>مخطط: {detailProject.diagram_path || '—'}</li>
+                <li>تصميم: {detailProject.design_path || '—'}</li>
+              </ul>
             </div>
 
             {selected ? (
               <div className="border-t border-teknofest-light-blue/20 pt-4 space-y-4">
                 <label className="block text-sm text-gray-300">
-                  الدرجة (0–100)
+                  الدرجة (0–100) لهذه المرحلة
                   <input
                     type="number"
                     min={0}
@@ -297,7 +310,7 @@ export default function JuryScoring() {
                   onClick={() => openScore(detailProject)}
                   className="btn-primary"
                 >
-                  تقييم هذا المشروع
+                  تقييم هذه المرحلة
                 </button>
               </div>
             )}

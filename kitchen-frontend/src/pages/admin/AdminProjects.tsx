@@ -144,15 +144,21 @@ export default function AdminProjects() {
               </div>
 
               <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                {project.problem_statement}
+                {project.summary || project.problem_statement}
               </p>
 
               <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <span
+                  className={`px-2 py-1 rounded text-xs ${
+                    (project.stage ?? 'primary') === 'final'
+                      ? 'bg-teknofest-cyan/20 text-teknofest-cyan'
+                      : 'bg-teknofest-orange/20 text-teknofest-orange'
+                  }`}
+                >
+                  {(project.stage ?? 'primary') === 'final' ? 'نهائية' : 'أولية'}
+                </span>
                 <span className="px-2 py-1 bg-teknofest-orange/20 text-teknofest-orange rounded text-xs">
                   {project.field}
-                </span>
-                <span className="px-2 py-1 bg-teknofest-cyan/20 text-teknofest-cyan rounded text-xs">
-                  {project.character_count} حرف
                 </span>
                 {project.has_attachments && (
                   <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
@@ -232,36 +238,13 @@ export default function AdminProjects() {
                 </div>
               </div>
 
-              {/* Problem Statement */}
               <div>
                 <h3 className="text-white font-medium mb-2 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-yellow-400" />
-                  المشكلة
+                  الملخص
                 </h3>
-                <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl">
-                  {selectedProject.problem_statement}
-                </p>
-              </div>
-
-              {/* Technical Description */}
-              <div>
-                <h3 className="text-white font-medium mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-teknofest-cyan" />
-                  الوصف التقني
-                </h3>
-                <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap max-h-60 overflow-y-auto">
-                  {selectedProject.technical_description}
-                </p>
-              </div>
-
-              {/* Scientific Reference */}
-              <div>
-                <h3 className="text-white font-medium mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-400" />
-                  المرجع العلمي
-                </h3>
-                <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl">
-                  {selectedProject.scientific_reference}
+                <p className="text-gray-300 bg-teknofest-dark-blue/50 p-4 rounded-xl whitespace-pre-wrap">
+                  {selectedProject.summary || selectedProject.problem_statement || '—'}
                 </p>
               </div>
 

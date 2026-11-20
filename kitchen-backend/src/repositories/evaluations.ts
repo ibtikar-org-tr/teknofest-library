@@ -119,3 +119,15 @@ export const averageJuryScores = (
   const sum = juryScores.reduce((acc, e) => acc + e.score, 0)
   return { jury_average: sum / juryScores.length, jury_count: juryScores.length }
 }
+
+/** Overall team score: 40% primary stage + 60% final stage (both required). */
+export const PRIMARY_STAGE_WEIGHT = 0.4
+export const FINAL_STAGE_WEIGHT = 0.6
+
+export const weightedOverallScore = (
+  primaryAverage: number | null,
+  finalAverage: number | null,
+): number | null => {
+  if (primaryAverage == null || finalAverage == null) return null
+  return primaryAverage * PRIMARY_STAGE_WEIGHT + finalAverage * FINAL_STAGE_WEIGHT
+}

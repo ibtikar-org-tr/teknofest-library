@@ -8,10 +8,32 @@ import {
   findJuryEvaluation,
   listEvaluationsByProject,
   upsertJuryEvaluation,
+  weightedOverallScore,
 } from '../repositories/evaluations'
 import { canEvaluateTeam, listJuryMembershipNumbers } from '../repositories/juries'
-import { getProject } from '../repositories/projects'
+import { getProject, listProjectsByTeam } from '../repositories/projects'
 import { getTeam } from '../repositories/teams'
+
+async function stageAveragesForTeam(
+  env: Environment,
+  teamId: number,
+  jurySet: Set<string>,
+) {
+  const projects = await listProjectsByTeam(env, teamId)
+  let primary_average: number | null = null
+  let final_average: number | null = null
+  for (const p of projects) {
+    const evals = await listEvaluationsByProject(env, p.id)
+    const { jury_average } = averageJuryScores(evals, jurySet)
+    if (p.stage === 'primary') primary_average = jury_average
+    if (p.stage === 'final') final_average = jury_average
+  }
+  return {
+    primary_average,
+    final_average,
+    overall_score: weightedOverallScore(primary_average, final_average),
+  }
+}
 
 const evaluationRouter = new Hono<AppBindings>()
 
@@ -36,15 +58,25 @@ evaluationRouter.get('/project/:project_id/score', async (c) => {
   const aiAvg =
     aiScores.length > 0 ? aiScores.reduce((sum, e) => sum + e.score, 0) / aiScores.length : null
 
+  const teamScores = team
+    ? await stageAveragesForTeam(c.env, project.team_id, jurySet)
+    : { primary_average: null, final_average: null, overall_score: null }
+
   return c.json({
     project_id: projectId,
+    stage: project.stage,
     jury_average,
     jury_count,
+    stage_score: jury_average,
+    primary_average: teamScores.primary_average,
+    final_average: teamScores.final_average,
+    overall_score: teamScores.overall_score,
+    /** Stage average; use overall_score for 40/60 team total */
     final_score: jury_average,
     ai_average: aiAvg,
-    /** @deprecated use final_score / jury_average */
+    /** @deprecated use stage_score / jury_average */
     admin_average: jury_average ?? 0,
-    total_score: jury_average,
+    total_score: teamScores.overall_score ?? jury_average,
     evaluations_count: evaluations.length,
   })
 })
@@ -95,15 +127,23 @@ evaluationRouter.get('/project/:project_id/details', memberAuthMiddleware, async
     ),
   }))
 
+  const teamScores = await stageAveragesForTeam(c.env, project.team_id, jurySet)
+
   return c.json({
     project_id: projectId,
     project_title: project.title,
+    stage: project.stage,
+    summary: project.summary,
     evaluations: mapped,
     current_admin_evaluation: current
       ? mapped.find((e) => e.id === current.id)
       : undefined,
     total_admin_evaluations: jury_count,
     jury_average,
+    stage_score: jury_average,
+    primary_average: teamScores.primary_average,
+    final_average: teamScores.final_average,
+    overall_score: teamScores.overall_score,
     final_score: jury_average,
     has_ai_evaluation: evaluations.some((e) => e.is_ai_evaluation),
   })
