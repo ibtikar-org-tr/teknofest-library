@@ -29,16 +29,6 @@ export default function Footer() {
                   الرئيسية
                 </Link>
               </li>
-              <li>
-                <Link to="/register/team" className="text-gray-400 hover:text-teknofest-orange transition-colors">
-                  تسجيل فريق
-                </Link>
-              </li>
-              <li>
-                <Link to="/register/individual" className="text-gray-400 hover:text-teknofest-orange transition-colors">
-                  تسجيل فردي
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Menu, X, Home, Users, User, FileText, Trophy, LogIn, LogOut, Shield, Star } from 'lucide-react'
+import { Menu, X, Users, Trophy, LogIn, LogOut, Shield, Star } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession, isLoggedIn, isStaffSession, getSession } from '../lib/auth-session'
 import { kitchensService } from '../services/api'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
-  const [hasTeam, setHasTeam] = useState(false)
   const [isJury, setIsJury] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
@@ -18,19 +17,18 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!eventId || !loggedIn) {
-      setHasTeam(false)
       setIsJury(false)
       return
     }
     let cancelled = false
-    Promise.all([
-      kitchensService.getMyTeam(eventId).catch(() => null),
-      kitchensService.get(eventId).catch(() => null),
-    ]).then(([team, kitchen]) => {
-      if (cancelled) return
-      setHasTeam(Boolean(team))
-      setIsJury(Boolean(kitchen?.is_jury))
-    })
+    kitchensService
+      .get(eventId)
+      .then((kitchen) => {
+        if (!cancelled) setIsJury(Boolean(kitchen?.is_jury))
+      })
+      .catch(() => {
+        if (!cancelled) setIsJury(false)
+      })
     return () => {
       cancelled = true
     }
@@ -38,18 +36,15 @@ export default function Navbar() {
 
   const navLinks = eventId
     ? [
-        { to: `/events/${eventId}`, label: 'المطبخ', icon: Home },
-        { to: `/events/${eventId}/register/team`, label: 'التقديم كفريق', icon: Users },
-        { to: `/events/${eventId}/register/individual`, label: 'التقديم كفرد', icon: User },
-        ...(hasTeam
-          ? [{ to: `/events/${eventId}/project/submit`, label: 'تقديم مشروع', icon: FileText }]
+        { to: `/events/${eventId}/leaderboard`, label: 'لوحة المتصدرين', icon: Trophy },
+        ...(loggedIn
+          ? [{ to: `/events/${eventId}/my-team`, label: 'فريقي', icon: Users }]
           : []),
-        ...(isJury
+        ...(loggedIn && isJury
           ? [{ to: `/events/${eventId}/jury`, label: 'تحكيم', icon: Star }]
           : []),
-        { to: `/events/${eventId}/leaderboard`, label: 'لوحة المتصدرين', icon: Trophy },
       ]
-    : [{ to: '/', label: 'الرئيسية', icon: Home }]
+    : []
 
   const logout = () => {
     clearSession()
@@ -60,7 +55,7 @@ export default function Navbar() {
     <nav className="bg-teknofest-dark-blue/90 backdrop-blur-md border-b border-teknofest-light-blue/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to={eventId ? `/events/${eventId}` : '/'} className="flex items-center gap-2 group">
             <Logo size="md" className="transform group-hover:scale-110 transition-transform" />
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-white">تكنوفيست</h1>
@@ -71,7 +66,8 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => {
               const Icon = link.icon
-              const isActive = location.pathname === link.to
+              const isActive =
+                location.pathname === link.to || location.pathname.startsWith(`${link.to}/`)
               return (
                 <Link
                   key={link.to}
@@ -96,7 +92,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 px-4 py-2 border border-teknofest-cyan text-teknofest-cyan rounded-lg hover:bg-teknofest-cyan hover:text-teknofest-dark-blue transition-all duration-300"
               >
                 <Shield className="w-4 h-4" />
-                <span>إدارة المطابخ</span>
+                <span>إدارة</span>
               </Link>
             ) : null}
 
@@ -112,7 +108,7 @@ export default function Navbar() {
               </button>
             ) : (
               <Link
-                to="/login"
+                to={eventId ? `/login?next=${encodeURIComponent(`/events/${eventId}/my-team`)}` : '/login'}
                 className="flex items-center gap-2 px-4 py-2 bg-teknofest-orange text-white rounded-lg hover:opacity-90 transition-all"
               >
                 <LogIn className="w-4 h-4" />
@@ -154,9 +150,31 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-teknofest-cyan hover:bg-teknofest-medium-blue"
             >
               <Shield className="w-4 h-4" />
-              إدارة المطابخ
+              إدارة
             </Link>
           ) : null}
+          {loggedIn ? (
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false)
+                logout()
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+            >
+              <LogOut className="w-4 h-4" />
+              خروج
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-teknofest-orange hover:bg-teknofest-medium-blue"
+            >
+              <LogIn className="w-4 h-4" />
+              دخول
+            </Link>
+          )}
         </div>
       ) : null}
     </nav>

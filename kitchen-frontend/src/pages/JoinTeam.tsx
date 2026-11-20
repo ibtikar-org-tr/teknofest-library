@@ -41,7 +41,7 @@ export default function JoinTeam() {
     try {
       await kitchensService.joinTeam(eventId, teamId)
       toast.success('تم الانضمام للفريق بنجاح')
-      navigate(`/events/${eventId}`)
+      navigate(`/events/${eventId}/my-team`)
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'تعذر الانضمام للفريق')
     } finally {
@@ -52,19 +52,19 @@ export default function JoinTeam() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <Link
-        to={`/events/${eventId}`}
+        to={`/events/${eventId}/join`}
         className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8"
       >
         <ArrowRight className="w-4 h-4" />
-        العودة لمطبخ الفعالية
+        خيارات الانضمام
       </Link>
 
       <div className="text-center mb-10">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-teknofest-orange to-pink-500 mb-4">
           <UserPlus className="w-7 h-7 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">الانضمام لفريق</h1>
-        <p className="text-gray-400">اختر فريقاً فيه أماكن شاغرة للانضمام إليه</p>
+        <h1 className="text-3xl font-bold text-white mb-2">الانضمام لفريق محدد</h1>
+        <p className="text-gray-400">اختر فريقاً فيه أماكن شاغرة</p>
       </div>
 
       {loading ? (

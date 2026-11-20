@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, FileText, Loader2, Star, UserPlus, Users } from 'lucide-react'
+import { ArrowRight, Loader2, Trophy, Users } from 'lucide-react'
 import { kitchensService } from '../services/api'
 import type { KitchenEvent, Team } from '../types'
-
-type Action = {
-  to: string
-  title: string
-  description: string
-  icon: typeof Users
-}
+import { isLoggedIn } from '../lib/auth-session'
 
 export default function EventKitchen() {
   const { eventId = '' } = useParams()
@@ -17,12 +11,16 @@ export default function EventKitchen() {
   const [myTeam, setMyTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const loggedIn = isLoggedIn()
 
   useEffect(() => {
     if (!eventId) return
     let cancelled = false
     setLoading(true)
-    Promise.all([kitchensService.get(eventId), kitchensService.getMyTeam(eventId)])
+    Promise.all([
+      kitchensService.get(eventId),
+      loggedIn ? kitchensService.getMyTeam(eventId).catch(() => null) : Promise.resolve(null),
+    ])
       .then(([eventData, team]) => {
         if (cancelled) return
         setEvent(eventData)
@@ -39,7 +37,7 @@ export default function EventKitchen() {
     return () => {
       cancelled = true
     }
-  }, [eventId])
+  }, [eventId, loggedIn])
 
   if (loading) {
     return (
@@ -60,44 +58,8 @@ export default function EventKitchen() {
     )
   }
 
-  const actions: Action[] = [
-    ...(myTeam
-      ? [
-          {
-            to: `/events/${eventId}/project/submit`,
-            title: 'التقديم مع الفريق',
-            description: `قدّم مشروع فريق «${myTeam.team_name}» لهذه الفعالية`,
-            icon: FileText,
-          },
-        ]
-      : [
-          {
-            to: `/events/${eventId}/register/team`,
-            title: 'إنشاء فريق',
-            description: 'أسّس فريقاً جديداً ضمن هذه الفعالية',
-            icon: Users,
-          },
-          {
-            to: `/events/${eventId}/join-team`,
-            title: 'الانضمام لفريق',
-            description: 'انضم لفريق موجود ما زال فيه أماكن شاغرة',
-            icon: UserPlus,
-          },
-        ]),
-    ...(event.is_jury
-      ? [
-          {
-            to: `/events/${eventId}/jury`,
-            title: 'تحكيم المشاريع',
-            description: 'قيّم الفرق المعيّنة لك كمحكم',
-            icon: Star,
-          },
-        ]
-      : []),
-  ]
-
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
+    <div className="max-w-3xl mx-auto px-4 py-12">
       <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8">
         <ArrowRight className="w-4 h-4" />
         كل المطابخ
@@ -110,31 +72,33 @@ export default function EventKitchen() {
           <p className="text-gray-400 max-w-2xl">{event.description}</p>
         ) : null}
         {myTeam ? (
-          <p className="text-sm text-teknofest-orange mt-3">
-            أنت عضو في فريق: {myTeam.team_name}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-500 mt-3">
-            أنشئ فريقاً أو انضم لفريق أولاً — بعدها يمكنك التقديم بالمشروع.
-          </p>
-        )}
+          <p className="text-sm text-teknofest-orange mt-3">فريقك: {myTeam.team_name}</p>
+        ) : null}
       </div>
 
-      <div className={`grid gap-5 ${actions.length > 1 ? 'sm:grid-cols-2' : 'max-w-md'}`}>
-        {actions.map((action) => {
-          const Icon = action.icon
-          return (
-            <Link
-              key={action.to}
-              to={action.to}
-              className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
-            >
-              <Icon className="w-8 h-8 text-teknofest-orange mb-4" />
-              <h2 className="text-xl font-bold text-white mb-2">{action.title}</h2>
-              <p className="text-gray-400 text-sm">{action.description}</p>
-            </Link>
-          )
-        })}
+      <div className="grid sm:grid-cols-2 gap-5">
+        <Link
+          to={`/events/${eventId}/leaderboard`}
+          className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
+        >
+          <Trophy className="w-8 h-8 text-teknofest-orange mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">لوحة المتصدرين</h2>
+          <p className="text-gray-400 text-sm">أسماء الفرق وعدد الأعضاء</p>
+        </Link>
+        <Link
+          to={
+            loggedIn
+              ? `/events/${eventId}/my-team`
+              : `/login?next=${encodeURIComponent(`/events/${eventId}/my-team`)}`
+          }
+          className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-cyan/40 transition-all"
+        >
+          <Users className="w-8 h-8 text-teknofest-cyan mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">فريقي</h2>
+          <p className="text-gray-400 text-sm">
+            {myTeam ? 'عرض فريقك وتقديم المشروع' : 'إنشاء فريق أو الانضمام'}
+          </p>
+        </Link>
       </div>
     </div>
   )

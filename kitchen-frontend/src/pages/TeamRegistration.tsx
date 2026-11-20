@@ -147,7 +147,7 @@ export default function TeamRegistration() {
 
       await teamsService.create(teamData as any)
       toast.success('تم تسجيل الفريق بنجاح!')
-      navigate(`/events/${eventId}`)
+      navigate(`/events/${eventId}/my-team`)
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء التسجيل')
     } finally {

@@ -5,6 +5,8 @@ import EventKitchen from './pages/EventKitchen'
 import TeamRegistration from './pages/TeamRegistration'
 import IndividualRegistration from './pages/IndividualRegistration'
 import JoinTeam from './pages/JoinTeam'
+import JoinOptions from './pages/JoinOptions'
+import MyTeam from './pages/MyTeam'
 import ProjectSubmission from './pages/ProjectSubmission'
 import Login from './pages/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -25,6 +27,16 @@ function LegacyTopTeamsRedirect() {
   return <Navigate to={`/events/${eventId}/leaderboard`} replace />
 }
 
+function RedirectToJoin() {
+  const { eventId } = useParams()
+  return <Navigate to={`/events/${eventId}/join`} replace />
+}
+
+function RedirectToPool() {
+  const { eventId } = useParams()
+  return <Navigate to={`/events/${eventId}/join/pool`} replace />
+}
+
 function App() {
   return (
     <div className="min-h-screen">
@@ -43,9 +55,13 @@ function App() {
 
           <Route element={<MemberRoute />}>
             <Route path="events/:eventId" element={<EventKitchen />} />
+            <Route path="events/:eventId/my-team" element={<MyTeam />} />
             <Route path="events/:eventId/register/team" element={<TeamRegistration />} />
-            <Route path="events/:eventId/join-team" element={<JoinTeam />} />
-            <Route path="events/:eventId/register/individual" element={<IndividualRegistration />} />
+            <Route path="events/:eventId/join" element={<JoinOptions />} />
+            <Route path="events/:eventId/join/team" element={<JoinTeam />} />
+            <Route path="events/:eventId/join/pool" element={<IndividualRegistration />} />
+            <Route path="events/:eventId/join-team" element={<RedirectToJoin />} />
+            <Route path="events/:eventId/register/individual" element={<RedirectToPool />} />
             <Route path="events/:eventId/project/submit" element={<ProjectSubmission />} />
             <Route path="events/:eventId/jury" element={<JuryScoring />} />
           </Route>

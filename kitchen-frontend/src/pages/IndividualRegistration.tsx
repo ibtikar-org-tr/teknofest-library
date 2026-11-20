@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { User, Lightbulb, Users, Check, ChevronRight, ExternalLink } from 'lucide-react'
+import { ArrowRight, User, Lightbulb, Users, Check, ChevronRight, ExternalLink } from 'lucide-react'
 import type { Individual, RegistrationType } from '../types'
 import { useProjectFields } from '../hooks/useProjectFields'
 import { individualsService, kitchensService } from '../services/api'
@@ -99,8 +99,8 @@ export default function IndividualRegistration() {
       }
 
       await individualsService.create(individualData)
-      toast.success('تم التسجيل بنجاح! سيتم التواصل معك قريباً')
-      navigate(`/events/${eventId}`)
+      toast.success('تم التسجيل في القائمة — سيتم توزيعك على فريق قريباً')
+      navigate(`/events/${eventId}/my-team`)
     } catch (error: any) {
       toast.error(
         error.response?.data?.message || error.response?.data?.detail || 'حدث خطأ أثناء التسجيل',
@@ -116,13 +116,21 @@ export default function IndividualRegistration() {
   return (
     <div className="min-h-screen py-12 px-4">
       <div className="max-w-3xl mx-auto">
+        <Link
+          to={`/events/${eventId}/join`}
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8"
+        >
+          <ArrowRight className="w-4 h-4" />
+          خيارات الانضمام
+        </Link>
+
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
             <User className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">تسجيل فردي</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">الدخول إلى القائمة</h1>
           <p className="text-gray-400">
-            بياناتك ومهاراتك من VMS — عدّلها من ملفك الشخصي هناك
+            سجّل في قائمة الانتظار لتُوزَّع على فريق. بياناتك من VMS — عدّلها من ملفك هناك.
           </p>
         </div>
 
