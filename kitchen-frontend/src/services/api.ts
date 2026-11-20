@@ -52,6 +52,7 @@ api.interceptors.response.use(
 export type VmsExchangeResponse = AuthToken & {
   is_staff: boolean
   is_event_manager?: boolean
+  is_jury?: boolean
   is_superadmin: boolean
   admin?: Admin | null
   user: {
@@ -59,6 +60,29 @@ export type VmsExchangeResponse = AuthToken & {
     email: string
     role: string
   }
+}
+
+export type EventRegistrant = {
+  membership_number: string
+  full_name: string
+  email: string
+  status: string
+}
+
+export type EventJury = {
+  event_id: string
+  membership_number: string
+  full_name: string | null
+  email: string | null
+  created_by: string | null
+  created_at: string
+  team_ids: number[]
+}
+
+export type JuryAssignmentItem = {
+  team_id: number
+  team_name: string
+  projects: ProjectSubmission[]
 }
 
 // ==================== Auth ====================
@@ -181,6 +205,51 @@ export const kitchensService = {
 
   getStats: async (eventId: string) => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/stats`)
+    return response.data
+  },
+
+  getRegistrants: async (eventId: string): Promise<EventRegistrant[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/registrants`)
+    return response.data
+  },
+
+  listJuries: async (eventId: string): Promise<EventJury[]> => {
+    const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/juries`)
+    return response.data
+  },
+
+  addJury: async (
+    eventId: string,
+    payload: { membership_number: string; full_name?: string; email?: string },
+  ): Promise<EventJury> => {
+    const response = await api.post(`/kitchens/${encodeURIComponent(eventId)}/juries`, payload)
+    return response.data
+  },
+
+  removeJury: async (eventId: string, membershipNumber: string): Promise<void> => {
+    await api.delete(
+      `/kitchens/${encodeURIComponent(eventId)}/juries/${encodeURIComponent(membershipNumber)}`,
+    )
+  },
+
+  setJuryTeams: async (
+    eventId: string,
+    membershipNumber: string,
+    teamIds: number[],
+  ): Promise<{ membership_number: string; team_ids: number[] }> => {
+    const response = await api.put(
+      `/kitchens/${encodeURIComponent(eventId)}/juries/${encodeURIComponent(membershipNumber)}/teams`,
+      { team_ids: teamIds },
+    )
+    return response.data
+  },
+
+  getMyJuryAssignments: async (
+    eventId: string,
+  ): Promise<{ event_id: string; assignments: JuryAssignmentItem[] }> => {
+    const response = await api.get(
+      `/kitchens/${encodeURIComponent(eventId)}/my-jury-assignments`,
+    )
     return response.data
   },
 }
@@ -335,6 +404,8 @@ export interface ProjectEvaluationsDetails {
   evaluations: EvaluationWithAdmin[]
   current_admin_evaluation?: EvaluationWithAdmin
   total_admin_evaluations: number
+  jury_average?: number | null
+  final_score?: number | null
   has_ai_evaluation: boolean
 }
 
@@ -351,6 +422,19 @@ export const evaluationsService = {
 
   getByProject: async (projectId: number): Promise<Evaluation[]> => {
     const response = await api.get(`/evaluation/project/${projectId}`)
+    return response.data
+  },
+
+  getScore: async (
+    projectId: number,
+  ): Promise<{
+    project_id: number
+    jury_average: number | null
+    jury_count: number
+    final_score: number | null
+    ai_average: number | null
+  }> => {
+    const response = await api.get(`/evaluation/project/${projectId}/score`)
     return response.data
   },
 

@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { AppBindings } from '../types/env'
 import { memberAuthMiddleware } from '../middleware/staff-auth'
+import { memberIsAnyJury } from '../repositories/juries'
 import { memberManagesAnyEvent } from '../repositories/vms-event-permissions'
 import { fetchVmsApi } from '../utils/vms-fetch'
 
@@ -66,12 +67,14 @@ authRouter.post('/vms/exchange', async (c) => {
     c.env,
     exchangePayload.membershipNumber,
   )
+  const isJury = await memberIsAnyJury(c.env, exchangePayload.membershipNumber)
 
   return c.json({
     access_token: exchangePayload.accessToken,
     token_type: 'bearer',
     is_staff: canManageKitchens,
     is_event_manager: canManageKitchens,
+    is_jury: isJury,
     is_superadmin: false,
     admin: null,
     user: {
@@ -85,6 +88,7 @@ authRouter.post('/vms/exchange', async (c) => {
 authRouter.get('/me', memberAuthMiddleware, async (c) => {
   const member = c.get('member')
   const canManageKitchens = await memberManagesAnyEvent(c.env, member.membership_number)
+  const isJury = await memberIsAnyJury(c.env, member.membership_number)
   return c.json({
     user: {
       membershipNumber: member.membership_number,
@@ -93,6 +97,7 @@ authRouter.get('/me', memberAuthMiddleware, async (c) => {
     },
     is_staff: canManageKitchens,
     is_event_manager: canManageKitchens,
+    is_jury: isJury,
     is_superadmin: false,
     admin: null,
   })

@@ -38,6 +38,9 @@ jobs:
           | .d1_databases[1].database_id = $vmsDbId
           | .d1_databases[1].database_name = $vmsDbName
           | .d1_databases[1].remote = true
+          | .d1_databases[2].database_id = $membersDbId
+          | .d1_databases[2].database_name = $membersDbName
+          | .d1_databases[2].remote = true
           | .vars.APP_NAME = $appName
           | .vars.VMS_API_BASE = $vmsApiBase
           | .services = [
@@ -52,6 +55,8 @@ jobs:
             --arg kitchenDbName "${{ vars.KITCHEN_DB_NAME }}" \
             --arg vmsDbId "${{ vars.VMS_DB_ID }}" \
             --arg vmsDbName "${{ vars.VMS_DB_NAME }}" \
+            --arg membersDbId "${{ vars.MEMBERS_DB_ID }}" \
+            --arg membersDbName "${{ vars.MEMBERS_DB_NAME }}" \
             --arg appName "${{ vars.KITCHEN_BE_NAME }}" \
             --arg vmsApiBase "${{ vars.VMS_URL }}/ms/membership-app/api" \
             --arg libraryServiceName "${{ vars.LIBRARY_BE_NAME }}" \

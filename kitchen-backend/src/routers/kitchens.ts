@@ -2,8 +2,16 @@ import { Hono } from 'hono'
 import { memberAuthMiddleware } from '../middleware/staff-auth'
 import { requireEventKitchenAccess } from '../middleware/event-access'
 import { createIndividual, listIndividuals } from '../repositories/individuals'
-import { createProject, listProjects } from '../repositories/projects'
+import { createProject, listProjects, listProjectsByTeam } from '../repositories/projects'
 import { getEventKitchen, listEventKitchens } from '../repositories/event-kitchens'
+import {
+  addEventJury,
+  isEventJury,
+  listAssignedTeamsForJury,
+  listEventJuries,
+  removeEventJury,
+  setJuryTeamAssignments,
+} from '../repositories/juries'
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import { addMemberToTeam, createTeam, getTeam, listTeams } from '../repositories/teams'
 import { listLibraryCompetitionFields } from '../repositories/library-competitions'
@@ -13,6 +21,7 @@ import {
   getVmsEvent,
   getVmsEventsByIds,
   isMemberRegisteredForEvent,
+  listEventRegistrants,
 } from '../repositories/vms-events'
 import type { AppBindings, Environment, KitchenMember } from '../types/env'
 import type { KitchenEventView } from '../types/models'
@@ -37,10 +46,13 @@ async function buildKitchenViews(
 
     let canManage = false
     let canAccess = false
+    let isJury = false
     if (member) {
       canManage = await canManageVmsEvent(env, kitchen.event_id, member.membership_number)
+      isJury = await isEventJury(env, kitchen.event_id, member.membership_number)
       canAccess =
         canManage ||
+        isJury ||
         (await isMemberRegisteredForEvent(env, kitchen.event_id, member.membership_number))
     }
 
@@ -50,6 +62,7 @@ async function buildKitchenViews(
       kitchen,
       can_access: canAccess,
       can_manage: canManage,
+      is_jury: isJury,
     })
   }
   return views
@@ -380,6 +393,160 @@ kitchensRouter.get('/:eventId/stats', ...withEventAccess, async (c) => {
   })
 })
 
+async function requireEventManager(
+  env: Environment,
+  eventId: string,
+  membershipNumber: string | undefined,
+) {
+  if (!(await canManageVmsEvent(env, eventId, membershipNumber))) {
+    return false
+  }
+  return true
+}
+
+kitchensRouter.get('/:eventId/registrants', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can list registrants' }, 403)
+  }
+  return c.json(await listEventRegistrants(c.env, eventId))
+})
+
+kitchensRouter.get('/:eventId/juries', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can list juries' }, 403)
+  }
+  return c.json(await listEventJuries(c.env, eventId))
+})
+
+kitchensRouter.post('/:eventId/juries', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can appoint juries' }, 403)
+  }
+
+  const body = await c.req.json<{
+    membership_number?: string
+    full_name?: string
+    email?: string
+  }>()
+  const membershipNumber = body.membership_number?.trim()
+  if (!membershipNumber) {
+    return c.json({ message: 'membership_number is required' }, 400)
+  }
+
+  if (!(await isMemberRegisteredForEvent(c.env, eventId, membershipNumber))) {
+    return c.json({ message: 'Jury must be a registered VMS member for this event' }, 400)
+  }
+
+  let fullName = body.full_name?.trim() || null
+  let email = body.email?.trim() || null
+  if (!fullName || !email) {
+    const registrants = await listEventRegistrants(c.env, eventId)
+    const match = registrants.find((r) => r.membership_number === membershipNumber)
+    fullName = fullName || match?.full_name || membershipNumber
+    email = email || match?.email || null
+  }
+
+  const jury = await addEventJury(c.env, {
+    event_id: eventId,
+    membership_number: membershipNumber,
+    full_name: fullName,
+    email,
+    created_by: member?.membership_number ?? null,
+  })
+  return c.json(jury, 201)
+})
+
+kitchensRouter.delete('/:eventId/juries/:membershipNumber', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const membershipNumber = decodeURIComponent(c.req.param('membershipNumber'))
+  const member = c.get('member')
+  if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can remove juries' }, 403)
+  }
+  const removed = await removeEventJury(c.env, eventId, membershipNumber)
+  if (!removed) return c.json({ message: 'Jury not found' }, 404)
+  return c.json({ message: 'Jury removed' })
+})
+
+kitchensRouter.get(
+  '/:eventId/juries/:membershipNumber/teams',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const membershipNumber = decodeURIComponent(c.req.param('membershipNumber'))
+    const member = c.get('member')
+    if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can view jury assignments' }, 403)
+    }
+    if (!(await isEventJury(c.env, eventId, membershipNumber))) {
+      return c.json({ message: 'Jury not found' }, 404)
+    }
+    const teams = await listAssignedTeamsForJury(c.env, eventId, membershipNumber)
+    return c.json({ membership_number: membershipNumber, teams, team_ids: teams.map((t) => t.team_id) })
+  },
+)
+
+kitchensRouter.put(
+  '/:eventId/juries/:membershipNumber/teams',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const membershipNumber = decodeURIComponent(c.req.param('membershipNumber'))
+    const member = c.get('member')
+    if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can assign jury teams' }, 403)
+    }
+    if (!(await isEventJury(c.env, eventId, membershipNumber))) {
+      return c.json({ message: 'Jury not found' }, 404)
+    }
+
+    const body = await c.req.json<{ team_ids?: number[] }>()
+    const teamIds = Array.isArray(body.team_ids) ? body.team_ids.map(Number) : []
+    const eventTeams = await listTeams(c.env, eventId)
+    const validIds = new Set(eventTeams.map((t) => t.id))
+    const filtered = teamIds.filter((id) => validIds.has(id))
+
+    const saved = await setJuryTeamAssignments(
+      c.env,
+      eventId,
+      membershipNumber,
+      filtered,
+      member?.membership_number ?? null,
+    )
+    return c.json({ membership_number: membershipNumber, team_ids: saved })
+  },
+)
+
+/** Jury-facing: assigned teams and their projects. */
+kitchensRouter.get('/:eventId/my-jury-assignments', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!member?.membership_number) {
+    return c.json({ message: 'Authenticated VMS member required' }, 401)
+  }
+  if (!(await isEventJury(c.env, eventId, member.membership_number))) {
+    return c.json({ message: 'You are not a jury for this event' }, 403)
+  }
+
+  const teams = await listAssignedTeamsForJury(c.env, eventId, member.membership_number)
+  const items = []
+  for (const team of teams) {
+    const projects = await listProjectsByTeam(c.env, team.team_id)
+    items.push({
+      team_id: team.team_id,
+      team_name: team.team_name,
+      projects,
+    })
+  }
+  return c.json({ event_id: eventId, assignments: items })
+})
+
 kitchensRouter.get('/:eventId', memberAuthMiddleware, async (c) => {
   const eventId = c.req.param('eventId')
   const kitchen = await getEventKitchen(c.env, eventId)
@@ -392,8 +559,12 @@ kitchensRouter.get('/:eventId', memberAuthMiddleware, async (c) => {
 
   const member = c.get('member')
   const canManage = await canManageVmsEvent(c.env, eventId, member?.membership_number)
+  const isJury = member
+    ? await isEventJury(c.env, eventId, member.membership_number)
+    : false
   const canAccess =
     canManage ||
+    isJury ||
     (member
       ? await isMemberRegisteredForEvent(c.env, eventId, member.membership_number)
       : false)
@@ -410,6 +581,7 @@ kitchensRouter.get('/:eventId', memberAuthMiddleware, async (c) => {
     kitchen,
     can_access: true,
     can_manage: canManage,
+    is_jury: isJury,
   }
   return c.json(view)
 })

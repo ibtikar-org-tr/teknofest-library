@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, FileText, Loader2, UserPlus, Users } from 'lucide-react'
+import { ArrowRight, FileText, Loader2, Star, UserPlus, Users } from 'lucide-react'
 import { kitchensService } from '../services/api'
 import type { KitchenEvent, Team } from '../types'
 
@@ -60,29 +60,41 @@ export default function EventKitchen() {
     )
   }
 
-  const actions: Action[] = myTeam
-    ? [
-        {
-          to: `/events/${eventId}/project/submit`,
-          title: 'التقديم مع الفريق',
-          description: `قدّم مشروع فريق «${myTeam.team_name}» لهذه الفعالية`,
-          icon: FileText,
-        },
-      ]
-    : [
-        {
-          to: `/events/${eventId}/register/team`,
-          title: 'إنشاء فريق',
-          description: 'أسّس فريقاً جديداً ضمن هذه الفعالية',
-          icon: Users,
-        },
-        {
-          to: `/events/${eventId}/join-team`,
-          title: 'الانضمام لفريق',
-          description: 'انضم لفريق موجود ما زال فيه أماكن شاغرة',
-          icon: UserPlus,
-        },
-      ]
+  const actions: Action[] = [
+    ...(myTeam
+      ? [
+          {
+            to: `/events/${eventId}/project/submit`,
+            title: 'التقديم مع الفريق',
+            description: `قدّم مشروع فريق «${myTeam.team_name}» لهذه الفعالية`,
+            icon: FileText,
+          },
+        ]
+      : [
+          {
+            to: `/events/${eventId}/register/team`,
+            title: 'إنشاء فريق',
+            description: 'أسّس فريقاً جديداً ضمن هذه الفعالية',
+            icon: Users,
+          },
+          {
+            to: `/events/${eventId}/join-team`,
+            title: 'الانضمام لفريق',
+            description: 'انضم لفريق موجود ما زال فيه أماكن شاغرة',
+            icon: UserPlus,
+          },
+        ]),
+    ...(event.is_jury
+      ? [
+          {
+            to: `/events/${eventId}/jury`,
+            title: 'تحكيم المشاريع',
+            description: 'قيّم الفرق المعيّنة لك كمحكم',
+            icon: Star,
+          },
+        ]
+      : []),
+  ]
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">

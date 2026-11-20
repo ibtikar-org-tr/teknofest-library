@@ -6,6 +6,7 @@ import {
   User,
   FileText,
   Star,
+  Gavel,
   LogOut,
   Menu,
   X,
@@ -43,6 +44,7 @@ function SidebarContent({
         { to: `${base}/teams`, label: 'الفرق', icon: Users },
         { to: `${base}/individuals`, label: 'الأفراد', icon: User },
         { to: `${base}/projects`, label: 'المشاريع', icon: FileText },
+        { to: `${base}/juries`, label: 'المحكمون', icon: Gavel },
         { to: `${base}/evaluations`, label: 'التقييمات', icon: Star },
       )
     }
@@ -131,11 +133,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           ? 'الأفراد'
           : location.pathname.includes('/projects')
             ? 'المشاريع'
-            : location.pathname.includes('/evaluations')
-              ? 'التقييمات'
-              : eventId
-                ? 'لوحة التحكم'
-                : 'لوحة الإدارة'
+            : location.pathname.includes('/juries')
+              ? 'المحكمون'
+              : location.pathname.includes('/evaluations')
+                ? 'التقييمات'
+                : eventId
+                  ? 'لوحة التحكم'
+                  : 'لوحة الإدارة'
 
   return (
     <div className="min-h-screen bg-teknofest-dark-blue flex">

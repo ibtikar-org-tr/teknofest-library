@@ -76,6 +76,7 @@ export default function AuthCallback() {
           user: response.user,
           is_staff: canManage,
           is_event_manager: canManage,
+          is_jury: Boolean(response.is_jury),
           is_superadmin: false,
         })
 

@@ -13,6 +13,8 @@ export type KitchenSession = {
   /** Can manage kitchens for at least one VMS event (event creator/admin/project manager). */
   is_staff: boolean
   is_event_manager: boolean
+  /** Appointed as jury on at least one event kitchen. */
+  is_jury?: boolean
   is_superadmin: boolean
 }
 
@@ -61,4 +63,8 @@ export function isStaffSession(): boolean {
 
 export function isEventManagerSession(): boolean {
   return isStaffSession()
+}
+
+export function isJurySession(): boolean {
+  return Boolean(getSession()?.is_jury)
 }

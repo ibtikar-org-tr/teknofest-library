@@ -62,6 +62,8 @@ export interface KitchenEventView extends VmsEventSummary {
   kitchen?: EventKitchen | null
   can_access?: boolean
   can_manage?: boolean
+  /** Caller is appointed jury for this event (may or may not have team assignments yet). */
+  is_jury?: boolean
 }
 
 export interface Team {

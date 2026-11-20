@@ -24,6 +24,12 @@ VMS Integrations uses `VITE_KITCHEN_URL` (must be the real Kitchen FE URL, not l
 Field dropdowns load from Kitchen `GET /kitchens/:eventId/fields` (Library-backed).  
 Do not hardcode competition lists in the FE.
 
+## Juries
+
+- Admin: `/admin/events/:eventId/juries` — appoint registrants and assign teams.
+- Scoring UI: `/events/:eventId/jury` (navbar “تحكيم” when `kitchen.is_jury`).
+- Only juries with team assignments can POST `/evaluation/admin`. Managers use the jury page after self-appointing; admin evaluations is view-only.
+
 ## Important when modifying Kitchen FE
 
 - API axios `baseURL` is `VITE_API_TARGET + '/api'`.

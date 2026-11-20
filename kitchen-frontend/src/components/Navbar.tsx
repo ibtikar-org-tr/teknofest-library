@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Menu, X, Home, Users, User, FileText, Trophy, LogIn, LogOut, Shield } from 'lucide-react'
+import { Menu, X, Home, Users, User, FileText, Trophy, LogIn, LogOut, Shield, Star } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession, isLoggedIn, isStaffSession, getSession } from '../lib/auth-session'
 import { kitchensService } from '../services/api'
@@ -8,6 +8,7 @@ import { kitchensService } from '../services/api'
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [hasTeam, setHasTeam] = useState(false)
+  const [isJury, setIsJury] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { eventId } = useParams()
@@ -18,17 +19,18 @@ export default function Navbar() {
   useEffect(() => {
     if (!eventId || !loggedIn) {
       setHasTeam(false)
+      setIsJury(false)
       return
     }
     let cancelled = false
-    kitchensService
-      .getMyTeam(eventId)
-      .then((team) => {
-        if (!cancelled) setHasTeam(Boolean(team))
-      })
-      .catch(() => {
-        if (!cancelled) setHasTeam(false)
-      })
+    Promise.all([
+      kitchensService.getMyTeam(eventId).catch(() => null),
+      kitchensService.get(eventId).catch(() => null),
+    ]).then(([team, kitchen]) => {
+      if (cancelled) return
+      setHasTeam(Boolean(team))
+      setIsJury(Boolean(kitchen?.is_jury))
+    })
     return () => {
       cancelled = true
     }
@@ -41,6 +43,9 @@ export default function Navbar() {
         { to: `/events/${eventId}/register/individual`, label: 'التقديم كفرد', icon: User },
         ...(hasTeam
           ? [{ to: `/events/${eventId}/project/submit`, label: 'تقديم مشروع', icon: FileText }]
+          : []),
+        ...(isJury
+          ? [{ to: `/events/${eventId}/jury`, label: 'تحكيم', icon: Star }]
           : []),
         { to: `/events/${eventId}/top-teams`, label: 'أفضل الفرق', icon: Trophy },
       ]

@@ -47,6 +47,7 @@ export interface KitchenEvent {
   kitchen_enabled: boolean
   can_access?: boolean
   can_manage?: boolean
+  is_jury?: boolean
   kitchen?: {
     event_id: string
     enabled: boolean

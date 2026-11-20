@@ -1,6 +1,8 @@
 export interface Environment {
   D1_DB: D1Database
   VMS_DB: D1Database
+  /** Membership users / user_info (names + emails for jury picker). */
+  MEMBERS_DB?: D1Database
   LIBRARY?: Fetcher
   VMS_SERVICE?: Fetcher
   APP_NAME: string

@@ -1,10 +1,11 @@
 import type { MiddlewareHandler } from 'hono'
 import { getEventKitchen } from '../repositories/event-kitchens'
+import { isEventJury } from '../repositories/juries'
 import { canManageVmsEvent } from '../repositories/vms-event-permissions'
 import { isMemberRegisteredForEvent } from '../repositories/vms-events'
 import type { AppBindings } from '../types/env'
 
-/** Requires member auth already run; checks kitchen exists + registration (event managers bypass). */
+/** Requires member auth already run; kitchen enabled + manager / jury / registrant. */
 export const requireEventKitchenAccess: MiddlewareHandler<AppBindings> = async (c, next) => {
   const eventId = c.req.param('eventId')
   if (!eventId) {
@@ -22,6 +23,11 @@ export const requireEventKitchenAccess: MiddlewareHandler<AppBindings> = async (
   }
 
   if (await canManageVmsEvent(c.env, eventId, member.membership_number)) {
+    await next()
+    return
+  }
+
+  if (await isEventJury(c.env, eventId, member.membership_number)) {
     await next()
     return
   }

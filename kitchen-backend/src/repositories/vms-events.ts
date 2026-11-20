@@ -78,3 +78,107 @@ export const isMemberRegisteredForEvent = async (
     .first<{ id: string }>()
   return Boolean(row)
 }
+
+export type EventRegistrant = {
+  membership_number: string
+  full_name: string
+  email: string
+  status: string
+}
+
+type MemberContact = {
+  membership_number: string
+  email: string | null
+  ar_name: string | null
+  en_name: string | null
+}
+
+const MEMBERSHIP_BATCH = 80
+
+/** Enrich membership numbers from MEMBERS_DB (users live there, not on VMS_DB). */
+async function loadMemberContacts(
+  env: Environment,
+  membershipNumbers: string[],
+): Promise<Map<string, MemberContact>> {
+  const map = new Map<string, MemberContact>()
+  const membersDb = env.MEMBERS_DB
+  if (!membersDb || membershipNumbers.length === 0) return map
+
+  for (let i = 0; i < membershipNumbers.length; i += MEMBERSHIP_BATCH) {
+    const batch = membershipNumbers.slice(i, i + MEMBERSHIP_BATCH)
+    const placeholders = batch.map(() => '?').join(', ')
+    try {
+      const { results } = await membersDb
+        .prepare(
+          `SELECT
+             u.membership_number AS membership_number,
+             u.email AS email,
+             ui.ar_name AS ar_name,
+             ui.en_name AS en_name
+           FROM users u
+           LEFT JOIN user_info ui ON ui.membership_number = u.membership_number
+           WHERE u.membership_number IN (${placeholders})`,
+        )
+        .bind(...batch)
+        .all<MemberContact>()
+      for (const row of results ?? []) {
+        map.set(row.membership_number.trim(), row)
+      }
+    } catch (error) {
+      console.error('MEMBERS_DB contact lookup failed', error)
+      break
+    }
+  }
+  return map
+}
+
+/**
+ * Member registrants (not guests) eligible to be appointed as juries.
+ * Registrations come from VMS_DB; names/emails from MEMBERS_DB when bound.
+ */
+export const listEventRegistrants = async (
+  env: Environment,
+  eventId: string,
+): Promise<EventRegistrant[]> => {
+  const { results } = await env.VMS_DB.prepare(
+    `SELECT membership_number, status
+     FROM event_registrations
+     WHERE event_id = ?
+       AND status IN ('registered', 'attended')
+       AND membership_number IS NOT NULL
+       AND TRIM(membership_number) != ''`,
+  )
+    .bind(eventId)
+    .all<{ membership_number: string; status: string }>()
+
+  const seen = new Set<string>()
+  const base: { membership_number: string; status: string }[] = []
+  for (const row of results ?? []) {
+    const membershipNumber = row.membership_number.trim()
+    if (!membershipNumber || seen.has(membershipNumber)) continue
+    seen.add(membershipNumber)
+    base.push({ membership_number: membershipNumber, status: row.status })
+  }
+
+  const contacts = await loadMemberContacts(
+    env,
+    base.map((r) => r.membership_number),
+  )
+
+  const out: EventRegistrant[] = base.map((r) => {
+    const contact = contacts.get(r.membership_number)
+    const fullName =
+      contact?.ar_name?.trim() ||
+      contact?.en_name?.trim() ||
+      r.membership_number
+    return {
+      membership_number: r.membership_number,
+      full_name: fullName,
+      email: contact?.email?.trim() || '',
+      status: r.status,
+    }
+  })
+
+  out.sort((a, b) => a.full_name.localeCompare(b.full_name, 'ar'))
+  return out
+}

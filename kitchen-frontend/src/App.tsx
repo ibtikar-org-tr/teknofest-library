@@ -12,8 +12,10 @@ import AdminTeams from './pages/admin/AdminTeams'
 import AdminIndividuals from './pages/admin/AdminIndividuals'
 import AdminProjects from './pages/admin/AdminProjects'
 import AdminEvaluations from './pages/admin/AdminEvaluations'
+import AdminJuries from './pages/admin/AdminJuries'
 import AdminKitchens from './pages/admin/AdminKitchens'
 import AuthCallback from './pages/AuthCallback'
+import JuryScoring from './pages/JuryScoring'
 import TopTeams from './pages/TopTeams'
 import MemberRoute from './components/MemberRoute'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -38,6 +40,7 @@ function App() {
             <Route path="events/:eventId/register/individual" element={<IndividualRegistration />} />
             <Route path="events/:eventId/project/submit" element={<ProjectSubmission />} />
             <Route path="events/:eventId/top-teams" element={<TopTeams />} />
+            <Route path="events/:eventId/jury" element={<JuryScoring />} />
           </Route>
 
           {/* Legacy global form URLs → home (kitchens are event-scoped) */}
@@ -53,6 +56,7 @@ function App() {
           <Route path="events/:eventId/teams" element={<AdminTeams />} />
           <Route path="events/:eventId/individuals" element={<AdminIndividuals />} />
           <Route path="events/:eventId/projects" element={<AdminProjects />} />
+          <Route path="events/:eventId/juries" element={<AdminJuries />} />
           <Route path="events/:eventId/evaluations" element={<AdminEvaluations />} />
           <Route path="management" element={<Navigate to="/admin/kitchens" replace />} />
           <Route path="teams" element={<Navigate to="/admin/kitchens" replace />} />
