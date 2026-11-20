@@ -1,25 +1,55 @@
-name: (master) [kitchen-db] Kitchen Database
+name: (main) [kitchen-db] Migrate Kitchen D1
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'kitchen-backend/migrations/**'
+      - '.github/workflows/kitchen-db.yml'
   workflow_dispatch:
 
 jobs:
-  create-db:
+  migrate:
     runs-on: ubuntu-latest
-    environment: master
+    environment: main
+    defaults:
+      run:
+        working-directory: ./kitchen-backend
     steps:
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Create database via SSH
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Update wrangler config with environment variables
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            docker pull postgres:latest
-            docker stop library-kitchen-db || true
-            docker rm library-kitchen-db || true
-            docker run -d --name library-kitchen-db -e POSTGRES_USER=library_kitchen_user -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} -e POSTGRES_DB=library_kitchen_db -p 127.0.0.1:9681:5432 postgres:latest
-            docker network create library-kitchen
-            docker network connect library-kitchen library-kitchen-db
-          EOF
+          jq_filter='.d1_databases[0].database_id = $kitchenDbId
+          | .d1_databases[0].database_name = $kitchenDbName
+          | .d1_databases[1].database_id = $vmsDbId
+          | .d1_databases[1].database_name = $vmsDbName
+          | .d1_databases[1].remote = true
+          | .account_id = $accountId'
+
+          jq \
+            --arg kitchenDbId "${{ vars.KITCHEN_DB_ID }}" \
+            --arg kitchenDbName "${{ vars.KITCHEN_DB_NAME }}" \
+            --arg vmsDbId "${{ vars.VMS_DB_ID }}" \
+            --arg vmsDbName "${{ vars.VMS_DB_NAME }}" \
+            --arg accountId "${{ vars.CLOUDFLARE_ACCOUNT_ID }}" \
+            "$jq_filter" \
+            wrangler.jsonc > wrangler.local.jsonc
+
+      - name: Migrate Kitchen D1 Database
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: wrangler d1 migrations apply ${{ vars.KITCHEN_DB_NAME }} --remote --config wrangler.local.jsonc
