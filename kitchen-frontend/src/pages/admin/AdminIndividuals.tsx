@@ -17,11 +17,12 @@ import {
   Lightbulb,
   Calendar,
   UserCheck,
-  Undo
+  Undo,
 } from 'lucide-react'
 import { individualsService } from '../../services/api'
 import { useProjectFields } from '../../hooks/useProjectFields'
 import type { Individual, TeamWithSpace } from '../../types'
+import AdminPageHeader from '../../components/AdminPageHeader'
 
 type AssignMode = 'new' | 'existing'
 const GENDER_LABELS = {
@@ -244,28 +245,29 @@ export default function AdminIndividuals() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">إدارة الأفراد</h1>
-          <p className="text-gray-400">فرز الأفراد إلى فرق</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg">
-            <User className="w-5 h-5" />
+      <AdminPageHeader
+        icon={User}
+        title="إدارة الأفراد"
+        description="فرز الأفراد من قائمة الانتظار إلى فرق مناسبة."
+        tone="purple"
+      >
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-lg text-sm">
+            <Users className="w-4 h-4" />
             <span className="font-medium">{individuals.length} فرد</span>
           </div>
-          {selectedIndividuals.length > 0 && (
+          {selectedIndividuals.length > 0 ? (
             <button
+              type="button"
               onClick={openAssignModal}
-              className="btn-primary flex items-center gap-2"
+              className="btn-primary flex items-center gap-2 text-sm py-2"
             >
-              <UserPlus className="w-5 h-5" />
+              <UserPlus className="w-4 h-4" />
               فرز المحددين ({selectedIndividuals.length})
             </button>
-          )}
+          ) : null}
         </div>
-      </div>
+      </AdminPageHeader>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">

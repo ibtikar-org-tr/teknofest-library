@@ -12,6 +12,7 @@ import {
   Calendar,
   BookOpen,
   Trophy,
+  type LucideIcon,
 } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession } from '../lib/auth-session'
@@ -127,22 +128,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     navigate('/login')
   }
 
-  const pageTitle =
-    location.pathname === '/admin/kitchens'
-      ? 'المطابخ / الفعاليات'
-      : location.pathname.includes('/teams')
-        ? 'الفرق'
-        : location.pathname.includes('/individuals')
-          ? 'الأفراد'
-          : location.pathname.includes('/competitions')
-            ? 'المسابقات'
-            : location.pathname.includes('/juries')
-              ? 'المحكمون'
-              : eventId && location.pathname === `/admin/events/${eventId}`
-                ? 'لوحة التحكم'
-                : eventId
-                  ? 'لوحة الإدارة'
-                  : 'لوحة الإدارة'
+  const pageMeta: { title: string; icon: LucideIcon } = (() => {
+    if (location.pathname === '/admin/kitchens') {
+      return { title: 'المطابخ / الفعاليات', icon: Calendar }
+    }
+    if (location.pathname.includes('/teams')) return { title: 'الفرق', icon: Users }
+    if (location.pathname.includes('/individuals')) return { title: 'الأفراد', icon: User }
+    if (location.pathname.includes('/competitions')) {
+      return { title: 'المسابقات', icon: Trophy }
+    }
+    if (location.pathname.includes('/juries')) return { title: 'المحكمون', icon: Gavel }
+    if (eventId && location.pathname === `/admin/events/${eventId}`) {
+      return { title: 'لوحة التحكم', icon: LayoutDashboard }
+    }
+    return { title: 'لوحة الإدارة', icon: LayoutDashboard }
+  })()
+  const PageIcon = pageMeta.icon
 
   return (
     <div className="min-h-screen bg-teknofest-dark-blue flex">
@@ -192,7 +193,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <h2 className="text-xl font-bold text-white">{pageTitle}</h2>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="hidden sm:inline-flex w-9 h-9 rounded-xl bg-teknofest-orange/15 text-teknofest-orange items-center justify-center shrink-0">
+                  <PageIcon className="w-4.5 h-4.5 w-4 h-4" />
+                </span>
+                <h2 className="text-xl font-bold text-white truncate">{pageMeta.title}</h2>
+              </div>
             </div>
           </div>
         </header>

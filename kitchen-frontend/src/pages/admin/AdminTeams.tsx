@@ -15,6 +15,8 @@ import {
   FileText,
   Gavel,
   Star,
+  Trophy,
+  Hash,
 } from 'lucide-react'
 import {
   emailService,
@@ -24,6 +26,7 @@ import {
   type AdminTeamOverview,
 } from '../../services/api'
 import type { TeamMember } from '../../types'
+import AdminPageHeader from '../../components/AdminPageHeader'
 
 const STAGE_LABEL = { primary: 'المرحلة الأولية', final: 'المرحلة النهائية' } as const
 
@@ -168,13 +171,11 @@ export default function AdminTeams() {
 
   return (
     <div className="space-y-6">
-      <div className="card space-y-2">
-        <h1 className="text-2xl font-bold text-white">الفرق</h1>
-        <p className="text-gray-400 text-sm leading-relaxed">
-          كل شيء عن الفريق هنا: الأعضاء، التقديمات، درجات المحكّمين والملاحظات، واعتماد النتيجة
-          للنشر في لوحة المتصدرين (لكل مرحلة على حدة).
-        </p>
-      </div>
+      <AdminPageHeader
+        icon={Users}
+        title="الفرق"
+        description="الأعضاء، التقديمات، درجات المحكّمين والملاحظات، واعتماد النتيجة للنشر في لوحة المتصدرين (لكل مرحلة على حدة)."
+      />
 
       <div className="relative">
         <Search className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -189,10 +190,16 @@ export default function AdminTeams() {
 
       <div className="space-y-4">
         {filteredTeams.length === 0 ? (
-          <div className="card text-center py-12 text-gray-500">لا توجد فرق</div>
+          <div className="card text-center py-12 text-gray-500">
+            <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
+            لا توجد فرق
+          </div>
         ) : (
           filteredTeams.map((team) => {
             const open = expandedTeam === team.id
+            const pendingAccept =
+              (team.stages.primary?.can_accept ? 1 : 0) +
+              (team.stages.final?.can_accept ? 1 : 0)
             return (
               <div key={team.id} className="card p-0 overflow-hidden">
                 <button
@@ -200,15 +207,35 @@ export default function AdminTeams() {
                   onClick={() => setExpandedTeam(open ? null : team.id!)}
                   className="w-full flex items-center justify-between gap-4 px-5 py-4 text-right hover:bg-teknofest-medium-blue/30"
                 >
-                  <div className="min-w-0">
-                    <p className="text-white font-bold truncate">{team.team_name}</p>
-                    <p className="text-gray-400 text-sm truncate">
-                      {team.field_label || team.field || 'لم تُختر مسابقة بعد'}
-                      {' · '}
-                      {team.member_count} أعضاء
-                      {' · '}
-                      {team.assigned_juries.length} محكّم
-                    </p>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="w-10 h-10 rounded-xl bg-teknofest-cyan/15 text-teknofest-cyan flex items-center justify-center shrink-0 mt-0.5">
+                      <Users className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-white font-bold truncate flex items-center gap-2">
+                        {team.team_name}
+                        {pendingAccept > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-teknofest-orange/20 text-teknofest-orange font-medium">
+                            <Star className="w-3 h-3" />
+                            اعتماد
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-gray-400 text-sm truncate flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                        <span className="inline-flex items-center gap-1">
+                          <Trophy className="w-3.5 h-3.5 shrink-0" />
+                          {team.field_label || team.field || 'لم تُختر مسابقة بعد'}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <Hash className="w-3.5 h-3.5 shrink-0" />
+                          {team.member_count} أعضاء
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <Gavel className="w-3.5 h-3.5 shrink-0" />
+                          {team.assigned_juries.length} محكّم
+                        </span>
+                      </p>
+                    </div>
                   </div>
                   {open ? (
                     <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" />

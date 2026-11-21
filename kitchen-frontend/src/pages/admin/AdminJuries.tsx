@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Loader2, Search, Trash2, UserPlus, Users, Save } from 'lucide-react'
+import { Gavel, Loader2, Search, Trash2, UserPlus, Save } from 'lucide-react'
 import { kitchensService, type EventJury, type EventRegistrant } from '../../services/api'
 import type { Team } from '../../types'
+import AdminPageHeader from '../../components/AdminPageHeader'
 
 export default function AdminJuries() {
   const { eventId = '' } = useParams()
@@ -132,13 +133,12 @@ export default function AdminJuries() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">المحكمون</h1>
-        <p className="text-gray-400 mt-1">
-          عيّن محكمين من مسجلي الفعالية، ثم اربط كل محكم بالفرق التي يقيّمها. التقييم النهائي =
-          متوسط درجات المحكمين فقط.
-        </p>
-      </div>
+      <AdminPageHeader
+        icon={Gavel}
+        title="المحكمون"
+        description="عيّن محكمين من مسجلي الفعالية، ثم اربط كل محكم بالفرق التي يقيّمها. التقييم النهائي = متوسط درجات المحكمين فقط."
+        tone="cyan"
+      />
 
       <div className="card space-y-4">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -185,7 +185,7 @@ export default function AdminJuries() {
 
       {juries.length === 0 ? (
         <div className="card text-center py-12 text-gray-400">
-          <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <Gavel className="w-12 h-12 mx-auto mb-3 opacity-50" />
           لا يوجد محكمون بعد
         </div>
       ) : (
@@ -195,14 +195,19 @@ export default function AdminJuries() {
             return (
               <div key={jury.membership_number} className="card space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-white font-bold">
-                      {jury.full_name || jury.membership_number}
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      {jury.membership_number}
-                      {jury.email ? ` · ${jury.email}` : ''}
-                    </p>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="w-10 h-10 rounded-xl bg-teknofest-cyan/15 text-teknofest-cyan flex items-center justify-center shrink-0">
+                      <Gavel className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-white font-bold truncate">
+                        {jury.full_name || jury.membership_number}
+                      </h3>
+                      <p className="text-sm text-gray-400 truncate">
+                        {jury.membership_number}
+                        {jury.email ? ` · ${jury.email}` : ''}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button

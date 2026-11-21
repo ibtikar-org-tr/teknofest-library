@@ -1,10 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { CheckSquare, ExternalLink, Loader2, Save, Search, Square } from 'lucide-react'
+import {
+  CheckSquare,
+  ExternalLink,
+  Loader2,
+  Save,
+  Search,
+  Square,
+  Trophy,
+  AlertCircle,
+  CheckCircle2,
+  SlidersHorizontal,
+} from 'lucide-react'
 import { kitchensService } from '../../services/api'
 import { libraryCompetitionUrl } from '../../lib/competition'
 import type { ProjectFieldOption } from '../../types'
+import AdminPageHeader from '../../components/AdminPageHeader'
 
 type CatalogRow = ProjectFieldOption & { selected: boolean }
 
@@ -134,47 +146,62 @@ export default function AdminCompetitions() {
 
   return (
     <div className="space-y-6">
-      <div className="card space-y-2">
-        <h1 className="text-2xl font-bold text-white">مسابقات المطبخ وقواعد الاهتمام</h1>
-        <p className="text-gray-400 text-sm leading-relaxed">
-          حدّد المسابقات المتاحة، والحد الأدنى والأقصى لما يختاره الملتحقون بالقائمة كاهتمامات.
-          لا يمكن إنشاء فرق أو الانضمام قبل حفظ هذه القواعد.
-        </p>
-        <p
-          className={`text-sm ${registrationOpen ? 'text-green-400' : 'text-teknofest-orange'}`}
-        >
-          {registrationOpen
-            ? 'التسجيل مفتوح للأعضاء'
-            : 'التسجيل مغلق — احفظ مسابقات + حد أدنى/أقصى صالحين'}
-        </p>
-        <p className="text-teknofest-cyan text-sm">
-          محدد حالياً: <strong className="text-white">{selected.size}</strong> من {rows.length}
-        </p>
-      </div>
+      <AdminPageHeader
+        icon={Trophy}
+        title="مسابقات المطبخ وقواعد الاهتمام"
+        description="حدّد المسابقات المتاحة، والحد الأدنى والأقصى لما يختاره الملتحقون بالقائمة كاهتمامات. لا يمكن إنشاء فرق أو الانضمام قبل حفظ هذه القواعد."
+      >
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <span
+            className={`inline-flex items-center gap-1.5 text-sm ${
+              registrationOpen ? 'text-green-400' : 'text-teknofest-orange'
+            }`}
+          >
+            {registrationOpen ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            {registrationOpen
+              ? 'التسجيل مفتوح للأعضاء'
+              : 'التسجيل مغلق — احفظ مسابقات + حد أدنى/أقصى صالحين'}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-sm text-teknofest-cyan">
+            <CheckSquare className="w-4 h-4" />
+            محدد: <strong className="text-white">{selected.size}</strong> من {rows.length}
+          </span>
+        </div>
+      </AdminPageHeader>
 
-      <div className="card grid sm:grid-cols-2 gap-4">
-        <label className="block text-sm text-gray-300">
-          الحد الأدنى لاهتمامات الفرد
-          <input
-            type="number"
-            min={1}
-            max={20}
-            value={interestMin}
-            onChange={(e) => setInterestMin(Number(e.target.value))}
-            className="input-field mt-1"
-          />
-        </label>
-        <label className="block text-sm text-gray-300">
-          الحد الأقصى لاهتمامات الفرد
-          <input
-            type="number"
-            min={1}
-            max={20}
-            value={interestMax}
-            onChange={(e) => setInterestMax(Number(e.target.value))}
-            className="input-field mt-1"
-          />
-        </label>
+      <div className="card space-y-4">
+        <h2 className="text-white font-semibold flex items-center gap-2">
+          <SlidersHorizontal className="w-4 h-4 text-teknofest-cyan" />
+          حدود الاهتمام
+        </h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="block text-sm text-gray-300">
+            الحد الأدنى لاهتمامات الفرد
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={interestMin}
+              onChange={(e) => setInterestMin(Number(e.target.value))}
+              className="input-field mt-1"
+            />
+          </label>
+          <label className="block text-sm text-gray-300">
+            الحد الأقصى لاهتمامات الفرد
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={interestMax}
+              onChange={(e) => setInterestMax(Number(e.target.value))}
+              className="input-field mt-1"
+            />
+          </label>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
