@@ -9,9 +9,11 @@ import {
   ChevronDown,
   ChevronUp,
   MessageCircle,
+  UserMinus,
+  ArrowLeftRight,
 } from 'lucide-react'
-import { teamsService, emailService } from '../../services/api'
-import type { Team } from '../../types'
+import { teamsService, emailService, kitchensService } from '../../services/api'
+import type { Team, TeamMember } from '../../types'
 
 export default function AdminTeams() {
   const { eventId = '' } = useParams()
@@ -21,13 +23,24 @@ export default function AdminTeams() {
   const [expandedTeam, setExpandedTeam] = useState<number | null>(null)
   const [telegramLink, setTelegramLink] = useState('')
   const [sendingEmail, setSendingEmail] = useState<number | null>(null)
+  const [busyMemberId, setBusyMemberId] = useState<number | null>(null)
+  const [movingMember, setMovingMember] = useState<{
+    member: TeamMember
+    fromTeamId: number
+  } | null>(null)
+  const [moveTargetId, setMoveTargetId] = useState('')
+
+  const reload = async () => {
+    if (!eventId) return
+    const data = await teamsService.getAll(eventId)
+    setTeams(data)
+  }
 
   useEffect(() => {
     if (!eventId) return
     const fetchTeams = async () => {
       try {
-        const data = await teamsService.getAll(eventId)
-        setTeams(data)
+        await reload()
       } catch {
         toast.error('حدث خطأ في تحميل الفرق')
       } finally {
@@ -41,7 +54,7 @@ export default function AdminTeams() {
   const filteredTeams = teams.filter(
     (team) =>
       team.team_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      team.field.toLowerCase().includes(searchTerm.toLowerCase())
+      (team.field || '').toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const handleSendTelegramLink = async (team: Team) => {
@@ -57,22 +70,56 @@ export default function AdminTeams() {
         emails,
         `رابط مجموعة التلغرام - فريق ${team.team_name}`,
         `مرحباً بكم في فريق ${team.team_name}!\n\nرابط مجموعة التلغرام: ${telegramLink}`,
-        telegramLink
+        telegramLink,
       )
       await teamsService.sendTelegramLink(team.id!, telegramLink)
       toast.success('تم إرسال الرابط بنجاح')
       setTelegramLink('')
 
-      // Update team in state
       setTeams((prev) =>
         prev.map((t) =>
-          t.id === team.id ? { ...t, telegram_group_link: telegramLink } : t
-        )
+          t.id === team.id ? { ...t, telegram_group_link: telegramLink } : t,
+        ),
       )
     } catch {
       toast.error('حدث خطأ في إرسال الرابط')
     } finally {
       setSendingEmail(null)
+    }
+  }
+
+  const handleRemove = async (teamId: number, member: TeamMember) => {
+    if (!member.id || !eventId) return
+    const ok = window.confirm(
+      `إزالة ${member.full_name} من الفريق؟ لا يمكن للعضو مغادرة الفريق بنفسه.`,
+    )
+    if (!ok) return
+    setBusyMemberId(member.id)
+    try {
+      await kitchensService.removeTeamMember(eventId, teamId, member.id)
+      toast.success('تم إزالة العضو من الفريق')
+      await reload()
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'تعذر إزالة العضو')
+    } finally {
+      setBusyMemberId(null)
+    }
+  }
+
+  const handleMove = async () => {
+    if (!movingMember?.member.id || !eventId || !moveTargetId) return
+    const toTeamId = Number(moveTargetId)
+    setBusyMemberId(movingMember.member.id)
+    try {
+      await kitchensService.moveTeamMember(eventId, movingMember.member.id, toTeamId)
+      toast.success('تم نقل العضو إلى الفريق الآخر')
+      setMovingMember(null)
+      setMoveTargetId('')
+      await reload()
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'تعذر نقل العضو')
+    } finally {
+      setBusyMemberId(null)
     }
   }
 
@@ -86,11 +133,12 @@ export default function AdminTeams() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">إدارة الفرق</h1>
-          <p className="text-gray-400">عرض وإدارة جميع الفرق المسجلة</p>
+          <p className="text-gray-400">
+            الأعضاء لا يغادرون بأنفسهم — فقط المدير يمكنه الإزالة أو النقل بين الفرق.
+          </p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-teknofest-orange/20 text-teknofest-orange rounded-lg">
           <Users className="w-5 h-5" />
@@ -98,7 +146,6 @@ export default function AdminTeams() {
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input
@@ -110,7 +157,6 @@ export default function AdminTeams() {
         />
       </div>
 
-      {/* Teams List */}
       {filteredTeams.length === 0 ? (
         <div className="card text-center py-12">
           <Users className="w-16 h-16 text-gray-500 mx-auto mb-4" />
@@ -120,18 +166,25 @@ export default function AdminTeams() {
         <div className="space-y-4">
           {filteredTeams.map((team) => (
             <div key={team.id} className="card">
-              {/* Team Header */}
               <div
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setExpandedTeam(expandedTeam === team.id ? null : team.id!)}
               >
                 <div className="flex items-center gap-4">
-                  <div className={team.gender === 'male' ? "w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center" : "w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center"}>
+                  <div
+                    className={
+                      team.gender === 'male'
+                        ? 'w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center'
+                        : 'w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center'
+                    }
+                  >
                     <Users className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">{team.team_name} - {team.gender === 'male' ? 'ذكور' : 'إناث'}</h3>
-                    <p className="text-gray-400 text-sm">{team.field}</p>
+                    <h3 className="text-lg font-bold text-white">
+                      {team.team_name} - {team.gender === 'male' ? 'ذكور' : 'إناث'}
+                    </h3>
+                    <p className="text-gray-400 text-sm">{team.field || 'لم تُختر مسابقة بعد'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -149,10 +202,8 @@ export default function AdminTeams() {
                 </div>
               </div>
 
-              {/* Expanded Content */}
               {expandedTeam === team.id && (
                 <div className="mt-6 pt-6 border-t border-teknofest-light-blue/20 space-y-6">
-                  {/* Team Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-teknofest-dark-blue/50 rounded-xl">
                       <p className="text-gray-400 text-sm mb-1">نوع التسجيل</p>
@@ -172,7 +223,6 @@ export default function AdminTeams() {
                     </div>
                   </div>
 
-                  {/* Initial Idea */}
                   {team.initial_idea && (
                     <div className="p-4 bg-teknofest-dark-blue/50 rounded-xl">
                       <p className="text-gray-400 text-sm mb-2">فكرة المشروع</p>
@@ -180,20 +230,19 @@ export default function AdminTeams() {
                     </div>
                   )}
 
-                  {/* Members */}
                   <div>
                     <h4 className="text-white font-medium mb-3">أعضاء الفريق</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {(team.members ?? []).map((member, idx) => (
+                      {(team.members ?? []).map((member) => (
                         <div
-                          key={idx}
-                          className={`p-3 rounded-xl border ${
+                          key={member.id ?? member.email}
+                          className={`p-3 rounded-xl border space-y-2 ${
                             member.is_leader
                               ? 'bg-teknofest-orange/10 border-teknofest-orange/30'
                               : 'bg-teknofest-dark-blue/50 border-teknofest-light-blue/20'
                           }`}
                         >
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2">
                             <span className="text-white font-medium">{member.full_name}</span>
                             {member.is_leader && (
                               <span className="text-xs px-2 py-0.5 bg-teknofest-orange text-white rounded">
@@ -205,12 +254,44 @@ export default function AdminTeams() {
                           <p className="text-gray-400 text-sm" dir="ltr">
                             {member.phone}
                           </p>
+                          {member.id ? (
+                            <div className="flex gap-2 pt-1">
+                              <button
+                                type="button"
+                                className="btn-secondary text-xs py-1.5 flex-1 flex items-center justify-center gap-1"
+                                disabled={busyMemberId === member.id}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setMovingMember({ member, fromTeamId: team.id! })
+                                  setMoveTargetId('')
+                                }}
+                              >
+                                <ArrowLeftRight className="w-3.5 h-3.5" />
+                                نقل
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary text-xs py-1.5 flex-1 flex items-center justify-center gap-1 text-red-300"
+                                disabled={busyMemberId === member.id}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  void handleRemove(team.id!, member)
+                                }}
+                              >
+                                {busyMemberId === member.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <UserMinus className="w-3.5 h-3.5" />
+                                )}
+                                إزالة
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Telegram Link */}
                   <div className="p-4 bg-teknofest-dark-blue/50 rounded-xl">
                     <h4 className="text-white font-medium mb-3 flex items-center gap-2">
                       <MessageCircle className="w-5 h-5 text-teknofest-cyan" />
@@ -257,6 +338,51 @@ export default function AdminTeams() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {movingMember && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-md space-y-4">
+            <h3 className="text-lg font-bold text-white">نقل العضو</h3>
+            <p className="text-gray-400 text-sm">
+              نقل <span className="text-white">{movingMember.member.full_name}</span> إلى فريق آخر
+            </p>
+            <select
+              className="input-field"
+              value={moveTargetId}
+              onChange={(e) => setMoveTargetId(e.target.value)}
+            >
+              <option value="">اختر الفريق الهدف</option>
+              {teams
+                .filter((t) => t.id !== movingMember.fromTeamId)
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.team_name} ({t.members?.length ?? 0}/6)
+                  </option>
+                ))}
+            </select>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setMovingMember(null)
+                  setMoveTargetId('')
+                }}
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                className="btn-primary disabled:opacity-50"
+                disabled={!moveTargetId || busyMemberId === movingMember.member.id}
+                onClick={() => void handleMove()}
+              >
+                تأكيد النقل
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

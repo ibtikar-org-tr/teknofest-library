@@ -18,6 +18,8 @@ import {
   addMemberToTeam,
   createTeam,
   getTeam,
+  moveMemberToTeam,
+  removeMemberFromTeam,
   setTeamCompetition,
   teamHasPrimarySubmission,
   listLeaderboardTeams,
@@ -143,6 +145,24 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
     return c.json({ message: 'Juries cannot create or join teams' }, 403)
   }
 
+  // Members cannot leave a team themselves — also cannot create another while already on one.
+  const alreadyOnTeam = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    sessionMembership,
+    sessionEmail,
+  )
+  if (alreadyOnTeam) {
+    return c.json(
+      {
+        message:
+          'You are already on a team in this event. Only an event manager can move you.',
+        team_id: alreadyOnTeam.id,
+      },
+      409,
+    )
+  }
+
   const members = Array.isArray(body.members)
     ? body.members.map(
         (m: {
@@ -171,6 +191,21 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
         400,
       )
     }
+    const onTeam = await findTeamForMemberInEvent(
+      c.env,
+      eventId,
+      m.membership_number ?? undefined,
+      m.email,
+    )
+    if (onTeam) {
+      return c.json(
+        {
+          message: `${m.full_name || m.email} is already on a team. Only an event manager can move them.`,
+          team_id: onTeam.id,
+        },
+        409,
+      )
+    }
   }
 
   // Competition is chosen later via PUT …/my-team/competition (locked after primary).
@@ -188,6 +223,23 @@ kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
 
   if (await isEventJury(c.env, eventId, member.membership_number)) {
     return c.json({ message: 'Juries cannot enter the team pool' }, 403)
+  }
+
+  const alreadyOnTeam = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    member.membership_number,
+    member.email,
+  )
+  if (alreadyOnTeam) {
+    return c.json(
+      {
+        message:
+          'You are already on a team. Members cannot leave or switch — ask an event manager.',
+        team_id: alreadyOnTeam.id,
+      },
+      409,
+    )
   }
 
   const profile = await fetchVmsMemberProfile(
@@ -269,7 +321,11 @@ kitchensRouter.post('/:eventId/teams/:teamId/join', ...withEventAccess, async (c
   )
   if (existing) {
     return c.json(
-      { message: 'You are already on a team in this event kitchen', team_id: existing.id },
+      {
+        message:
+          'You are already on a team. Members cannot leave or switch teams — ask an event manager.',
+        team_id: existing.id,
+      },
       409,
     )
   }
@@ -313,6 +369,48 @@ kitchensRouter.post('/:eventId/teams/:teamId/join', ...withEventAccess, async (c
 
   const updated = await getTeam(c.env, teamId)
   return c.json(updated, 201)
+})
+
+/** Manager-only: remove a member from a team (members cannot leave themselves). */
+kitchensRouter.delete(
+  '/:eventId/teams/:teamId/members/:memberId',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const teamId = Number(c.req.param('teamId'))
+    const memberId = Number(c.req.param('memberId'))
+    const member = c.get('member')
+    if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can remove team members' }, 403)
+    }
+    if (!Number.isFinite(teamId) || !Number.isFinite(memberId)) {
+      return c.json({ message: 'Invalid team or member id' }, 400)
+    }
+    const result = await removeMemberFromTeam(c.env, eventId, teamId, memberId)
+    if (!result.ok) return c.json({ message: result.message }, result.status)
+    return c.json(result.team)
+  },
+)
+
+/** Manager-only: move a member to another team in this event. */
+kitchensRouter.post('/:eventId/members/:memberId/move', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const memberId = Number(c.req.param('memberId'))
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can move team members' }, 403)
+  }
+  if (!Number.isFinite(memberId) || memberId <= 0) {
+    return c.json({ message: 'Invalid member id' }, 400)
+  }
+  const body = await c.req.json<{ to_team_id?: number }>()
+  const toTeamId = Number(body.to_team_id)
+  if (!Number.isFinite(toTeamId) || toTeamId <= 0) {
+    return c.json({ message: 'to_team_id is required' }, 400)
+  }
+  const result = await moveMemberToTeam(c.env, eventId, memberId, toTeamId)
+  if (!result.ok) return c.json({ message: result.message }, result.status)
+  return c.json(result)
 })
 
 /** Current member's team in this event kitchen (for gating project apply). */

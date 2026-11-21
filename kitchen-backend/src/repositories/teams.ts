@@ -216,3 +216,164 @@ export const addMemberToTeam = async (
 
   return mapTeamMember(created as Record<string, unknown>)
 }
+
+export const getTeamMember = async (
+  env: Environment,
+  memberId: number,
+): Promise<TeamMember | null> => {
+  const row = await env.D1_DB.prepare('SELECT * FROM team_members WHERE id = ?')
+    .bind(memberId)
+    .first()
+  return row ? mapTeamMember(row as Record<string, unknown>) : null
+}
+
+async function clearIndividualAssignmentForMember(
+  env: Environment,
+  eventId: string,
+  member: TeamMember,
+): Promise<void> {
+  const email = member.email?.trim().toLowerCase() || null
+  const membership = member.membership_number?.trim() || null
+  if (!email && !membership) return
+  await env.D1_DB.prepare(
+    `UPDATE individuals
+     SET is_assigned = 0, assigned_team_id = NULL, updated_at = datetime('now')
+     WHERE event_id = ?
+       AND (
+         (? IS NOT NULL AND lower(email) = ?)
+         OR (? IS NOT NULL AND membership_number = ?)
+       )`,
+  )
+    .bind(eventId, email, email ?? '', membership, membership ?? '')
+    .run()
+}
+
+async function promoteFirstRemainingLeader(env: Environment, teamId: number): Promise<void> {
+  const remaining = await env.D1_DB.prepare(
+    `SELECT id FROM team_members WHERE team_id = ? ORDER BY id ASC LIMIT 1`,
+  )
+    .bind(teamId)
+    .first<{ id: number }>()
+  if (!remaining) return
+  await env.D1_DB.prepare(`UPDATE team_members SET is_leader = 1 WHERE id = ?`)
+    .bind(remaining.id)
+    .run()
+}
+
+export type RemoveMemberResult =
+  | { ok: true; team: Team }
+  | { ok: false; status: 400 | 404; message: string }
+
+/** Manager-only: remove a member from a team. Members cannot do this themselves. */
+export const removeMemberFromTeam = async (
+  env: Environment,
+  eventId: string,
+  teamId: number,
+  memberId: number,
+): Promise<RemoveMemberResult> => {
+  const team = await getTeam(env, teamId)
+  if (!team || team.event_id !== eventId) {
+    return { ok: false, status: 404, message: 'Team not found in this event kitchen' }
+  }
+  const member = await getTeamMember(env, memberId)
+  if (!member || member.team_id !== teamId) {
+    return { ok: false, status: 404, message: 'Team member not found' }
+  }
+
+  const wasLeader = member.is_leader
+  await env.D1_DB.prepare('DELETE FROM team_members WHERE id = ?').bind(memberId).run()
+  await clearIndividualAssignmentForMember(env, eventId, member)
+
+  if (wasLeader) {
+    const stillHasLeader = await env.D1_DB.prepare(
+      `SELECT id FROM team_members WHERE team_id = ? AND is_leader = 1 LIMIT 1`,
+    )
+      .bind(teamId)
+      .first()
+    if (!stillHasLeader) {
+      await promoteFirstRemainingLeader(env, teamId)
+    }
+  }
+
+  const updated = await getTeam(env, teamId)
+  return { ok: true, team: updated! }
+}
+
+export type MoveMemberResult =
+  | { ok: true; from_team: Team; to_team: Team }
+  | { ok: false; status: 400 | 404 | 409; message: string }
+
+/** Manager-only: move a member from their current team to another team in the same event. */
+export const moveMemberToTeam = async (
+  env: Environment,
+  eventId: string,
+  memberId: number,
+  toTeamId: number,
+): Promise<MoveMemberResult> => {
+  const member = await getTeamMember(env, memberId)
+  if (!member) return { ok: false, status: 404, message: 'Team member not found' }
+
+  const fromTeam = await getTeam(env, member.team_id)
+  if (!fromTeam || fromTeam.event_id !== eventId) {
+    return { ok: false, status: 404, message: 'Source team not found in this event kitchen' }
+  }
+
+  if (member.team_id === toTeamId) {
+    return { ok: false, status: 400, message: 'Member is already on that team' }
+  }
+
+  const toTeam = await getTeam(env, toTeamId)
+  if (!toTeam || toTeam.event_id !== eventId || !toTeam.is_active) {
+    return { ok: false, status: 404, message: 'Target team not found in this event kitchen' }
+  }
+
+  const destCount = toTeam.members?.length ?? 0
+  if (destCount >= 6) {
+    return { ok: false, status: 409, message: 'Target team is full' }
+  }
+
+  const wasLeader = member.is_leader
+  const fromTeamId = member.team_id
+
+  await env.D1_DB.prepare('DELETE FROM team_members WHERE id = ?').bind(memberId).run()
+
+  if (wasLeader) {
+    const stillHasLeader = await env.D1_DB.prepare(
+      `SELECT id FROM team_members WHERE team_id = ? AND is_leader = 1 LIMIT 1`,
+    )
+      .bind(fromTeamId)
+      .first()
+    if (!stillHasLeader) {
+      await promoteFirstRemainingLeader(env, fromTeamId)
+    }
+  }
+
+  await addMemberToTeam(env, toTeamId, {
+    full_name: member.full_name,
+    email: member.email,
+    phone: member.phone,
+    membership_number: member.membership_number,
+    is_leader: false,
+  })
+
+  // Keep individual assignment pointing at the new team if present.
+  const email = member.email?.trim().toLowerCase() || null
+  const membership = member.membership_number?.trim() || null
+  if (email || membership) {
+    await env.D1_DB.prepare(
+      `UPDATE individuals
+       SET is_assigned = 1, assigned_team_id = ?, updated_at = datetime('now')
+       WHERE event_id = ?
+         AND (
+           (? IS NOT NULL AND lower(email) = ?)
+           OR (? IS NOT NULL AND membership_number = ?)
+         )`,
+    )
+      .bind(toTeamId, eventId, email, email ?? '', membership, membership ?? '')
+      .run()
+  }
+
+  const fromUpdated = await getTeam(env, fromTeamId)
+  const toUpdated = await getTeam(env, toTeamId)
+  return { ok: true, from_team: fromUpdated!, to_team: toUpdated! }
+}

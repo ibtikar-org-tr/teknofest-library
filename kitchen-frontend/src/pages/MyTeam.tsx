@@ -177,6 +177,10 @@ export default function MyTeam() {
             <Users className="w-5 h-5 text-teknofest-orange" />
             الأعضاء ({members.length})
           </h2>
+          <p className="text-gray-500 text-xs">
+            بعد الانضمام لا يمكنك مغادرة الفريق أو الانتقال لفريق آخر بنفسك — تواصل مع مدير
+            الفعالية إن لزم الأمر.
+          </p>
           <ul className="space-y-2">
             {members.map((m) => (
               <li

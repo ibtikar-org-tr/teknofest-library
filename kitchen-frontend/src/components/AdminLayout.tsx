@@ -12,6 +12,7 @@ import {
   X,
   ChevronLeft,
   Calendar,
+  BookOpen,
 } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession } from '../lib/auth-session'
@@ -36,6 +37,7 @@ function SidebarContent({
   const sidebarLinks = useMemo(() => {
     const links = [
       { to: '/admin/kitchens', label: 'المطابخ / الفعاليات', icon: Calendar },
+      { to: '/instructions?tab=admin', label: 'التعليمات', icon: BookOpen },
     ]
     if (eventId) {
       const base = `/admin/events/${eventId}`

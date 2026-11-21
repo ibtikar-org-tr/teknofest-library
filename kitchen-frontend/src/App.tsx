@@ -18,6 +18,7 @@ import AdminJuries from './pages/admin/AdminJuries'
 import AdminKitchens from './pages/admin/AdminKitchens'
 import AuthCallback from './pages/AuthCallback'
 import Leaderboard from './pages/Leaderboard'
+import Instructions from './pages/Instructions'
 import MemberRoute from './components/MemberRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -52,10 +53,12 @@ function App() {
 
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="instructions" element={<Instructions />} />
           <Route path="top-teams" element={<Navigate to="/" replace />} />
           {/* Public leaderboard — no login */}
           <Route path="events/:eventId/leaderboard" element={<Leaderboard />} />
           <Route path="events/:eventId/top-teams" element={<LegacyTopTeamsRedirect />} />
+          <Route path="events/:eventId/instructions" element={<Instructions />} />
 
           <Route element={<MemberRoute />}>
             <Route path="events/:eventId" element={<EventKitchen />} />

@@ -205,6 +205,31 @@ export const kitchensService = {
     return response.data
   },
 
+  /** Manager-only: remove a member from a team. */
+  removeTeamMember: async (
+    eventId: string,
+    teamId: number,
+    memberId: number,
+  ): Promise<Team> => {
+    const response = await api.delete(
+      `/kitchens/${encodeURIComponent(eventId)}/teams/${teamId}/members/${memberId}`,
+    )
+    return response.data
+  },
+
+  /** Manager-only: move a team member to another team. */
+  moveTeamMember: async (
+    eventId: string,
+    memberId: number,
+    toTeamId: number,
+  ): Promise<{ from_team: Team; to_team: Team }> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/members/${memberId}/move`,
+      { to_team_id: toTeamId },
+    )
+    return response.data
+  },
+
   getTeams: async (eventId: string): Promise<Team[]> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/teams`)
     return response.data

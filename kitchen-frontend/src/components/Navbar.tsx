@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Menu, X, LayoutDashboard, Trophy, LogIn, LogOut, Shield } from 'lucide-react'
+import { Menu, X, LayoutDashboard, Trophy, LogIn, LogOut, Shield, BookOpen } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession, isLoggedIn, isStaffSession, getSession } from '../lib/auth-session'
 
@@ -13,14 +13,21 @@ export default function Navbar() {
   const staff = isStaffSession()
   const session = getSession()
 
-  const navLinks = eventId
-    ? [
-        { to: `/events/${eventId}/leaderboard`, label: 'لوحة المتصدرين', icon: Trophy },
-        ...(loggedIn
-          ? [{ to: `/events/${eventId}/dashboard`, label: 'لوحتي', icon: LayoutDashboard }]
-          : []),
-      ]
-    : []
+  const instructionsTo = eventId
+    ? `/events/${eventId}/instructions`
+    : '/instructions'
+
+  const navLinks = [
+    { to: instructionsTo, label: 'التعليمات', icon: BookOpen },
+    ...(eventId
+      ? [
+          { to: `/events/${eventId}/leaderboard`, label: 'لوحة المتصدرين', icon: Trophy },
+          ...(loggedIn
+            ? [{ to: `/events/${eventId}/dashboard`, label: 'لوحتي', icon: LayoutDashboard }]
+            : []),
+        ]
+      : []),
+  ]
 
   const logout = () => {
     clearSession()
