@@ -71,7 +71,10 @@ function SidebarContent({
         <ul className="space-y-2">
           {sidebarLinks.map((link) => {
             const Icon = link.icon
-            const isActive = pathname === link.to
+            const isDashboard = Boolean(eventId) && link.to === `/admin/events/${eventId}`
+            const isActive = isDashboard
+              ? pathname === link.to
+              : pathname === link.to || pathname.startsWith(`${link.to}/`)
             return (
               <li key={link.to}>
                 <Link
@@ -131,14 +134,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         ? 'الفرق'
         : location.pathname.includes('/individuals')
           ? 'الأفراد'
-          : location.pathname.includes('/projects')
-            ? 'المشاريع'
+          : location.pathname.includes('/competitions')
+            ? 'المسابقات'
             : location.pathname.includes('/juries')
               ? 'المحكمون'
-              : location.pathname.includes('/evaluations')
-                ? 'التقييمات'
+              : eventId && location.pathname === `/admin/events/${eventId}`
+                ? 'لوحة التحكم'
                 : eventId
-                  ? 'لوحة التحكم'
+                  ? 'لوحة الإدارة'
                   : 'لوحة الإدارة'
 
   return (
