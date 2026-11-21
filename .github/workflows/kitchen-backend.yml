@@ -62,7 +62,7 @@ jobs:
             --arg vmsApiBase "${{ vars.VMS_URL }}/ms/membership-app/api" \
             --arg libraryServiceName "${{ vars.LIBRARY_BE_NAME }}" \
             --arg vmsServiceName "${{ vars.VMS_SERVICE_NAME }}" \
-            --arg r2Bucket "{{ vars.KITCHEN_R2_BUCKET }}" \
+            --arg r2Bucket "${{ vars.KITCHEN_R2_BUCKET }}" \
             --arg accountId "${{ vars.CLOUDFLARE_ACCOUNT_ID }}" \
             "$jq_filter" \
             wrangler.jsonc > wrangler.local.jsonc
