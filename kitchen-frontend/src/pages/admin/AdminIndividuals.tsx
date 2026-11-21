@@ -411,7 +411,11 @@ export default function AdminIndividuals() {
                 </p>
                 <p className="text-gray-400">
                   <span className="text-gray-500">المهارات:</span>{' '}
-                  {individual.technical_skills.substring(0, 50)}...
+                  {individual.technical_skills
+                    ? `${individual.technical_skills.substring(0, 50)}${
+                        individual.technical_skills.length > 50 ? '...' : ''
+                      }`
+                    : '—'}
                 </p>
               </div>
 
