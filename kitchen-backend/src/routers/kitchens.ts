@@ -19,6 +19,7 @@ import {
   createTeam,
   getTeam,
   setTeamCompetition,
+  teamHasPrimarySubmission,
   listLeaderboardTeams,
   listTeams,
 } from '../repositories/teams'
@@ -172,7 +173,8 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
     }
   }
 
-  const team = await createTeam(c.env, { ...body, members, event_id: eventId })
+  // Competition is chosen later via PUT …/my-team/competition (locked after primary).
+  const team = await createTeam(c.env, { ...body, field: '', members, event_id: eventId })
   return c.json(team, 201)
 })
 
@@ -326,10 +328,15 @@ kitchensRouter.get('/:eventId/my-team', ...withEventAccess, async (c) => {
   if (!team) {
     return c.json({ message: 'You are not on a team in this event kitchen' }, 404)
   }
-  return c.json(team)
+  const competition_locked = await teamHasPrimarySubmission(c.env, team.id)
+  return c.json({ ...team, competition_locked })
 })
 
-/** Choose competition before primary/final applications (FE step 1; not a jury stage). */
+/**
+ * Choose / change competition (FE step 1).
+ * Allowed until primary is submitted; after that returns 409.
+ * Final stage does not unlock competition changes.
+ */
 kitchensRouter.put('/:eventId/my-team/competition', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const member = c.get('member')
@@ -345,7 +352,7 @@ kitchensRouter.put('/:eventId/my-team/competition', ...withEventAccess, async (c
   }
   const result = await setTeamCompetition(c.env, team.id, body.field ?? '')
   if (!result.ok) return c.json({ message: result.message }, result.status)
-  return c.json(result.team)
+  return c.json({ ...result.team, competition_locked: false })
 })
 
 kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {

@@ -30,8 +30,12 @@ Each is a separate `project_submissions` row (`stage`, unique per team). Stages 
 
 ## APIs
 
-- Choose / change competition: `PUT /api/kitchens/:eventId/my-team/competition` `{ field }` (409 after primary is submitted)
-- Submit: `POST /api/kitchens/:eventId/projects` with `{ stage, summary, team_id? }`
+- Choose / change competition: `PUT /api/kitchens/:eventId/my-team/competition` `{ field }`  
+  — **409** once primary exists (final submit does not unlock changes)  
+  — create-team always starts with empty `field`; this endpoint is the only way to set it
+- `GET …/my-team` includes `competition_locked: true` after primary is submitted
+- Submit: `POST /api/kitchens/:eventId/projects` with `{ stage, summary, team_id? }`  
+  — requires competition; final requires primary; one row per stage
 - Upload file: `POST /api/projects/:id/files` multipart (`file`, `display_name`, `description?`)
 - List/download: `GET /api/projects/:id/files`, `GET /api/projects/:id/files/:fileId`
 - Own apps: `GET /api/kitchens/:eventId/my-projects`

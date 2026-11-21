@@ -41,7 +41,7 @@ studentsRouter.post('/team', memberAuthMiddleware, async (c) => {
         },
       )
     : body.members
-  const team = await createTeam(c.env, { ...body, members })
+  const team = await createTeam(c.env, { ...body, field: '', members })
   return c.json(team, 201)
 })
 

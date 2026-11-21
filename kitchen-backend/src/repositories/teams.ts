@@ -128,11 +128,29 @@ export const createTeam = async (
   return team
 }
 
+export const teamHasPrimarySubmission = async (
+  env: Environment,
+  teamId: number,
+): Promise<boolean> => {
+  const row = await env.D1_DB.prepare(
+    `SELECT id FROM project_submissions
+     WHERE team_id = ? AND stage = 'primary'
+     LIMIT 1`,
+  )
+    .bind(teamId)
+    .first()
+  return Boolean(row)
+}
+
 export type SetTeamCompetitionResult =
   | { ok: true; team: Team }
   | { ok: false; status: 400 | 404 | 409; message: string }
 
-/** Set competition (`field`) before applications. Locked after primary stage is submitted. */
+/**
+ * Set / change competition (`field`).
+ * Allowed until the primary stage is submitted; after that returns 409.
+ * Final-stage submit does not unlock competition changes.
+ */
 export const setTeamCompetition = async (
   env: Environment,
   teamId: number,
@@ -146,14 +164,7 @@ export const setTeamCompetition = async (
   const existing = await getTeam(env, teamId)
   if (!existing) return { ok: false, status: 404, message: 'Team not found' }
 
-  const primary = await env.D1_DB.prepare(
-    `SELECT id FROM project_submissions
-     WHERE team_id = ? AND stage = 'primary'
-     LIMIT 1`,
-  )
-    .bind(teamId)
-    .first()
-  if (primary) {
+  if (await teamHasPrimarySubmission(env, teamId)) {
     return {
       ok: false,
       status: 409,
