@@ -91,27 +91,42 @@ export default function MyTeam() {
   )
   const teamCompetitionHref = libraryCompetitionUrl(team?.field, competitions)
 
+  const selectedHref = libraryCompetitionUrl(selectedCompetition, competitions)
+
   const competitionPicker = (
     <div className="space-y-3">
-      <select
-        className="input-field"
-        value={selectedCompetition}
-        disabled={competitionsLoading || competitions.length === 0}
-        onChange={(e) => setSelectedCompetition(e.target.value)}
-      >
-        <option value="">
-          {competitionsLoading
-            ? 'جاري تحميل المسابقات...'
-            : competitions.length === 0
-              ? 'لا مسابقات متاحة — انتظر تفعيل المدير'
-              : 'اختر المسابقة'}
-        </option>
-        {competitions.map((c) => (
-          <option key={c.id} value={String(c.id)}>
-            {c.label}
+      <div className="flex gap-2 items-stretch">
+        <select
+          className="input-field flex-1"
+          value={selectedCompetition}
+          disabled={competitionsLoading || competitions.length === 0}
+          onChange={(e) => setSelectedCompetition(e.target.value)}
+        >
+          <option value="">
+            {competitionsLoading
+              ? 'جاري تحميل المسابقات...'
+              : competitions.length === 0
+                ? 'لا مسابقات متاحة — انتظر تفعيل المدير'
+                : 'اختر المسابقة'}
           </option>
-        ))}
-      </select>
+          {competitions.map((c) => (
+            <option key={c.id} value={String(c.id)}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+        {selectedHref ? (
+          <a
+            href={selectedHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary px-3 flex items-center shrink-0"
+            title="فتح المسابقة في المكتبة"
+          >
+            فتح
+          </a>
+        ) : null}
+      </div>
       <div className="flex flex-col sm:flex-row gap-2">
         <button
           type="button"

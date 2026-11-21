@@ -65,8 +65,19 @@ studentsRouter.post('/individual', memberAuthMiddleware, async (c) => {
     )
   }
 
+  const preferredIds = Array.isArray(body.preferred_competition_ids)
+    ? body.preferred_competition_ids.map(Number).filter((n: number) => Number.isFinite(n) && n > 0)
+    : body.preferred_field
+      ? [Number(body.preferred_field)].filter((n: number) => Number.isFinite(n) && n > 0)
+      : []
+  if (preferredIds.length === 0) {
+    return c.json({ message: 'preferred_competition_ids is required' }, 400)
+  }
+
   const individual = await createIndividual(c.env, {
     ...body,
+    preferred_field: String(preferredIds[0]),
+    preferred_competition_ids: preferredIds,
     email: member.email || profile.email,
     membership_number: member.membership_number,
     full_name: profile.full_name,

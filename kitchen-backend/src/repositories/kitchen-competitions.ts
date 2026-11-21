@@ -1,9 +1,51 @@
 import type { Environment } from '../types/env'
+import { getEventKitchen, setKitchenInterestRules } from './event-kitchens'
 import {
   getLibraryCompetitionById,
   listLibraryCompetitionFields,
   type KitchenCompetitionField,
 } from './library-competitions'
+
+export type KitchenCompetitionSettings = {
+  competitions: KitchenCompetitionField[]
+  interest_min: number | null
+  interest_max: number | null
+  /** True when admin set min/max and enough allowlisted competitions exist. */
+  registration_open: boolean
+}
+
+export function isRegistrationOpen(settings: {
+  interest_min: number | null
+  interest_max: number | null
+  allowlist_count: number
+}): boolean {
+  const min = settings.interest_min
+  const max = settings.interest_max
+  if (min == null || max == null) return false
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return false
+  if (min < 1 || max < min) return false
+  return settings.allowlist_count >= min
+}
+
+export async function getKitchenCompetitionSettings(
+  env: Environment,
+  eventId: string,
+): Promise<KitchenCompetitionSettings> {
+  const kitchen = await getEventKitchen(env, eventId)
+  const competitions = await listKitchenCompetitionFields(env, eventId)
+  const interest_min = kitchen?.interest_min ?? null
+  const interest_max = kitchen?.interest_max ?? null
+  return {
+    competitions,
+    interest_min,
+    interest_max,
+    registration_open: isRegistrationOpen({
+      interest_min,
+      interest_max,
+      allowlist_count: competitions.length,
+    }),
+  }
+}
 
 export async function listKitchenCompetitionIds(
   env: Environment,
@@ -38,12 +80,29 @@ export async function listKitchenCompetitionFields(
     .sort((a, b) => a.label.localeCompare(b.label, 'ar'))
 }
 
-/** Replace the kitchen allowlist. Unknown library ids are rejected. */
-export async function setKitchenCompetitionIds(
+/**
+ * Replace allowlist + interest min/max.
+ * Registration opens only when min/max are valid and allowlist.length >= min.
+ */
+export async function setKitchenCompetitionSettings(
   env: Environment,
   eventId: string,
   competitionIds: number[],
-): Promise<{ ok: true; competition_ids: number[] } | { ok: false; message: string }> {
+  interestMin: number,
+  interestMax: number,
+): Promise<
+  | { ok: true; competition_ids: number[]; interest_min: number; interest_max: number }
+  | { ok: false; message: string }
+> {
+  const min = Number(interestMin)
+  const max = Number(interestMax)
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min < 1 || max < min || max > 20) {
+    return {
+      ok: false,
+      message: 'interest_min/interest_max must satisfy 1 ≤ min ≤ max ≤ 20',
+    }
+  }
+
   const unique = [
     ...new Set(
       competitionIds
@@ -51,6 +110,13 @@ export async function setKitchenCompetitionIds(
         .filter((id) => Number.isFinite(id) && id > 0),
     ),
   ].sort((a, b) => a - b)
+
+  if (unique.length < min) {
+    return {
+      ok: false,
+      message: `Select at least ${min} competitions (interest_min)`,
+    }
+  }
 
   if (unique.length > 0) {
     const catalog = await listLibraryCompetitionFields(env)
@@ -62,6 +128,11 @@ export async function setKitchenCompetitionIds(
         message: `Unknown library competition ids: ${missing.join(', ')}`,
       }
     }
+  }
+
+  const kitchen = await getEventKitchen(env, eventId)
+  if (!kitchen) {
+    return { ok: false, message: 'Kitchen not found for this event' }
   }
 
   await env.D1_DB.prepare(`DELETE FROM kitchen_competitions WHERE event_id = ?`)
@@ -76,7 +147,22 @@ export async function setKitchenCompetitionIds(
       .run()
   }
 
-  return { ok: true, competition_ids: unique }
+  await setKitchenInterestRules(env, eventId, min, max)
+  return { ok: true, competition_ids: unique, interest_min: min, interest_max: max }
+}
+
+/** @deprecated use setKitchenCompetitionSettings */
+export async function setKitchenCompetitionIds(
+  env: Environment,
+  eventId: string,
+  competitionIds: number[],
+): Promise<{ ok: true; competition_ids: number[] } | { ok: false; message: string }> {
+  const kitchen = await getEventKitchen(env, eventId)
+  const min = kitchen?.interest_min ?? 1
+  const max = kitchen?.interest_max ?? Math.max(min, Math.min(5, competitionIds.length || 5))
+  const result = await setKitchenCompetitionSettings(env, eventId, competitionIds, min, max)
+  if (!result.ok) return result
+  return { ok: true, competition_ids: result.competition_ids }
 }
 
 export async function isCompetitionAllowedForKitchen(
@@ -133,15 +219,27 @@ export async function enrichTeamsWithCompetitionLabels<
 }
 
 export async function enrichIndividualsWithCompetitionLabels<
-  T extends { preferred_field: string },
+  T extends { preferred_field: string; preferred_competition_ids?: number[] },
 >(
   env: Environment,
   individuals: T[],
-): Promise<(T & { preferred_field_label: string })[]> {
+): Promise<(T & { preferred_field_label: string; preferred_field_labels: string[] })[]> {
   const labels = await labelLookup(env)
   return individuals.map((row) => {
+    const ids =
+      row.preferred_competition_ids && row.preferred_competition_ids.length > 0
+        ? row.preferred_competition_ids
+        : (() => {
+            const n = Number(row.preferred_field)
+            return Number.isFinite(n) && n > 0 ? [n] : []
+          })()
+    const preferred_field_labels = ids.map((id) => labels.get(String(id)) || String(id))
     const key = String(row.preferred_field ?? '').trim()
-    return { ...row, preferred_field_label: labels.get(key) || key }
+    return {
+      ...row,
+      preferred_field_label: labels.get(key) || preferred_field_labels[0] || key,
+      preferred_field_labels,
+    }
   })
 }
 

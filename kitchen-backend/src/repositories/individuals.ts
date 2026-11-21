@@ -40,16 +40,18 @@ export const createIndividual = async (
     interests?: string | null
     experience_level?: string | null
     preferred_field: string
+    preferred_competition_ids: number[]
     project_idea?: string | null
     program_version_id?: number | null
   },
 ): Promise<Individual> => {
+  const idsJson = JSON.stringify(payload.preferred_competition_ids)
   const row = await env.D1_DB.prepare(
     `INSERT INTO individuals (
       event_id, registration_type, full_name, membership_number, email, phone, gender,
-      technical_skills, interests, experience_level, preferred_field,
+      technical_skills, interests, experience_level, preferred_field, preferred_competition_ids,
       project_idea, program_version_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING *`,
   )
     .bind(
@@ -64,6 +66,7 @@ export const createIndividual = async (
       payload.interests ?? null,
       payload.experience_level ?? null,
       payload.preferred_field,
+      idsJson,
       payload.project_idea ?? null,
       payload.program_version_id ?? null,
     )

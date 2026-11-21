@@ -12,8 +12,6 @@ import Login from './pages/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminTeams from './pages/admin/AdminTeams'
 import AdminIndividuals from './pages/admin/AdminIndividuals'
-import AdminProjects from './pages/admin/AdminProjects'
-import AdminEvaluations from './pages/admin/AdminEvaluations'
 import AdminJuries from './pages/admin/AdminJuries'
 import AdminCompetitions from './pages/admin/AdminCompetitions'
 import AdminKitchens from './pages/admin/AdminKitchens'
@@ -41,6 +39,11 @@ function RedirectToPool() {
 function RedirectToDashboard() {
   const { eventId } = useParams()
   return <Navigate to={`/events/${eventId}/dashboard`} replace />
+}
+
+function RedirectAdminToTeams() {
+  const { eventId } = useParams()
+  return <Navigate to={`/admin/events/${eventId}/teams`} replace />
 }
 
 function App() {
@@ -87,10 +90,10 @@ function App() {
           <Route path="events/:eventId" element={<AdminDashboard />} />
           <Route path="events/:eventId/teams" element={<AdminTeams />} />
           <Route path="events/:eventId/individuals" element={<AdminIndividuals />} />
-          <Route path="events/:eventId/projects" element={<AdminProjects />} />
+          <Route path="events/:eventId/projects" element={<RedirectAdminToTeams />} />
           <Route path="events/:eventId/juries" element={<AdminJuries />} />
           <Route path="events/:eventId/competitions" element={<AdminCompetitions />} />
-          <Route path="events/:eventId/evaluations" element={<AdminEvaluations />} />
+          <Route path="events/:eventId/evaluations" element={<RedirectAdminToTeams />} />
           <Route path="management" element={<Navigate to="/admin/kitchens" replace />} />
           <Route path="teams" element={<Navigate to="/admin/kitchens" replace />} />
           <Route path="individuals" element={<Navigate to="/admin/kitchens" replace />} />

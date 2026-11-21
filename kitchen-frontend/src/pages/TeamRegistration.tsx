@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
@@ -12,10 +12,12 @@ import {
   Lightbulb,
   CheckCircle2,
   XCircle,
+  Loader2,
 } from 'lucide-react'
 import type { TeamMember, RegistrationType, Gender } from '../types'
 import { iForgotService, teamsService } from '../services/api'
 import { getSession } from '../lib/auth-session'
+import { useProjectFields } from '../hooks/useProjectFields'
 
 interface TeamFormData {
   team_name: string
@@ -34,6 +36,7 @@ const GENDER_LABELS: Record<Gender, string> = {
 export default function TeamRegistration() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
+  const { registrationOpen, loading: rulesLoading } = useProjectFields(eventId)
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -351,6 +354,27 @@ export default function TeamRegistration() {
       } 
     })
   }, [memberData, setValue])
+
+  if (rulesLoading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="w-8 h-8 text-teknofest-orange animate-spin" />
+      </div>
+    )
+  }
+
+  if (!registrationOpen) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4">
+        <p className="text-teknofest-orange">
+          لا يمكن إنشاء فرق قبل أن يضبط المدير المسابقات وقواعد الاهتمام.
+        </p>
+        <Link to={`/events/${eventId}/dashboard`} className="text-teknofest-cyan hover:underline">
+          العودة للوحتي
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen py-12 px-4">

@@ -2,6 +2,8 @@ import type { Environment } from '../types/env'
 import type { Team, TeamMember } from '../types/models'
 import { mapTeam, mapTeamMember } from '../utils/mappers'
 import { boolToInt } from '../utils/sql'
+import { averageJuryScores, listEvaluationsByProject } from './evaluations'
+import { listJuriesAssignedToTeam } from './juries'
 
 export const listTeams = async (
   env: Environment,
@@ -24,13 +26,28 @@ export type LeaderboardTeam = {
   member_count: number
 }
 
-/** Public leaderboard rows: active teams for an event (name + member count only). */
-export const listLeaderboardTeams = async (
+export type LeaderboardScoredEntry = {
+  team_id: number
+  team_name: string
+  member_count: number
+  stage: 'primary' | 'final'
+  score: number
+  rank: number
+}
+
+export type PublicLeaderboard = {
+  teams: LeaderboardTeam[]
+  primary: LeaderboardScoredEntry[]
+  final: LeaderboardScoredEntry[]
+}
+
+/** Public leaderboard: all teams (name + count) + accepted stage scores only. */
+export const listPublicLeaderboard = async (
   env: Environment,
   eventId: string,
-): Promise<LeaderboardTeam[]> => {
-  const { results } = await env.D1_DB.prepare(
-    `SELECT t.team_name AS team_name,
+): Promise<PublicLeaderboard> => {
+  const { results: teamRows } = await env.D1_DB.prepare(
+    `SELECT t.id AS team_id, t.team_name AS team_name,
             (
               SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id
             ) AS member_count
@@ -40,12 +57,67 @@ export const listLeaderboardTeams = async (
      ORDER BY t.team_name ASC`,
   )
     .bind(eventId)
-    .all<{ team_name: string; member_count: number }>()
+    .all<{ team_id: number; team_name: string; member_count: number }>()
 
-  return (results ?? []).map((row) => ({
+  const teams = (teamRows ?? []).map((row) => ({
     team_name: row.team_name,
     member_count: Number(row.member_count) || 0,
   }))
+
+  const memberCountById = new Map(
+    (teamRows ?? []).map((r) => [Number(r.team_id), Number(r.member_count) || 0]),
+  )
+
+  const { results: accepted } = await env.D1_DB.prepare(
+    `SELECT p.id AS project_id, p.team_id, p.stage, t.team_name
+     FROM project_submissions p
+     INNER JOIN teams t ON t.id = p.team_id
+     WHERE p.event_id = ?
+       AND p.score_accepted = 1
+       AND t.is_active = 1`,
+  )
+    .bind(eventId)
+    .all<{ project_id: number; team_id: number; stage: string; team_name: string }>()
+
+  const primaryRaw: Omit<LeaderboardScoredEntry, 'rank'>[] = []
+  const finalRaw: Omit<LeaderboardScoredEntry, 'rank'>[] = []
+
+  for (const row of accepted ?? []) {
+    const assigned = await listJuriesAssignedToTeam(env, eventId, Number(row.team_id))
+    const jurySet = new Set(assigned.map((j) => j.membership_number))
+    const evals = await listEvaluationsByProject(env, Number(row.project_id))
+    const { jury_average } = averageJuryScores(evals, jurySet)
+    if (jury_average == null) continue
+    const entry = {
+      team_id: Number(row.team_id),
+      team_name: row.team_name,
+      member_count: memberCountById.get(Number(row.team_id)) ?? 0,
+      stage: (row.stage === 'final' ? 'final' : 'primary') as 'primary' | 'final',
+      score: Math.round(jury_average * 100) / 100,
+    }
+    if (entry.stage === 'final') finalRaw.push(entry)
+    else primaryRaw.push(entry)
+  }
+
+  const rank = (rows: Omit<LeaderboardScoredEntry, 'rank'>[]) =>
+    [...rows]
+      .sort((a, b) => b.score - a.score || a.team_name.localeCompare(b.team_name, 'ar'))
+      .map((row, i) => ({ ...row, rank: i + 1 }))
+
+  return {
+    teams,
+    primary: rank(primaryRaw),
+    final: rank(finalRaw),
+  }
+}
+
+/** @deprecated use listPublicLeaderboard */
+export const listLeaderboardTeams = async (
+  env: Environment,
+  eventId: string,
+): Promise<LeaderboardTeam[]> => {
+  const board = await listPublicLeaderboard(env, eventId)
+  return board.teams
 }
 
 export const getTeam = async (env: Environment, id: number): Promise<Team | null> => {

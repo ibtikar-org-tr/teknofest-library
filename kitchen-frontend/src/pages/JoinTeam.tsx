@@ -4,10 +4,12 @@ import toast from 'react-hot-toast'
 import { ArrowRight, Loader2, UserPlus, Users } from 'lucide-react'
 import { kitchensService } from '../services/api'
 import type { TeamWithSpace } from '../types'
+import { useProjectFields } from '../hooks/useProjectFields'
 
 export default function JoinTeam() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
+  const { registrationOpen, loading: rulesLoading } = useProjectFields(eventId)
   const [teams, setTeams] = useState<TeamWithSpace[]>([])
   const [loading, setLoading] = useState(true)
   const [joiningId, setJoiningId] = useState<number | null>(null)
@@ -47,6 +49,27 @@ export default function JoinTeam() {
     } finally {
       setJoiningId(null)
     }
+  }
+
+  if (rulesLoading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="w-8 h-8 text-teknofest-orange animate-spin" />
+      </div>
+    )
+  }
+
+  if (!registrationOpen) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4">
+        <p className="text-teknofest-orange">
+          التسجيل مغلق — انتظر ضبط المدير للمسابقات وقواعد الاهتمام.
+        </p>
+        <Link to={`/events/${eventId}/join`} className="text-teknofest-cyan hover:underline">
+          العودة
+        </Link>
+      </div>
+    )
   }
 
   return (

@@ -362,7 +362,12 @@ export default function AdminIndividuals() {
                   <div>
                     <h3 className="text-white font-bold">{individual.full_name} - {GENDER_LABELS[individual.gender]}</h3>
                     <p className="text-gray-400 text-sm">
-                      {individual.preferred_field_label || individual.preferred_field}
+                      {(individual.preferred_field_labels &&
+                        individual.preferred_field_labels.length > 0
+                        ? individual.preferred_field_labels.join(' · ')
+                        : null) ||
+                        individual.preferred_field_label ||
+                        individual.preferred_field}
                     </p>
                   </div>
                 </div>

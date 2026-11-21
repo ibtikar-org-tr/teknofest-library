@@ -25,8 +25,11 @@ Each is a separate `project_submissions` row (`stage`, unique per team). Stages 
 
 ## Scoring
 
-- Stage score = average of assigned jury scores for that stage’s submission  
+- Stage score = average of **assigned** jury scores for that stage’s submission  
 - Overall team score = **40% primary + 60% final** (both stage averages required; otherwise overall is null)
+- A stage score is **not public** until a manager **accepts** it (`score_accepted` on the submission).  
+  Accept requires every jury assigned to the team to have scored that stage.
+- Public leaderboard: separate **primary** and **final** boards (accepted averages only), plus a plain team list (name + member count).
 
 ## APIs
 

@@ -43,6 +43,10 @@ export interface EventKitchen {
   created_by: string
   created_at: string
   updated_at: string | null
+  /** Min competitions a pool registrant must select (null = rules not set). */
+  interest_min: number | null
+  /** Max competitions a pool registrant may select (null = rules not set). */
+  interest_max: number | null
 }
 
 export interface VmsEventSummary {
@@ -108,7 +112,12 @@ export interface Individual {
   technical_skills: string | null
   interests: string | null
   experience_level: string | null
+  /** Primary / first interest (library id string) — kept for display compatibility. */
   preferred_field: string
+  /** All interest competition ids (library). */
+  preferred_competition_ids: number[]
+  preferred_field_label?: string
+  preferred_field_labels?: string[]
   project_idea: string | null
   assigned_team_id: number | null
   program_version_id: number | null
@@ -148,6 +157,10 @@ export interface ProjectSubmission {
   is_complete: boolean
   character_count: number
   is_featured: boolean
+  /** When true, stage average is public on the leaderboard. */
+  score_accepted: boolean
+  score_accepted_at: string | null
+  score_accepted_by: string | null
   created_at: string
   updated_at: string | null
   files?: ProjectFile[]

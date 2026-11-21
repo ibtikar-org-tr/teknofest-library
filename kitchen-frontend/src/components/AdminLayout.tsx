@@ -4,8 +4,6 @@ import {
   LayoutDashboard,
   Users,
   User,
-  FileText,
-  Star,
   Gavel,
   LogOut,
   Menu,
@@ -47,9 +45,7 @@ function SidebarContent({
         { to: `${base}/teams`, label: 'الفرق', icon: Users },
         { to: `${base}/individuals`, label: 'الأفراد', icon: User },
         { to: `${base}/competitions`, label: 'المسابقات', icon: Trophy },
-        { to: `${base}/projects`, label: 'المشاريع', icon: FileText },
         { to: `${base}/juries`, label: 'المحكمون', icon: Gavel },
-        { to: `${base}/evaluations`, label: 'التقييمات', icon: Star },
       )
     }
     return links

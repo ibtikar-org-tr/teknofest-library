@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { CheckSquare, Loader2, Save, Search, Square } from 'lucide-react'
+import { CheckSquare, ExternalLink, Loader2, Save, Search, Square } from 'lucide-react'
 import { kitchensService } from '../../services/api'
+import { libraryCompetitionUrl } from '../../lib/competition'
 import type { ProjectFieldOption } from '../../types'
 
 type CatalogRow = ProjectFieldOption & { selected: boolean }
@@ -11,6 +12,11 @@ export default function AdminCompetitions() {
   const { eventId = '' } = useParams()
   const [rows, setRows] = useState<CatalogRow[]>([])
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [interestMin, setInterestMin] = useState(1)
+  const [interestMax, setInterestMax] = useState(5)
+  const [savedMin, setSavedMin] = useState<number | null>(null)
+  const [savedMax, setSavedMax] = useState<number | null>(null)
+  const [registrationOpen, setRegistrationOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
@@ -22,6 +28,13 @@ export default function AdminCompetitions() {
       const data = await kitchensService.getCompetitionCatalog(eventId)
       setRows(data.competitions)
       setSelected(new Set(data.selected_ids))
+      const min = data.interest_min ?? 1
+      const max = data.interest_max ?? 5
+      setInterestMin(min)
+      setInterestMax(max)
+      setSavedMin(data.interest_min)
+      setSavedMax(data.interest_max)
+      setRegistrationOpen(Boolean(data.registration_open))
     } catch {
       toast.error('تعذر تحميل مسابقات المكتبة')
     } finally {
@@ -47,12 +60,13 @@ export default function AdminCompetitions() {
 
   const dirty = useMemo(() => {
     const initial = new Set(rows.filter((r) => r.selected).map((r) => r.id))
+    if (interestMin !== (savedMin ?? 1) || interestMax !== (savedMax ?? 5)) return true
     if (initial.size !== selected.size) return true
     for (const id of selected) {
       if (!initial.has(id)) return true
     }
     return false
-  }, [rows, selected])
+  }, [rows, selected, interestMin, interestMax, savedMin, savedMax])
 
   const toggle = (id: number) => {
     setSelected((prev) => {
@@ -80,11 +94,28 @@ export default function AdminCompetitions() {
   }
 
   const handleSave = async () => {
+    if (interestMin < 1 || interestMax < interestMin || interestMax > 20) {
+      toast.error('الحد الأدنى/الأقصى غير صالح (1 ≤ أدنى ≤ أقصى ≤ 20)')
+      return
+    }
+    if (selected.size < interestMin) {
+      toast.error(`اختر على الأقل ${interestMin} مسابقة متاحة`)
+      return
+    }
     setSaving(true)
     try {
       const ids = [...selected].sort((a, b) => a - b)
-      await kitchensService.setKitchenCompetitions(eventId, ids)
-      toast.success(`تم حفظ ${ids.length} مسابقة للمطبخ`)
+      const result = await kitchensService.setKitchenCompetitions(
+        eventId,
+        ids,
+        interestMin,
+        interestMax,
+      )
+      toast.success(
+        result.registration_open
+          ? `تم الحفظ — التسجيل مفتوح (${ids.length} مسابقة، ${interestMin}–${interestMax} اهتمام)`
+          : 'تم الحفظ',
+      )
       await load()
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'تعذر حفظ المسابقات')
@@ -104,14 +135,46 @@ export default function AdminCompetitions() {
   return (
     <div className="space-y-6">
       <div className="card space-y-2">
-        <h1 className="text-2xl font-bold text-white">مسابقات المطبخ</h1>
+        <h1 className="text-2xl font-bold text-white">مسابقات المطبخ وقواعد الاهتمام</h1>
         <p className="text-gray-400 text-sm leading-relaxed">
-          اختر المسابقات المتاحة من مكتبة تكنوفيست. الفرق والأفراد يرون هذه القائمة فقط، ويتم
-          التخزين برقم المسابقة (ID) لفتح الصفحة الصحيحة في المكتبة.
+          حدّد المسابقات المتاحة، والحد الأدنى والأقصى لما يختاره الملتحقون بالقائمة كاهتمامات.
+          لا يمكن إنشاء فرق أو الانضمام قبل حفظ هذه القواعد.
+        </p>
+        <p
+          className={`text-sm ${registrationOpen ? 'text-green-400' : 'text-teknofest-orange'}`}
+        >
+          {registrationOpen
+            ? 'التسجيل مفتوح للأعضاء'
+            : 'التسجيل مغلق — احفظ مسابقات + حد أدنى/أقصى صالحين'}
         </p>
         <p className="text-teknofest-cyan text-sm">
           محدد حالياً: <strong className="text-white">{selected.size}</strong> من {rows.length}
         </p>
+      </div>
+
+      <div className="card grid sm:grid-cols-2 gap-4">
+        <label className="block text-sm text-gray-300">
+          الحد الأدنى لاهتمامات الفرد
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={interestMin}
+            onChange={(e) => setInterestMin(Number(e.target.value))}
+            className="input-field mt-1"
+          />
+        </label>
+        <label className="block text-sm text-gray-300">
+          الحد الأقصى لاهتمامات الفرد
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={interestMax}
+            onChange={(e) => setInterestMax(Number(e.target.value))}
+            className="input-field mt-1"
+          />
+        </label>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -138,7 +201,7 @@ export default function AdminCompetitions() {
           className="btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          حفظ
+          حفظ القواعد
         </button>
       </div>
 
@@ -149,12 +212,13 @@ export default function AdminCompetitions() {
           ) : (
             filtered.map((row) => {
               const on = selected.has(row.id)
+              const href = libraryCompetitionUrl(String(row.id))
               return (
-                <li key={row.id}>
+                <li key={row.id} className="flex items-stretch">
                   <button
                     type="button"
                     onClick={() => toggle(row.id)}
-                    className={`w-full flex items-start gap-3 px-4 py-3 text-right transition-colors ${
+                    className={`flex-1 flex items-start gap-3 px-4 py-3 text-right transition-colors ${
                       on ? 'bg-teknofest-orange/10' : 'hover:bg-teknofest-medium-blue/40'
                     }`}
                   >
@@ -171,6 +235,18 @@ export default function AdminCompetitions() {
                       </p>
                     </div>
                   </button>
+                  {href ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 flex items-center text-teknofest-cyan hover:bg-teknofest-medium-blue/40"
+                      title="فتح في المكتبة"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  ) : null}
                 </li>
               )
             })

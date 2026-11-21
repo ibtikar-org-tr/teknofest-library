@@ -89,7 +89,9 @@ export interface Individual {
   interests: string
   experience_level?: string | null
   preferred_field: ProjectField
+  preferred_competition_ids?: number[]
   preferred_field_label?: string
+  preferred_field_labels?: string[]
   project_idea?: string
   assigned_team_id?: number
   is_assigned?: boolean

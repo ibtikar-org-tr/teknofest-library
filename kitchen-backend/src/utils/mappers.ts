@@ -65,26 +65,57 @@ export const mapTeam = (row: Record<string, unknown>): Team => ({
   updated_at: (row.updated_at as string) ?? null,
 })
 
-export const mapIndividual = (row: Record<string, unknown>): Individual => ({
-  id: Number(row.id),
-  event_id: row.event_id == null ? null : String(row.event_id),
-  registration_type: row.registration_type as Individual['registration_type'],
-  full_name: String(row.full_name),
-  membership_number: (row.membership_number as string) ?? null,
-  email: String(row.email),
-  phone: String(row.phone),
-  gender: row.gender as Individual['gender'],
-  technical_skills: (row.technical_skills as string) ?? null,
-  interests: (row.interests as string) ?? null,
-  experience_level: (row.experience_level as string) ?? null,
-  preferred_field: String(row.preferred_field),
-  project_idea: (row.project_idea as string) ?? null,
-  assigned_team_id: row.assigned_team_id == null ? null : Number(row.assigned_team_id),
-  program_version_id: row.program_version_id == null ? null : Number(row.program_version_id),
-  is_assigned: asBool(row.is_assigned),
-  created_at: String(row.created_at),
-  updated_at: (row.updated_at as string) ?? null,
-})
+function parsePreferredCompetitionIds(
+  raw: unknown,
+  fallbackField: string,
+): number[] {
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (Array.isArray(parsed)) {
+        return [
+          ...new Set(
+            parsed
+              .map((n) => Number(n))
+              .filter((id) => Number.isFinite(id) && id > 0),
+          ),
+        ]
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  const legacy = Number(fallbackField)
+  return Number.isFinite(legacy) && legacy > 0 ? [legacy] : []
+}
+
+export const mapIndividual = (row: Record<string, unknown>): Individual => {
+  const preferred_field = String(row.preferred_field ?? '')
+  return {
+    id: Number(row.id),
+    event_id: row.event_id == null ? null : String(row.event_id),
+    registration_type: row.registration_type as Individual['registration_type'],
+    full_name: String(row.full_name),
+    membership_number: (row.membership_number as string) ?? null,
+    email: String(row.email),
+    phone: String(row.phone),
+    gender: row.gender as Individual['gender'],
+    technical_skills: (row.technical_skills as string) ?? null,
+    interests: (row.interests as string) ?? null,
+    experience_level: (row.experience_level as string) ?? null,
+    preferred_field,
+    preferred_competition_ids: parsePreferredCompetitionIds(
+      row.preferred_competition_ids,
+      preferred_field,
+    ),
+    project_idea: (row.project_idea as string) ?? null,
+    assigned_team_id: row.assigned_team_id == null ? null : Number(row.assigned_team_id),
+    program_version_id: row.program_version_id == null ? null : Number(row.program_version_id),
+    is_assigned: asBool(row.is_assigned),
+    created_at: String(row.created_at),
+    updated_at: (row.updated_at as string) ?? null,
+  }
+}
 
 export const mapProject = (row: Record<string, unknown>): ProjectSubmission => {
   const problem = String(row.problem_statement ?? '')
@@ -112,6 +143,9 @@ export const mapProject = (row: Record<string, unknown>): ProjectSubmission => {
     is_complete: asBool(row.is_complete),
     character_count: Number(row.character_count),
     is_featured: asBool(row.is_featured),
+    score_accepted: asBool(row.score_accepted),
+    score_accepted_at: (row.score_accepted_at as string) ?? null,
+    score_accepted_by: (row.score_accepted_by as string) ?? null,
     created_at: String(row.created_at),
     updated_at: (row.updated_at as string) ?? null,
   }

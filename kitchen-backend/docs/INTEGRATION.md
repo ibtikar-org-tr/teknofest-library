@@ -32,11 +32,13 @@ CI var `VMS_SERVICE_NAME` must be the VMS membership Worker name (same value Car
 
 ## Competitions
 
-Catalog lives in Library. Kitchen stores an **allowlist** of library competition ids per event (`kitchen_competitions`).
+Catalog lives in Library. Kitchen stores an **allowlist** of library competition ids per event (`kitchen_competitions`) plus **interest min/max** on `event_kitchens`.
 
-- Members: `GET …/fields` → only allowlisted competitions (`value` = id string).
-- Managers: `GET …/competitions/catalog`, `PUT …/competitions` `{ competition_ids: number[] }`.
-- Team / individual / project `field` / `preferred_field` store the **library competition id** (string). Responses may include `field_label` / `preferred_field_label` for display. Links use `/competition/:id` on the library (TAL) site.
+- Members: `GET …/fields` → `{ competitions, interest_min, interest_max, registration_open }`.
+- Managers: `GET …/competitions/catalog`, `PUT …/competitions` `{ competition_ids, interest_min, interest_max }`.
+- `registration_open` is false until allowlist + valid min/max are saved; create team / join / pool return **403** until then.
+- Pool registrants send `preferred_competition_ids` (length within min–max). Team `field` remains a single competition id chosen later on the dashboard.
+- Links use `/competition/:id` on the library (TAL) site.
 
 ## Important when modifying Kitchen BE
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
@@ -11,59 +11,77 @@ import {
   MessageCircle,
   UserMinus,
   ArrowLeftRight,
+  CheckCircle2,
+  FileText,
+  Gavel,
+  Star,
 } from 'lucide-react'
-import { teamsService, emailService, kitchensService } from '../../services/api'
-import type { Team, TeamMember } from '../../types'
+import {
+  emailService,
+  kitchensService,
+  teamsService,
+  type AdminStageOverview,
+  type AdminTeamOverview,
+} from '../../services/api'
+import type { TeamMember } from '../../types'
+
+const STAGE_LABEL = { primary: 'المرحلة الأولية', final: 'المرحلة النهائية' } as const
 
 export default function AdminTeams() {
   const { eventId = '' } = useParams()
-  const [teams, setTeams] = useState<Team[]>([])
+  const [teams, setTeams] = useState<AdminTeamOverview[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedTeam, setExpandedTeam] = useState<number | null>(null)
   const [telegramLink, setTelegramLink] = useState('')
   const [sendingEmail, setSendingEmail] = useState<number | null>(null)
   const [busyMemberId, setBusyMemberId] = useState<number | null>(null)
+  const [acceptingProjectId, setAcceptingProjectId] = useState<number | null>(null)
   const [movingMember, setMovingMember] = useState<{
     member: TeamMember
     fromTeamId: number
   } | null>(null)
   const [moveTargetId, setMoveTargetId] = useState('')
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     if (!eventId) return
-    const data = await teamsService.getAll(eventId)
+    const data = await kitchensService.getTeams(eventId)
     setTeams(data)
-  }
+  }, [eventId])
 
   useEffect(() => {
     if (!eventId) return
-    const fetchTeams = async () => {
+    let cancelled = false
+    ;(async () => {
       try {
         await reload()
       } catch {
-        toast.error('حدث خطأ في تحميل الفرق')
+        if (!cancelled) toast.error('حدث خطأ في تحميل الفرق')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
+    })()
+    return () => {
+      cancelled = true
     }
+  }, [eventId, reload])
 
-    void fetchTeams()
-  }, [eventId])
-
-  const filteredTeams = teams.filter(
-    (team) =>
-      team.team_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (team.field || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (team.field_label || '').toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredTeams = useMemo(
+    () =>
+      teams.filter(
+        (team) =>
+          team.team_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (team.field || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (team.field_label || '').toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [teams, searchTerm],
   )
 
-  const handleSendTelegramLink = async (team: Team) => {
+  const handleSendTelegramLink = async (team: AdminTeamOverview) => {
     if (!telegramLink) {
       toast.error('يرجى إدخال رابط التلغرام')
       return
     }
-
     setSendingEmail(team.id!)
     try {
       const emails = (team.members ?? []).map((m) => m.email)
@@ -76,12 +94,7 @@ export default function AdminTeams() {
       await teamsService.sendTelegramLink(team.id!, telegramLink)
       toast.success('تم إرسال الرابط بنجاح')
       setTelegramLink('')
-
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.id === team.id ? { ...t, telegram_group_link: telegramLink } : t,
-        ),
-      )
+      await reload()
     } catch {
       toast.error('حدث خطأ في إرسال الرابط')
     } finally {
@@ -98,7 +111,7 @@ export default function AdminTeams() {
     setBusyMemberId(member.id)
     try {
       await kitchensService.removeTeamMember(eventId, teamId, member.id)
-      toast.success('تم إزالة العضو من الفريق')
+      toast.success('تمت إزالة العضو')
       await reload()
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'تعذر إزالة العضو')
@@ -109,11 +122,14 @@ export default function AdminTeams() {
 
   const handleMove = async () => {
     if (!movingMember?.member.id || !eventId || !moveTargetId) return
-    const toTeamId = Number(moveTargetId)
     setBusyMemberId(movingMember.member.id)
     try {
-      await kitchensService.moveTeamMember(eventId, movingMember.member.id, toTeamId)
-      toast.success('تم نقل العضو إلى الفريق الآخر')
+      await kitchensService.moveTeamMember(
+        eventId,
+        movingMember.member.id,
+        Number(moveTargetId),
+      )
+      toast.success('تم نقل العضو')
       setMovingMember(null)
       setMoveTargetId('')
       await reload()
@@ -124,9 +140,27 @@ export default function AdminTeams() {
     }
   }
 
+  const handleAccept = async (stage: AdminStageOverview) => {
+    if (!eventId || !stage.can_accept) return
+    const ok = window.confirm(
+      `اعتماد نتيجة ${STAGE_LABEL[stage.stage]} (متوسط ${stage.jury_average?.toFixed(1)}) ونشرها في لوحة المتصدرين؟`,
+    )
+    if (!ok) return
+    setAcceptingProjectId(stage.project_id)
+    try {
+      await kitchensService.acceptStageScore(eventId, stage.project_id)
+      toast.success('تم اعتماد النتيجة ونشرها')
+      await reload()
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'تعذر اعتماد النتيجة')
+    } finally {
+      setAcceptingProjectId(null)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex justify-center py-24">
         <Loader2 className="w-8 h-8 text-teknofest-orange animate-spin" />
       </div>
     )
@@ -134,223 +168,177 @@ export default function AdminTeams() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">إدارة الفرق</h1>
-          <p className="text-gray-400">
-            الأعضاء لا يغادرون بأنفسهم — فقط المدير يمكنه الإزالة أو النقل بين الفرق.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-teknofest-orange/20 text-teknofest-orange rounded-lg">
-          <Users className="w-5 h-5" />
-          <span className="font-medium">{teams.length} فريق</span>
-        </div>
+      <div className="card space-y-2">
+        <h1 className="text-2xl font-bold text-white">الفرق</h1>
+        <p className="text-gray-400 text-sm leading-relaxed">
+          كل شيء عن الفريق هنا: الأعضاء، التقديمات، درجات المحكّمين والملاحظات، واعتماد النتيجة
+          للنشر في لوحة المتصدرين (لكل مرحلة على حدة).
+        </p>
       </div>
 
       <div className="relative">
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
         <input
-          type="text"
+          type="search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="البحث عن فريق..."
+          placeholder="بحث عن فريق أو مسابقة…"
           className="input-field pr-12"
         />
       </div>
 
-      {filteredTeams.length === 0 ? (
-        <div className="card text-center py-12">
-          <Users className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-400">لا توجد فرق للعرض</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredTeams.map((team) => (
-            <div key={team.id} className="card">
-              <div
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => setExpandedTeam(expandedTeam === team.id ? null : team.id!)}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={
-                      team.gender === 'male'
-                        ? 'w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center'
-                        : 'w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center'
-                    }
-                  >
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">
-                      {team.team_name} - {team.gender === 'male' ? 'ذكور' : 'إناث'}
-                    </h3>
-                    <p className="text-gray-400 text-sm">
+      <div className="space-y-4">
+        {filteredTeams.length === 0 ? (
+          <div className="card text-center py-12 text-gray-500">لا توجد فرق</div>
+        ) : (
+          filteredTeams.map((team) => {
+            const open = expandedTeam === team.id
+            return (
+              <div key={team.id} className="card p-0 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExpandedTeam(open ? null : team.id!)}
+                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-right hover:bg-teknofest-medium-blue/30"
+                >
+                  <div className="min-w-0">
+                    <p className="text-white font-bold truncate">{team.team_name}</p>
+                    <p className="text-gray-400 text-sm truncate">
                       {team.field_label || team.field || 'لم تُختر مسابقة بعد'}
+                      {' · '}
+                      {team.member_count} أعضاء
+                      {' · '}
+                      {team.assigned_juries.length} محكّم
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-gray-400 text-sm">
-                    {team.members?.length ?? 0} أعضاء
-                  </span>
-                  {team.telegram_group_link && (
-                    <MessageCircle className="w-5 h-5 text-green-400" />
-                  )}
-                  {expandedTeam === team.id ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
+                  {open ? (
+                    <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />
                   )}
-                </div>
-              </div>
+                </button>
 
-              {expandedTeam === team.id && (
-                <div className="mt-6 pt-6 border-t border-teknofest-light-blue/20 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-teknofest-dark-blue/50 rounded-xl">
-                      <p className="text-gray-400 text-sm mb-1">نوع التسجيل</p>
-                      <p className="text-white">
-                        {team.registration_type === 'team_with_idea'
-                          ? 'فريق لديه فكرة'
-                          : 'فريق بدون فكرة'}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-teknofest-dark-blue/50 rounded-xl">
-                      <p className="text-gray-400 text-sm mb-1">تاريخ التسجيل</p>
-                      <p className="text-white">
-                        {team.created_at
-                          ? new Date(team.created_at).toLocaleDateString('ar-SA')
-                          : '-'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {team.initial_idea && (
-                    <div className="p-4 bg-teknofest-dark-blue/50 rounded-xl">
-                      <p className="text-gray-400 text-sm mb-2">فكرة المشروع</p>
-                      <p className="text-white">{team.initial_idea}</p>
-                    </div>
-                  )}
-
-                  <div>
-                    <h4 className="text-white font-medium mb-3">أعضاء الفريق</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {(team.members ?? []).map((member) => (
-                        <div
-                          key={member.id ?? member.email}
-                          className={`p-3 rounded-xl border space-y-2 ${
-                            member.is_leader
-                              ? 'bg-teknofest-orange/10 border-teknofest-orange/30'
-                              : 'bg-teknofest-dark-blue/50 border-teknofest-light-blue/20'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-medium">{member.full_name}</span>
-                            {member.is_leader && (
-                              <span className="text-xs px-2 py-0.5 bg-teknofest-orange text-white rounded">
-                                مشرف
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-gray-400 text-sm">{member.email}</p>
-                          <p className="text-gray-400 text-sm" dir="ltr">
-                            {member.phone}
-                          </p>
-                          {member.id ? (
-                            <div className="flex gap-2 pt-1">
+                {open ? (
+                  <div className="border-t border-teknofest-light-blue/15 px-5 py-5 space-y-8">
+                    {/* Members */}
+                    <section className="space-y-3">
+                      <h3 className="text-white font-semibold flex items-center gap-2">
+                        <Users className="w-4 h-4 text-teknofest-cyan" />
+                        الأعضاء ({team.members?.length ?? 0})
+                      </h3>
+                      <ul className="space-y-2">
+                        {(team.members ?? []).map((m) => (
+                          <li
+                            key={m.id}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-teknofest-dark-blue/40"
+                          >
+                            <div className="min-w-0 text-sm">
+                              <p className="text-white font-medium">
+                                {m.full_name}
+                                {m.is_leader ? (
+                                  <span className="text-teknofest-orange text-xs mr-2">قائد</span>
+                                ) : null}
+                              </p>
+                              <p className="text-gray-400 truncate">
+                                {m.email}
+                                {m.membership_number ? ` · ${m.membership_number}` : ''}
+                                {m.phone ? ` · ${m.phone}` : ''}
+                              </p>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
                               <button
                                 type="button"
-                                className="btn-secondary text-xs py-1.5 flex-1 flex items-center justify-center gap-1"
-                                disabled={busyMemberId === member.id}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setMovingMember({ member, fromTeamId: team.id! })
+                                disabled={busyMemberId === m.id}
+                                onClick={() => {
+                                  setMovingMember({ member: m, fromTeamId: team.id! })
                                   setMoveTargetId('')
                                 }}
+                                className="btn-secondary text-xs py-1.5 px-2 flex items-center gap-1"
                               >
                                 <ArrowLeftRight className="w-3.5 h-3.5" />
                                 نقل
                               </button>
                               <button
                                 type="button"
-                                className="btn-secondary text-xs py-1.5 flex-1 flex items-center justify-center gap-1 text-red-300"
-                                disabled={busyMemberId === member.id}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  void handleRemove(team.id!, member)
-                                }}
+                                disabled={busyMemberId === m.id}
+                                onClick={() => void handleRemove(team.id!, m)}
+                                className="btn-secondary text-xs py-1.5 px-2 flex items-center gap-1 text-red-300"
                               >
-                                {busyMemberId === member.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <UserMinus className="w-3.5 h-3.5" />
-                                )}
+                                <UserMinus className="w-3.5 h-3.5" />
                                 إزالة
                               </button>
                             </div>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
 
-                  <div className="p-4 bg-teknofest-dark-blue/50 rounded-xl">
-                    <h4 className="text-white font-medium mb-3 flex items-center gap-2">
-                      <MessageCircle className="w-5 h-5 text-teknofest-cyan" />
-                      رابط التلغرام
-                    </h4>
-                    {team.telegram_group_link ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-green-400">تم الإرسال:</span>
-                        <a
-                          href={team.telegram_group_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-teknofest-cyan hover:underline"
-                        >
-                          {team.telegram_group_link}
-                        </a>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Stages + jury */}
+                    <section className="space-y-4">
+                      <h3 className="text-white font-semibold flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-teknofest-orange" />
+                        التقديم والتحكيم
+                      </h3>
+                      {(['primary', 'final'] as const).map((key) => (
+                        <StageBlock
+                          key={key}
+                          stage={team.stages[key]}
+                          label={STAGE_LABEL[key]}
+                          accepting={acceptingProjectId}
+                          onAccept={handleAccept}
+                        />
+                      ))}
+                      {team.assigned_juries.length === 0 ? (
+                        <p className="text-sm text-teknofest-orange">
+                          لا محكّمين معيّنين لهذا الفريق — عيّن محكّمين من تبويب المحكمون قبل
+                          الاعتماد.
+                        </p>
+                      ) : null}
+                    </section>
+
+                    {/* Telegram */}
+                    <section className="space-y-3">
+                      <h3 className="text-white font-semibold flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-teknofest-cyan" />
+                        تلغرام
+                      </h3>
+                      {team.telegram_group_link ? (
+                        <p className="text-sm text-gray-400 break-all">{team.telegram_group_link}</p>
+                      ) : null}
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <input
-                          type="text"
+                          type="url"
                           value={telegramLink}
                           onChange={(e) => setTelegramLink(e.target.value)}
-                          placeholder="https://t.me/..."
+                          placeholder="رابط مجموعة التلغرام"
                           className="input-field flex-1"
-                          dir="ltr"
                         />
                         <button
-                          onClick={() => handleSendTelegramLink(team)}
+                          type="button"
                           disabled={sendingEmail === team.id}
-                          className="btn-primary flex items-center gap-2 disabled:opacity-50"
+                          onClick={() => void handleSendTelegramLink(team)}
+                          className="btn-primary flex items-center justify-center gap-2"
                         >
                           {sendingEmail === team.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <Send className="w-4 h-4" />
                           )}
-                          إرسال للأعضاء
+                          إرسال
                         </button>
                       </div>
-                    )}
+                    </section>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                ) : null}
+              </div>
+            )
+          })
+        )}
+      </div>
 
-      {movingMember && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-md space-y-4">
-            <h3 className="text-lg font-bold text-white">نقل العضو</h3>
-            <p className="text-gray-400 text-sm">
-              نقل <span className="text-white">{movingMember.member.full_name}</span> إلى فريق آخر
-            </p>
+      {movingMember ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="card max-w-md w-full space-y-4">
+            <h3 className="text-white font-bold">نقل {movingMember.member.full_name}</h3>
             <select
               className="input-field"
               value={moveTargetId}
@@ -361,7 +349,7 @@ export default function AdminTeams() {
                 .filter((t) => t.id !== movingMember.fromTeamId)
                 .map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.team_name} ({t.members?.length ?? 0}/6)
+                    {t.team_name}
                   </option>
                 ))}
             </select>
@@ -369,17 +357,14 @@ export default function AdminTeams() {
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => {
-                  setMovingMember(null)
-                  setMoveTargetId('')
-                }}
+                onClick={() => setMovingMember(null)}
               >
                 إلغاء
               </button>
               <button
                 type="button"
-                className="btn-primary disabled:opacity-50"
-                disabled={!moveTargetId || busyMemberId === movingMember.member.id}
+                className="btn-primary"
+                disabled={!moveTargetId}
                 onClick={() => void handleMove()}
               >
                 تأكيد النقل
@@ -387,7 +372,100 @@ export default function AdminTeams() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
+    </div>
+  )
+}
+
+function StageBlock({
+  stage,
+  label,
+  accepting,
+  onAccept,
+}: {
+  stage: AdminStageOverview | null
+  label: string
+  accepting: number | null
+  onAccept: (stage: AdminStageOverview) => void
+}) {
+  if (!stage) {
+    return (
+      <div className="rounded-xl border border-teknofest-light-blue/15 p-4 text-sm text-gray-500">
+        {label}: لم يُقدَّم بعد
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-teknofest-light-blue/20 p-4 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-white font-semibold">{label}</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {stage.files_count} ملف · محكّمون {stage.scored_jury_count}/{stage.required_jury_count}
+            {stage.jury_average != null
+              ? ` · متوسط ${stage.jury_average.toFixed(1)}`
+              : ''}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {stage.score_accepted ? (
+            <span className="inline-flex items-center gap-1 text-xs text-green-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              معتمد ومنشور
+            </span>
+          ) : stage.can_accept ? (
+            <button
+              type="button"
+              disabled={accepting === stage.project_id}
+              onClick={() => onAccept(stage)}
+              className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1"
+            >
+              {accepting === stage.project_id ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Star className="w-3.5 h-3.5" />
+              )}
+              اعتماد النتيجة
+            </button>
+          ) : (
+            <span className="text-xs text-gray-500">بانتظار اكتمال تحكيم المحكّمين</span>
+          )}
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-300 whitespace-pre-wrap">{stage.summary}</p>
+
+      <div className="space-y-2">
+        <p className="text-xs text-gray-500 flex items-center gap-1">
+          <Gavel className="w-3.5 h-3.5" />
+          تقييمات المحكّمين
+        </p>
+        {stage.evaluations.length === 0 ? (
+          <p className="text-xs text-gray-600">لا محكّمين معيّنين</p>
+        ) : (
+          <ul className="space-y-2">
+            {stage.evaluations.map((ev) => (
+              <li
+                key={ev.membership_number}
+                className="rounded-lg bg-teknofest-dark-blue/50 p-3 text-sm"
+              >
+                <div className="flex justify-between gap-2">
+                  <span className="text-white">
+                    {ev.full_name || ev.membership_number}
+                  </span>
+                  <span className={ev.evaluated ? 'text-teknofest-cyan font-medium' : 'text-gray-500'}>
+                    {ev.evaluated ? ev.score : 'لم يقيّم'}
+                  </span>
+                </div>
+                {ev.notes ? (
+                  <p className="text-gray-400 text-xs mt-1 whitespace-pre-wrap">{ev.notes}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }

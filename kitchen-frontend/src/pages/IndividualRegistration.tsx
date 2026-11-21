@@ -2,15 +2,24 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { ArrowRight, User, Lightbulb, Users, Check, ChevronRight, ExternalLink } from 'lucide-react'
+import {
+  ArrowRight,
+  User,
+  Lightbulb,
+  Users,
+  Check,
+  ChevronRight,
+  ExternalLink,
+  Loader2,
+} from 'lucide-react'
 import type { Individual, RegistrationType } from '../types'
 import { useProjectFields } from '../hooks/useProjectFields'
 import { individualsService, kitchensService } from '../services/api'
 import { getSession } from '../lib/auth-session'
 import { getVmsProfileUrl } from '../lib/vms-sso'
+import { libraryCompetitionUrl } from '../lib/competition'
 
 interface IndividualFormData {
-  preferred_field: string
   project_idea?: string
 }
 
@@ -23,12 +32,19 @@ type VmsSkillsSnapshot = {
 export default function IndividualRegistration() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
-  const { fields: projectFields, loading: fieldsLoading } = useProjectFields(eventId)
+  const {
+    fields: projectFields,
+    interestMin,
+    interestMax,
+    registrationOpen,
+    loading: fieldsLoading,
+  } = useProjectFields(eventId)
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [vmsProfile, setVmsProfile] = useState<VmsSkillsSnapshot | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
 
   const {
     register,
@@ -65,9 +81,27 @@ export default function IndividualRegistration() {
     }
   }, [eventId])
 
+  const min = interestMin ?? 1
+  const max = interestMax ?? Math.max(min, 5)
+
+  const toggleCompetition = (id: number) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id)
+      if (prev.length >= max) {
+        toast.error(`يمكنك اختيار ${max} مسابقات كحد أقصى`)
+        return prev
+      }
+      return [...prev, id]
+    })
+  }
+
   const onSubmit = async (data: IndividualFormData) => {
     if (!eventId) {
       toast.error('معرف الفعالية مفقود')
+      return
+    }
+    if (selectedIds.length < min || selectedIds.length > max) {
+      toast.error(`اختر بين ${min} و ${max} مسابقات`)
       return
     }
 
@@ -83,11 +117,11 @@ export default function IndividualRegistration() {
         ? 'individual_with_idea'
         : 'individual_no_idea'
 
-      // Identity + skills/interests come from VMS on the backend.
       const individualData = {
         event_id: eventId,
         registration_type: registrationType,
-        preferred_field: data.preferred_field as Individual['preferred_field'],
+        preferred_field: String(selectedIds[0]) as Individual['preferred_field'],
+        preferred_competition_ids: selectedIds,
         project_idea: hasIdea ? data.project_idea : undefined,
         technical_skills: vmsProfile?.technical_skills || '',
         interests: vmsProfile?.interests || '',
@@ -112,6 +146,27 @@ export default function IndividualRegistration() {
 
   const skillsText = vmsProfile?.technical_skills?.trim() || ''
   const interestsText = vmsProfile?.interests?.trim() || ''
+
+  if (fieldsLoading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="w-8 h-8 text-teknofest-orange animate-spin" />
+      </div>
+    )
+  }
+
+  if (!registrationOpen) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4">
+        <p className="text-teknofest-orange">
+          التسجيل غير متاح بعد — ينتظر المدير تفعيل المسابقات وقواعد الاهتمام.
+        </p>
+        <Link to={`/events/${eventId}/dashboard`} className="text-teknofest-cyan hover:underline">
+          العودة للوحتي
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen py-12 px-4">
@@ -249,24 +304,53 @@ export default function IndividualRegistration() {
                 </div>
 
                 <div>
-                  <label className="block text-white font-medium mb-2">المجال المفضل *</label>
-                  <select
-                    {...register('preferred_field', { required: 'يرجى اختيار المجال المفضل' })}
-                    className="input-field"
-                    disabled={fieldsLoading || projectFields.length === 0}
-                  >
-                    <option value="">
-                      {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة المفضلة'}
-                    </option>
-                    {projectFields.map((field) => (
-                      <option key={field.id} value={String(field.id)}>
-                        {field.label}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.preferred_field && (
-                    <p className="text-red-400 text-sm mt-1">{errors.preferred_field.message}</p>
-                  )}
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+                    <label className="block text-white font-medium">
+                      المسابقات التي تهمّك *
+                    </label>
+                    <span className="text-xs text-gray-500">
+                      اختر بين {min} و {max} — محدد: {selectedIds.length}
+                    </span>
+                  </div>
+                  <ul className="space-y-2 max-h-72 overflow-y-auto rounded-xl border border-teknofest-light-blue/20 divide-y divide-teknofest-light-blue/10">
+                    {projectFields.map((field) => {
+                      const on = selectedIds.includes(field.id)
+                      const href = libraryCompetitionUrl(String(field.id))
+                      return (
+                        <li key={field.id} className="flex items-stretch bg-teknofest-medium-blue/20">
+                          <button
+                            type="button"
+                            onClick={() => toggleCompetition(field.id)}
+                            className={`flex-1 flex items-center gap-3 px-3 py-3 text-right ${
+                              on ? 'bg-teknofest-orange/10' : ''
+                            }`}
+                          >
+                            <span
+                              className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                                on
+                                  ? 'bg-teknofest-orange border-teknofest-orange text-white'
+                                  : 'border-gray-500'
+                              }`}
+                            >
+                              {on ? <Check className="w-3.5 h-3.5" /> : null}
+                            </span>
+                            <span className="text-white text-sm">{field.label}</span>
+                          </button>
+                          {href ? (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 flex items-center text-teknofest-cyan hover:bg-teknofest-medium-blue/40"
+                              title="فتح صفحة المسابقة"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          ) : null}
+                        </li>
+                      )
+                    })}
+                  </ul>
                 </div>
 
                 {hasIdea && (
@@ -300,12 +384,22 @@ export default function IndividualRegistration() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || profileLoading}
+                  disabled={
+                    isSubmitting ||
+                    profileLoading ||
+                    selectedIds.length < min ||
+                    selectedIds.length > max
+                  }
                   onClick={async (e) => {
-                    const fields: Array<keyof IndividualFormData> = ['preferred_field']
-                    if (hasIdea) fields.push('project_idea')
-                    const ok = await trigger(fields)
-                    if (!ok) e.preventDefault()
+                    if (selectedIds.length < min || selectedIds.length > max) {
+                      toast.error(`اختر بين ${min} و ${max} مسابقات`)
+                      e.preventDefault()
+                      return
+                    }
+                    if (hasIdea) {
+                      const ok = await trigger(['project_idea'])
+                      if (!ok) e.preventDefault()
+                    }
                   }}
                   className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >

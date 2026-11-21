@@ -234,3 +234,27 @@ export const listJuryMembershipNumbers = async (
     .all<{ membership_number: string }>()
   return new Set((results ?? []).map((r) => r.membership_number.trim()))
 }
+
+/** Juries assigned to a specific team (required scorers for that team). */
+export const listJuriesAssignedToTeam = async (
+  env: Environment,
+  eventId: string,
+  teamId: number,
+): Promise<{ membership_number: string; full_name: string | null; email: string | null }[]> => {
+  const { results } = await env.D1_DB.prepare(
+    `SELECT j.membership_number, ej.full_name, ej.email
+     FROM jury_team_assignments j
+     LEFT JOIN event_juries ej
+       ON ej.event_id = j.event_id AND ej.membership_number = j.membership_number
+     WHERE j.event_id = ? AND j.team_id = ?
+     ORDER BY j.membership_number ASC`,
+  )
+    .bind(eventId, teamId)
+    .all<{ membership_number: string; full_name: string | null; email: string | null }>()
+
+  return (results ?? []).map((r) => ({
+    membership_number: r.membership_number.trim(),
+    full_name: r.full_name,
+    email: r.email,
+  }))
+}

@@ -8,6 +8,14 @@ const mapKitchen = (row: Record<string, unknown>): EventKitchen => ({
   created_by: String(row.created_by),
   created_at: String(row.created_at),
   updated_at: (row.updated_at as string) ?? null,
+  interest_min:
+    row.interest_min == null || row.interest_min === ''
+      ? null
+      : Number(row.interest_min),
+  interest_max:
+    row.interest_max == null || row.interest_max === ''
+      ? null
+      : Number(row.interest_max),
 })
 
 export const listEventKitchens = async (
@@ -70,6 +78,23 @@ export const disableEventKitchen = async (
      RETURNING *`,
   )
     .bind(eventId)
+    .first()
+  return row ? mapKitchen(row as Record<string, unknown>) : null
+}
+
+export const setKitchenInterestRules = async (
+  env: Environment,
+  eventId: string,
+  interestMin: number,
+  interestMax: number,
+): Promise<EventKitchen | null> => {
+  const row = await env.D1_DB.prepare(
+    `UPDATE event_kitchens
+     SET interest_min = ?, interest_max = ?, updated_at = datetime('now')
+     WHERE event_id = ?
+     RETURNING *`,
+  )
+    .bind(interestMin, interestMax, eventId)
     .first()
   return row ? mapKitchen(row as Record<string, unknown>) : null
 }

@@ -90,6 +90,57 @@ export type LeaderboardTeam = {
   member_count: number
 }
 
+export type LeaderboardScoredEntry = {
+  team_id: number
+  team_name: string
+  member_count: number
+  stage: 'primary' | 'final'
+  score: number
+  rank: number
+}
+
+export type AdminStageJuryScore = {
+  membership_number: string
+  full_name: string | null
+  email: string | null
+  score: number | null
+  notes: string | null
+  evaluated: boolean
+  evaluation_id: number | null
+  created_at: string | null
+}
+
+export type AdminStageOverview = {
+  project_id: number
+  stage: 'primary' | 'final'
+  title: string
+  summary: string
+  files_count: number
+  jury_average: number | null
+  required_jury_count: number
+  scored_jury_count: number
+  all_juries_scored: boolean
+  can_accept: boolean
+  score_accepted: boolean
+  score_accepted_at: string | null
+  score_accepted_by: string | null
+  evaluations: AdminStageJuryScore[]
+}
+
+export type AdminTeamOverview = Team & {
+  field_label?: string
+  member_count: number
+  assigned_juries: {
+    membership_number: string
+    full_name: string | null
+    email: string | null
+  }[]
+  stages: {
+    primary: AdminStageOverview | null
+    final: AdminStageOverview | null
+  }
+}
+
 // ==================== Auth ====================
 
 export const authService = {
@@ -122,18 +173,28 @@ export const kitchensService = {
     return response.data
   },
 
-  /** Competitions enabled for this kitchen (library ids). */
-  getFields: async (eventId: string): Promise<ProjectFieldOption[]> => {
+  /** Competitions + interest rules for this kitchen. */
+  getFields: async (
+    eventId: string,
+  ): Promise<{
+    competitions: ProjectFieldOption[]
+    interest_min: number | null
+    interest_max: number | null
+    registration_open: boolean
+  }> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/fields`)
     return response.data
   },
 
-  /** Full library catalog + selection flags (managers). */
+  /** Full library catalog + kitchen selection + interest rules (managers). */
   getCompetitionCatalog: async (
     eventId: string,
   ): Promise<{
     event_id: string
     selected_ids: number[]
+    interest_min: number | null
+    interest_max: number | null
+    registration_open: boolean
     competitions: (ProjectFieldOption & { selected: boolean })[]
   }> => {
     const response = await api.get(
@@ -145,13 +206,20 @@ export const kitchensService = {
   setKitchenCompetitions: async (
     eventId: string,
     competitionIds: number[],
+    interestMin: number,
+    interestMax: number,
   ): Promise<{
     event_id: string
     competition_ids: number[]
+    interest_min: number
+    interest_max: number
+    registration_open: boolean
     competitions: ProjectFieldOption[]
   }> => {
     const response = await api.put(`/kitchens/${encodeURIComponent(eventId)}/competitions`, {
       competition_ids: competitionIds,
+      interest_min: interestMin,
+      interest_max: interestMax,
     })
     return response.data
   },
@@ -258,8 +326,22 @@ export const kitchensService = {
     return response.data
   },
 
-  getTeams: async (eventId: string): Promise<Team[]> => {
+  getTeams: async (eventId: string): Promise<AdminTeamOverview[]> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/teams`)
+    return response.data
+  },
+
+  acceptStageScore: async (
+    eventId: string,
+    projectId: number,
+  ): Promise<{
+    project_id: number
+    stage: 'primary' | 'final'
+    jury_average: number
+  }> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/projects/${projectId}/accept-score`,
+    )
     return response.data
   },
 
@@ -280,10 +362,15 @@ export const kitchensService = {
     return response.data
   },
 
-  /** Public — no login required. Team name + member count only. */
+  /** Public — teams list + accepted primary/final score boards. */
   getLeaderboard: async (
     eventId: string,
-  ): Promise<{ event_id: string; teams: LeaderboardTeam[] }> => {
+  ): Promise<{
+    event_id: string
+    teams: LeaderboardTeam[]
+    primary: LeaderboardScoredEntry[]
+    final: LeaderboardScoredEntry[]
+  }> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/leaderboard`)
     return response.data
   },

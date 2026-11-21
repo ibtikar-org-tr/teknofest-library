@@ -22,19 +22,24 @@ import {
   removeMemberFromTeam,
   setTeamCompetition,
   teamHasPrimarySubmission,
-  listLeaderboardTeams,
+  listPublicLeaderboard,
   listTeams,
 } from '../repositories/teams'
+import {
+  acceptProjectStageScore,
+  listAdminTeamsOverview,
+} from '../repositories/admin-team-overview'
 import { listLibraryCompetitionFields } from '../repositories/library-competitions'
 import {
   enrichIndividualsWithCompetitionLabels,
   enrichProjectsWithCompetitionLabels,
   enrichTeamsWithCompetitionLabels,
+  getKitchenCompetitionSettings,
   isCompetitionAllowedForKitchen,
   listKitchenCompetitionFields,
   listKitchenCompetitionIds,
   resolveCompetitionLabel,
-  setKitchenCompetitionIds,
+  setKitchenCompetitionSettings,
 } from '../repositories/kitchen-competitions'
 import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
 import { canManageVmsEvent } from '../repositories/vms-event-permissions'
@@ -92,8 +97,9 @@ async function buildKitchenViews(
 const withEventAccess = [memberAuthMiddleware, requireEventKitchenAccess] as const
 
 /**
- * Public leaderboard — no auth. Team name + member count only.
- * Available when the event kitchen is enabled.
+ * Public leaderboard — no auth.
+ * `teams`: all active teams (name + member count).
+ * `primary` / `final`: ranked scores only after admin acceptance for that stage.
  */
 kitchensRouter.get('/:eventId/leaderboard', async (c) => {
   const eventId = c.req.param('eventId')
@@ -101,8 +107,8 @@ kitchensRouter.get('/:eventId/leaderboard', async (c) => {
   if (!kitchen?.enabled) {
     return c.json({ message: 'Kitchen not available for this event' }, 404)
   }
-  const teams = await listLeaderboardTeams(c.env, eventId)
-  return c.json({ event_id: eventId, teams })
+  const board = await listPublicLeaderboard(c.env, eventId)
+  return c.json({ event_id: eventId, ...board })
 })
 
 /** Enabled kitchens (registered members + VMS event managers). */
@@ -113,19 +119,19 @@ kitchensRouter.get('/', memberAuthMiddleware, async (c) => {
 })
 
 /**
- * Competitions available in this kitchen (admin allowlist ∩ library catalog).
- * Values are library competition ids (string). Empty list = none enabled yet.
+ * Competitions + interest rules for this kitchen.
+ * `registration_open` is false until the admin saves allowlist + min/max.
  */
 kitchensRouter.get('/:eventId/fields', ...withEventAccess, async (c) => {
   try {
-    return c.json(await listKitchenCompetitionFields(c.env, c.req.param('eventId')))
+    return c.json(await getKitchenCompetitionSettings(c.env, c.req.param('eventId')))
   } catch (error) {
     console.error('Failed to load kitchen competitions', error)
     return c.json({ message: 'Could not load competitions from library' }, 502)
   }
 })
 
-/** Full library catalog + kitchen selection (managers only). */
+/** Full library catalog + kitchen selection + interest rules (managers only). */
 kitchensRouter.get('/:eventId/competitions/catalog', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const member = c.get('member')
@@ -133,14 +139,18 @@ kitchensRouter.get('/:eventId/competitions/catalog', ...withEventAccess, async (
     return c.json({ message: 'Only VMS event managers can view the competition catalog' }, 403)
   }
   try {
-    const [catalog, selectedIds] = await Promise.all([
+    const [catalog, selectedIds, settings] = await Promise.all([
       listLibraryCompetitionFields(c.env),
       listKitchenCompetitionIds(c.env, eventId),
+      getKitchenCompetitionSettings(c.env, eventId),
     ])
     const selected = new Set(selectedIds)
     return c.json({
       event_id: eventId,
       selected_ids: selectedIds,
+      interest_min: settings.interest_min,
+      interest_max: settings.interest_max,
+      registration_open: settings.registration_open,
       competitions: catalog.map((row) => ({
         ...row,
         selected: selected.has(row.id),
@@ -152,7 +162,10 @@ kitchensRouter.get('/:eventId/competitions/catalog', ...withEventAccess, async (
   }
 })
 
-/** Replace kitchen competition allowlist (managers only). Body: `{ competition_ids: number[] }`. */
+/**
+ * Replace allowlist + interest min/max (managers only).
+ * Body: `{ competition_ids: number[], interest_min: number, interest_max: number }`
+ */
 kitchensRouter.put('/:eventId/competitions', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
   const member = c.get('member')
@@ -160,26 +173,54 @@ kitchensRouter.put('/:eventId/competitions', ...withEventAccess, async (c) => {
     return c.json({ message: 'Only VMS event managers can set kitchen competitions' }, 403)
   }
 
-  const body = await c.req.json<{ competition_ids?: unknown }>()
+  const body = await c.req.json<{
+    competition_ids?: unknown
+    interest_min?: unknown
+    interest_max?: unknown
+  }>()
   const raw = body.competition_ids
   if (!Array.isArray(raw)) {
     return c.json({ message: 'competition_ids must be an array' }, 400)
   }
   const ids = raw.map((v) => Number(v))
+  const interestMin = Number(body.interest_min)
+  const interestMax = Number(body.interest_max)
 
   try {
-    const result = await setKitchenCompetitionIds(c.env, eventId, ids)
+    const result = await setKitchenCompetitionSettings(
+      c.env,
+      eventId,
+      ids,
+      interestMin,
+      interestMax,
+    )
     if (!result.ok) return c.json({ message: result.message }, 400)
+    const settings = await getKitchenCompetitionSettings(c.env, eventId)
     return c.json({
       event_id: eventId,
       competition_ids: result.competition_ids,
-      competitions: await listKitchenCompetitionFields(c.env, eventId),
+      interest_min: result.interest_min,
+      interest_max: result.interest_max,
+      registration_open: settings.registration_open,
+      competitions: settings.competitions,
     })
   } catch (error) {
     console.error('Failed to save kitchen competitions', error)
     return c.json({ message: 'Could not validate competitions against library' }, 502)
   }
 })
+
+async function requireRegistrationOpen(env: Environment, eventId: string) {
+  const settings = await getKitchenCompetitionSettings(env, eventId)
+  if (!settings.registration_open) {
+    return {
+      ok: false as const,
+      message:
+        'Kitchen registration is closed until the event manager sets available competitions and interest min/max',
+    }
+  }
+  return { ok: true as const, settings }
+}
 
 /** Snapshot of the caller's VMS identity + skills/interests (read-only; edit on VMS /profile). */
 kitchensRouter.get('/:eventId/my-vms-profile', ...withEventAccess, async (c) => {
@@ -209,6 +250,9 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
   const member = c.get('member')
   const sessionEmail = member?.email?.trim().toLowerCase()
   const sessionMembership = member?.membership_number?.trim()
+
+  const registration = await requireRegistrationOpen(c.env, eventId)
+  if (!registration.ok) return c.json({ message: registration.message }, 403)
 
   if (sessionMembership && (await isEventJury(c.env, eventId, sessionMembership))) {
     return c.json({ message: 'Juries cannot create or join teams' }, 403)
@@ -290,6 +334,9 @@ kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
     return c.json({ message: 'Authenticated VMS member required' }, 401)
   }
 
+  const registration = await requireRegistrationOpen(c.env, eventId)
+  if (!registration.ok) return c.json({ message: registration.message }, 403)
+
   if (await isEventJury(c.env, eventId, member.membership_number)) {
     return c.json({ message: 'Juries cannot enter the team pool' }, 403)
   }
@@ -323,20 +370,40 @@ kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
     )
   }
 
-  const preferredId = Number(body.preferred_field)
-  if (!Number.isFinite(preferredId) || preferredId <= 0) {
-    return c.json({ message: 'preferred_field must be a library competition id' }, 400)
-  }
-  if (!(await isCompetitionAllowedForKitchen(c.env, eventId, preferredId))) {
+  const { interest_min: min, interest_max: max } = registration.settings
+  const rawIds = Array.isArray(body.preferred_competition_ids)
+    ? body.preferred_competition_ids
+    : body.preferred_field != null
+      ? [body.preferred_field]
+      : []
+  const preferredIds = [
+    ...new Set(
+      rawIds
+        .map((v: unknown) => Number(v))
+        .filter((id: number) => Number.isFinite(id) && id > 0),
+    ),
+  ]
+  if (preferredIds.length < (min ?? 1) || preferredIds.length > (max ?? preferredIds.length)) {
     return c.json(
-      { message: 'This competition is not available in this kitchen' },
+      {
+        message: `Select between ${min} and ${max} competitions you are interested in`,
+      },
       400,
     )
+  }
+  for (const id of preferredIds) {
+    if (!(await isCompetitionAllowedForKitchen(c.env, eventId, id))) {
+      return c.json(
+        { message: `Competition ${id} is not available in this kitchen` },
+        400,
+      )
+    }
   }
 
   const individual = await createIndividual(c.env, {
     ...body,
-    preferred_field: String(preferredId),
+    preferred_field: String(preferredIds[0]),
+    preferred_competition_ids: preferredIds,
     event_id: eventId,
     email: member.email || profile.email,
     membership_number: member.membership_number,
@@ -387,6 +454,10 @@ kitchensRouter.post('/:eventId/teams/:teamId/join', ...withEventAccess, async (c
   if (!member?.membership_number || !member.email) {
     return c.json({ message: 'Authenticated VMS member required' }, 401)
   }
+
+  const registration = await requireRegistrationOpen(c.env, eventId)
+  if (!registration.ok) return c.json({ message: registration.message }, 403)
+
   if (!Number.isFinite(teamId) || teamId <= 0) {
     return c.json({ message: 'Invalid team id' }, 400)
   }
@@ -630,9 +701,34 @@ kitchensRouter.get('/:eventId/teams', ...withEventAccess, async (c) => {
   if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
     return c.json({ message: 'Only VMS event managers can list teams' }, 403)
   }
-  const teams = await listTeams(c.env, eventId)
-  return c.json(await enrichTeamsWithCompetitionLabels(c.env, teams))
+  // Rich overview: members, stages, jury scores/notes, accept readiness.
+  return c.json(await listAdminTeamsOverview(c.env, eventId))
 })
+
+/** Accept a stage's jury average for the public leaderboard (managers only). */
+kitchensRouter.post(
+  '/:eventId/projects/:projectId/accept-score',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const projectId = Number(c.req.param('projectId'))
+    const member = c.get('member')
+    if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can accept stage scores' }, 403)
+    }
+    if (!Number.isFinite(projectId) || projectId <= 0) {
+      return c.json({ message: 'Invalid project id' }, 400)
+    }
+    const result = await acceptProjectStageScore(
+      c.env,
+      eventId,
+      projectId,
+      member!.membership_number,
+    )
+    if (!result.ok) return c.json({ message: result.message }, result.status)
+    return c.json(result)
+  },
+)
 
 kitchensRouter.get('/:eventId/individuals', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')

@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       value: stats.totalProjects,
       icon: FileText,
       color: 'from-orange-500 to-red-400',
-      link: `${base}/projects`,
+      link: `${base}/teams`,
     },
     {
       title: 'أفراد بدون فريق',
@@ -152,27 +152,29 @@ export default function AdminDashboard() {
               </div>
             </Link>
             <Link
-              to={`${base}/projects`}
+              to={`${base}/teams`}
               className="flex items-center gap-3 p-4 bg-teknofest-dark-blue/50 rounded-xl hover:bg-teknofest-medium-blue/50 transition-colors"
             >
               <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
                 <FileText className="w-5 h-5 text-orange-400" />
               </div>
               <div>
-                <p className="text-white font-medium">مراجعة المشاريع</p>
-                <p className="text-gray-400 text-sm">{stats.totalProjects} مشروع للمراجعة</p>
+                <p className="text-white font-medium">الفرق والتقديمات</p>
+                <p className="text-gray-400 text-sm">
+                  {stats.totalProjects} تقديم · اعتماد النتائج
+                </p>
               </div>
             </Link>
             <Link
-              to={`${base}/evaluations`}
+              to={`${base}/juries`}
               className="flex items-center gap-3 p-4 bg-teknofest-dark-blue/50 rounded-xl hover:bg-teknofest-medium-blue/50 transition-colors"
             >
               <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
                 <Star className="w-5 h-5 text-green-300" />
               </div>
               <div>
-                <p className="text-white font-medium">تقييم المشاريع</p>
-                <p className="text-gray-400 text-sm">ابدأ تقييم المشاريع المقدمة</p>
+                <p className="text-white font-medium">المحكمون</p>
+                <p className="text-gray-400 text-sm">تعيين المحكّمين وتوزيع الفرق</p>
               </div>
             </Link>
           </div>
