@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Download, ArrowRight, FileText, Link2, Cpu, Database, BookOpen } from "lucide-react";
-import { useRoute, useSearchParams } from "wouter";
+import { useEffect } from "react";
+import { useLocation, useRoute, useSearchParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
     buildApiUrl,
@@ -14,6 +15,7 @@ import {
     type CompetitionDataApi,
 } from "@/lib/competitions";
 import { useLanguage } from "@/lib/LanguageContext";
+import { withLang } from "@/lib/lang";
 import heroBg from "@assets/generated_images/rocket_competition.png";
 import CompetitionTimeline from "@/components/CompetitionTimeline";
 import CompetitionAwards from "@/components/CompetitionAwards";
@@ -25,9 +27,19 @@ type DetailTab = (typeof DETAIL_TABS)[number];
 const isDetailTab = (value: string | null): value is DetailTab =>
   !!value && (DETAIL_TABS as readonly string[]).includes(value);
 
+function decodeRouteKey(raw: string | undefined): string {
+  if (!raw) return "";
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export default function CompetitionDetail() {
   const [match, params] = useRoute("/competition/:id");
-    const id = match ? params.id : "1";
+    const routeKey = decodeRouteKey(match ? params.id : undefined) || "1";
+    const [, setLocation] = useLocation();
     const { language, t } = useLanguage();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab: DetailTab = isDetailTab(searchParams.get("tab"))
@@ -51,28 +63,39 @@ export default function CompetitionDetail() {
     };
 
     const { data, isLoading, error } = useQuery<CompetitionApi>({
-        queryKey: [buildApiUrl(`/api/competitions/${id}`)],
+        queryKey: [buildApiUrl(`/api/competitions/${encodeURIComponent(routeKey)}`)],
     });
+
+    // Canonicalize name-based URLs to /competition/:id (keep lang/tab query).
+    useEffect(() => {
+      if (!data?.id) return;
+      if (String(data.id) === routeKey) return;
+      const qs = searchParams.toString();
+      const path = `/competition/${data.id}${qs ? `?${qs}` : ""}`;
+      setLocation(withLang(path, language), { replace: true });
+    }, [data?.id, routeKey, searchParams, setLocation, language]);
+
+    const competitionId = data?.id;
 
     // Get the latest year or default to current year
     const currentYear = data?.years?.length ? Math.max(...data.years) : new Date().getFullYear();
 
     // Fetch competition data (timeline, awards, criteria)
     const { data: competitionData, isLoading: isLoadingData } = useQuery<CompetitionDataApi>({
-        queryKey: [buildApiUrl(`/api/competition-data/${id}/${currentYear}`)],
-        enabled: !!data, // Only fetch when competition data is loaded
+        queryKey: [buildApiUrl(`/api/competition-data/${competitionId}/${currentYear}`)],
+        enabled: !!competitionId,
     });
 
     // Fetch report files for this competition
     const { data: reportFiles, isLoading: isLoadingReportFiles } = useQuery<any[]>({
-        queryKey: [buildApiUrl(`/api/report-files/competition/${id}`)],
-        enabled: !!data,
+        queryKey: [buildApiUrl(`/api/report-files/competition/${competitionId}`)],
+        enabled: !!competitionId,
     });
 
     // Fetch resources for this competition
     const { data: resources, isLoading: isLoadingResources } = useQuery<any[]>({
-        queryKey: [buildApiUrl(`/api/resources/competition/${id}`)],
-        enabled: !!data,
+        queryKey: [buildApiUrl(`/api/resources/competition/${competitionId}`)],
+        enabled: !!competitionId,
     });
 
     const localized = (suffix: "name" | "description" | "link" | "application_link") =>

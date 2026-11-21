@@ -28,6 +28,37 @@ export const getCompetition = async (
   return row ? mapCompetitionRow(row) : null;
 };
 
+/** Resolve by numeric id or exact name match (ar / en / tr), ignoring case and outer whitespace. */
+export const getCompetitionByIdOrName = async (
+  env: Environment,
+  key: string
+): Promise<Competition | null> => {
+  const raw = key.trim();
+  if (!raw) return null;
+
+  const asId = Number(raw);
+  if (Number.isFinite(asId) && asId > 0 && String(asId) === raw) {
+    return getCompetition(env, asId);
+  }
+
+  const needle = raw.toLowerCase();
+  const { results } = await env.D1_DB.prepare(
+    `SELECT * FROM ${TABLE}
+     WHERE deleted_at IS NULL
+       AND (
+         lower(trim(COALESCE(ar_name, ''))) = ?
+         OR lower(trim(COALESCE(en_name, ''))) = ?
+         OR lower(trim(COALESCE(tr_name, ''))) = ?
+       )
+     LIMIT 1`,
+  )
+    .bind(needle, needle, needle)
+    .all();
+
+  const row = results?.[0];
+  return row ? mapCompetitionRow(row) : null;
+};
+
 export const createCompetition = async (
   env: Environment,
   payload: CreateCompetitionPayload

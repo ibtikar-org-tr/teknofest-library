@@ -3,6 +3,7 @@ import type { AppBindings } from '../types/env';
 import {
 	listCompetitions,
 	getCompetition,
+	getCompetitionByIdOrName,
 	createCompetition,
 	updateCompetition,
 	deleteCompetition
@@ -16,10 +17,15 @@ competitionRouters.get('/', async (c) => {
 	return c.json(data);
 });
 
-// Get a competition by ID
+/** Get by numeric id or competition name (ar / en / tr). */
 competitionRouters.get('/:id', async (c) => {
-	const id = Number(c.req.param('id'));
-	const item = await getCompetition(c.env, id);
+	let key = c.req.param('id');
+	try {
+		key = decodeURIComponent(key);
+	} catch {
+		/* keep raw */
+	}
+	const item = await getCompetitionByIdOrName(c.env, key);
 	if (!item) return c.json({ message: 'Not found' }, 404);
 	return c.json(item);
 });
