@@ -1,7 +1,14 @@
 import { Hono } from 'hono'
 import { memberAuthMiddleware } from '../middleware/staff-auth'
 import { requireEventKitchenAccess } from '../middleware/event-access'
-import { createIndividual, listIndividuals } from '../repositories/individuals'
+import {
+  createIndividual,
+  getIndividual,
+  getIndividualsByIds,
+  listIndividuals,
+  markIndividualUnassigned,
+  markIndividualsAssigned,
+} from '../repositories/individuals'
 import { createProject, listProjects, listProjectsByTeam } from '../repositories/projects'
 import { listProjectFiles } from '../repositories/project-files'
 import {
@@ -851,6 +858,244 @@ kitchensRouter.get('/:eventId/individuals', ...withEventAccess, async (c) => {
     : individuals
   return c.json(await enrichIndividualsWithCompetitionLabels(c.env, filtered))
 })
+
+/** Manager: create a team from unassigned individual pool entries. */
+kitchensRouter.post('/:eventId/assign-individuals', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can assign individuals' }, 403)
+  }
+
+  const body = await c.req.json<{
+    individual_ids?: number[]
+    team_name?: string
+    field?: string
+  }>()
+  const individualIds = (body.individual_ids ?? [])
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && n > 0)
+  const teamName = body.team_name?.trim() || ''
+  const field = String(body.field ?? '').trim()
+
+  if (individualIds.length === 0) {
+    return c.json({ message: 'individual_ids is required' }, 400)
+  }
+  if (!teamName) return c.json({ message: 'team_name is required' }, 400)
+  if (!field) return c.json({ message: 'field (competition id) is required' }, 400)
+
+  const maxTeamSize = await getKitchenMaxTeamSize(c.env, eventId)
+  if (individualIds.length > maxTeamSize) {
+    return c.json({ message: `A team may have at most ${maxTeamSize} members` }, 400)
+  }
+  if (!(await isCompetitionAllowedForKitchen(c.env, eventId, Number(field)))) {
+    return c.json({ message: 'Competition is not allowlisted for this kitchen' }, 400)
+  }
+
+  const individuals = await getIndividualsByIds(c.env, eventId, individualIds)
+  if (individuals.length !== individualIds.length) {
+    return c.json(
+      { message: 'Some individuals were not found or are not in this event' },
+      400,
+    )
+  }
+  if (individuals.some((ind) => ind.is_assigned)) {
+    return c.json({ message: 'Some individuals are already assigned to a team' }, 400)
+  }
+
+  const genders = new Set(individuals.map((ind) => ind.gender).filter(Boolean))
+  if (genders.size !== 1) {
+    return c.json({ message: 'Cannot create a team from mixed genders' }, 400)
+  }
+  const teamGender = [...genders][0]
+
+  for (const ind of individuals) {
+    const onTeam = await findTeamForMemberInEvent(
+      c.env,
+      eventId,
+      ind.membership_number ?? undefined,
+      ind.email,
+    )
+    if (onTeam) {
+      return c.json(
+        {
+          message: `${ind.full_name} is already on a team`,
+          team_id: onTeam.id,
+        },
+        409,
+      )
+    }
+  }
+
+  const team = await createTeam(c.env, {
+    event_id: eventId,
+    team_name: teamName,
+    registration_type: 'team_no_idea',
+    field,
+    gender: teamGender,
+    members: individuals.map((ind, index) => ({
+      full_name: ind.full_name,
+      email: ind.email,
+      phone: ind.phone,
+      membership_number: ind.membership_number,
+      is_leader: index === 0,
+    })),
+  })
+
+  await markIndividualsAssigned(
+    c.env,
+    individuals.map((ind) => ind.id),
+    team.id,
+  )
+
+  return c.json(await getTeam(c.env, team.id), 201)
+})
+
+/** Manager: add unassigned individuals into an existing team. */
+kitchensRouter.post(
+  '/:eventId/teams/:teamId/add-individuals',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const teamId = Number(c.req.param('teamId'))
+    const member = c.get('member')
+    if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can assign individuals' }, 403)
+    }
+    if (!Number.isFinite(teamId) || teamId <= 0) {
+      return c.json({ message: 'Invalid team id' }, 400)
+    }
+
+    const body = await c.req.json<number[] | { individual_ids?: number[] }>()
+    const individualIds = (Array.isArray(body) ? body : body.individual_ids ?? [])
+      .map(Number)
+      .filter((n) => Number.isFinite(n) && n > 0)
+    if (individualIds.length === 0) {
+      return c.json({ message: 'individual_ids is required' }, 400)
+    }
+
+    const team = await getTeam(c.env, teamId)
+    if (!team || team.event_id !== eventId || !team.is_active) {
+      return c.json({ message: 'Team not found in this event kitchen' }, 404)
+    }
+
+    const maxTeamSize = await getKitchenMaxTeamSize(c.env, eventId)
+    const memberCount = team.members?.length ?? 0
+    if (memberCount + individualIds.length > maxTeamSize) {
+      return c.json(
+        {
+          message: `Cannot add ${individualIds.length} members; ${Math.max(0, maxTeamSize - memberCount)} slots left`,
+        },
+        400,
+      )
+    }
+
+    const individuals = await getIndividualsByIds(c.env, eventId, individualIds)
+    if (individuals.length !== individualIds.length) {
+      return c.json(
+        { message: 'Some individuals were not found or are not in this event' },
+        400,
+      )
+    }
+    if (individuals.some((ind) => ind.is_assigned)) {
+      return c.json({ message: 'Some individuals are already assigned to a team' }, 400)
+    }
+
+    const genders = new Set(individuals.map((ind) => ind.gender).filter(Boolean))
+    if (genders.size === 0) {
+      return c.json({ message: 'Individuals are missing gender' }, 400)
+    }
+    if (!team.gender) {
+      if (genders.size !== 1) {
+        return c.json({ message: 'Cannot determine team gender from mixed individuals' }, 400)
+      }
+      await c.env.D1_DB.prepare(
+        `UPDATE teams SET gender = ?, updated_at = datetime('now') WHERE id = ?`,
+      )
+        .bind([...genders][0], teamId)
+        .run()
+      team.gender = [...genders][0]
+    } else if ([...genders].some((g) => g !== team.gender)) {
+      return c.json({ message: 'Individuals gender does not match the team' }, 400)
+    }
+
+    for (const ind of individuals) {
+      const onTeam = await findTeamForMemberInEvent(
+        c.env,
+        eventId,
+        ind.membership_number ?? undefined,
+        ind.email,
+      )
+      if (onTeam) {
+        return c.json(
+          {
+            message: `${ind.full_name} is already on a team`,
+            team_id: onTeam.id,
+          },
+          409,
+        )
+      }
+      await addMemberToTeam(c.env, teamId, {
+        full_name: ind.full_name,
+        email: ind.email,
+        phone: ind.phone,
+        membership_number: ind.membership_number,
+        is_leader: false,
+      })
+    }
+
+    await markIndividualsAssigned(c.env, individualIds, teamId)
+    const updated = await getTeam(c.env, teamId)
+    return c.json({
+      message: `Added ${individuals.length} individuals to the team`,
+      team_id: teamId,
+      team_name: updated?.team_name ?? team.team_name,
+      total_members: updated?.members?.length ?? 0,
+    })
+  },
+)
+
+/** Manager: unassign an individual from their team (removes team membership). */
+kitchensRouter.post(
+  '/:eventId/individuals/:individualId/unassign',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const individualId = Number(c.req.param('individualId'))
+    const member = c.get('member')
+    if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can unassign individuals' }, 403)
+    }
+    if (!Number.isFinite(individualId) || individualId <= 0) {
+      return c.json({ message: 'Invalid individual id' }, 400)
+    }
+
+    const individual = await getIndividual(c.env, individualId)
+    if (!individual || individual.event_id !== eventId) {
+      return c.json({ message: 'Individual not found in this event kitchen' }, 404)
+    }
+    if (!individual.is_assigned || !individual.assigned_team_id) {
+      return c.json({ message: 'Individual is not assigned' })
+    }
+
+    const teamId = individual.assigned_team_id
+    const team = await getTeam(c.env, teamId)
+    const teamMember = team?.members?.find(
+      (m) =>
+        (individual.membership_number &&
+          m.membership_number === individual.membership_number) ||
+        m.email?.toLowerCase() === individual.email.toLowerCase(),
+    )
+    if (teamMember) {
+      const result = await removeMemberFromTeam(c.env, eventId, teamId, teamMember.id)
+      if (!result.ok) return c.json({ message: result.message }, result.status)
+    } else {
+      await markIndividualUnassigned(c.env, individualId)
+    }
+
+    return c.json({ message: 'Individual unassigned', team_id: teamId })
+  },
+)
 
 kitchensRouter.get('/:eventId/projects', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')

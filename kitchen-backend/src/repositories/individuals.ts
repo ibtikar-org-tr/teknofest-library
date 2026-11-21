@@ -92,3 +92,49 @@ export const listUnassignedIndividuals = async (
   ).all()
   return (results ?? []).map((row) => mapIndividual(row as Record<string, unknown>))
 }
+
+export const getIndividualsByIds = async (
+  env: Environment,
+  eventId: string,
+  ids: number[],
+): Promise<Individual[]> => {
+  if (ids.length === 0) return []
+  const placeholders = ids.map(() => '?').join(', ')
+  const { results } = await env.D1_DB.prepare(
+    `SELECT * FROM individuals
+     WHERE event_id = ? AND id IN (${placeholders})
+     ORDER BY id ASC`,
+  )
+    .bind(eventId, ...ids)
+    .all()
+  return (results ?? []).map((row) => mapIndividual(row as Record<string, unknown>))
+}
+
+export const markIndividualsAssigned = async (
+  env: Environment,
+  individualIds: number[],
+  teamId: number,
+): Promise<void> => {
+  for (const id of individualIds) {
+    await env.D1_DB.prepare(
+      `UPDATE individuals
+       SET is_assigned = 1, assigned_team_id = ?, updated_at = datetime('now')
+       WHERE id = ?`,
+    )
+      .bind(teamId, id)
+      .run()
+  }
+}
+
+export const markIndividualUnassigned = async (
+  env: Environment,
+  individualId: number,
+): Promise<void> => {
+  await env.D1_DB.prepare(
+    `UPDATE individuals
+     SET is_assigned = 0, assigned_team_id = NULL, updated_at = datetime('now')
+     WHERE id = ?`,
+  )
+    .bind(individualId)
+    .run()
+}

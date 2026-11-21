@@ -128,8 +128,8 @@ export default function AdminIndividuals() {
   const handleAssign = async () => {
     if (assignMode === 'new') {
       // Create new team
-      if (selectedIndividuals.length < 3) {
-        toast.error('يجب اختيار 3 أفراد على الأقل')
+      if (selectedIndividuals.length < 1) {
+        toast.error('يجب اختيار فرد واحد على الأقل')
         return
       }
       if (selectedIndividuals.length > maxTeamSize) {
@@ -148,6 +148,7 @@ export default function AdminIndividuals() {
       setAssigning(true)
       try {
         await individualsService.assignToTeam(
+          eventId,
           selectedIndividuals,
           newTeamName,
           newTeamField
@@ -190,7 +191,11 @@ export default function AdminIndividuals() {
 
       setAssigning(true)
       try {
-        await individualsService.addToExistingTeam(selectedExistingTeam, selectedIndividuals)
+        await individualsService.addToExistingTeam(
+          eventId,
+          selectedExistingTeam,
+          selectedIndividuals,
+        )
         toast.success('تم إضافة الأفراد إلى الفريق بنجاح')
 
         const [individualsData, teamsData] = await Promise.all([
@@ -217,7 +222,7 @@ export default function AdminIndividuals() {
 
     setAssigning(true)
     try {
-      await individualsService.unassignIndividual(individual.id!)
+      await individualsService.unassignIndividual(eventId, individual.id!)
       toast.success('تم إلغاء الفرز بنجاح')
 
       // Refresh data

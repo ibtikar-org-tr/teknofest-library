@@ -507,17 +507,27 @@ export const individualsService = {
     return response.data
   },
 
-  assignToTeam: async (individualIds: number[], teamName: string, field: string): Promise<Team> => {
-    const response = await api.post('/students/assign-individuals', {
-      individual_ids: individualIds,
-      team_name: teamName,
-      field: field,
-    })
+  assignToTeam: async (
+    eventId: string,
+    individualIds: number[],
+    teamName: string,
+    field: string,
+  ): Promise<Team> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/assign-individuals`,
+      {
+        individual_ids: individualIds,
+        team_name: teamName,
+        field: field,
+      },
+    )
     return response.data
   },
 
-  unassignIndividual: async (individualId: number) => {
-    const response = await api.post(`/students/individuals/${individualId}/unassign`)
+  unassignIndividual: async (eventId: string, individualId: number) => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/individuals/${individualId}/unassign`,
+    )
     return response.data
   },
 
@@ -528,8 +538,15 @@ export const individualsService = {
     return response.data
   },
 
-  addToExistingTeam: async (teamId: number, individualIds: number[]): Promise<{ message: string; team_id: number; team_name: string; total_members: number }> => {
-    const response = await api.post(`/students/add-to-team/${teamId}`, individualIds)
+  addToExistingTeam: async (
+    eventId: string,
+    teamId: number,
+    individualIds: number[],
+  ): Promise<{ message: string; team_id: number; team_name: string; total_members: number }> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/teams/${teamId}/add-individuals`,
+      individualIds,
+    )
     return response.data
   },
 }
