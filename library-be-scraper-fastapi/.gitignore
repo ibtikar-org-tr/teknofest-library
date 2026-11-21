@@ -179,3 +179,7 @@ downloads/*
 # tests
 tests.ipynb
 tests
+
+# temporary files
+.~*
+*.tmp
