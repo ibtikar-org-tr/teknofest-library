@@ -19,12 +19,24 @@ export type AdminStageJuryScore = {
   created_at: string | null
 }
 
+export type AdminStageFile = {
+  id: number
+  project_id: number
+  display_name: string
+  description: string | null
+  original_filename: string | null
+  content_type: string | null
+  size_bytes: number
+  created_at: string
+}
+
 export type AdminStageOverview = {
   project_id: number
   stage: ApplicationStage
   title: string
   summary: string
   files_count: number
+  files: AdminStageFile[]
   jury_average: number | null
   required_jury_count: number
   scored_jury_count: number
@@ -98,6 +110,16 @@ async function buildStageOverview(
     title: project.title,
     summary: project.summary,
     files_count: files.length,
+    files: files.map((f) => ({
+      id: f.id,
+      project_id: f.project_id,
+      display_name: f.display_name,
+      description: f.description,
+      original_filename: f.original_filename,
+      content_type: f.content_type,
+      size_bytes: f.size_bytes,
+      created_at: f.created_at,
+    })),
     jury_average,
     required_jury_count,
     scored_jury_count,

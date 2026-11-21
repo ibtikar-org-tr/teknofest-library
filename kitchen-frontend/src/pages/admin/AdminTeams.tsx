@@ -21,6 +21,7 @@ import {
 import {
   emailService,
   kitchensService,
+  projectsService,
   teamsService,
   type AdminStageOverview,
   type AdminTeamOverview,
@@ -30,12 +31,40 @@ import AdminPageHeader from '../../components/AdminPageHeader'
 
 const STAGE_LABEL = { primary: 'المرحلة الأولية', final: 'المرحلة النهائية' } as const
 
+type PhaseFilter =
+  | 'all'
+  | 'primary_submitted'
+  | 'primary_missing'
+  | 'final_submitted'
+  | 'final_missing'
+  | 'primary_accepted'
+  | 'final_accepted'
+  | 'pending_accept'
+
+type SortKey =
+  | 'name_asc'
+  | 'name_desc'
+  | 'members_desc'
+  | 'primary_first'
+  | 'final_first'
+  | 'pending_accept'
+
+function formatBytes(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '—'
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function AdminTeams() {
   const { eventId = '' } = useParams()
   const [teams, setTeams] = useState<AdminTeamOverview[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>('all')
+  const [sortKey, setSortKey] = useState<SortKey>('name_asc')
   const [expandedTeam, setExpandedTeam] = useState<number | null>(null)
+  const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null)
   const [telegramLink, setTelegramLink] = useState('')
   const [sendingEmail, setSendingEmail] = useState<number | null>(null)
   const [busyMemberId, setBusyMemberId] = useState<number | null>(null)
@@ -69,16 +98,110 @@ export default function AdminTeams() {
     }
   }, [eventId, reload])
 
-  const filteredTeams = useMemo(
-    () =>
-      teams.filter(
-        (team) =>
-          team.team_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (team.field || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (team.field_label || '').toLowerCase().includes(searchTerm.toLowerCase()),
-      ),
-    [teams, searchTerm],
-  )
+  const filteredTeams = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase()
+    let list = teams.filter((team) => {
+      if (q) {
+        const hay = [
+          team.team_name,
+          team.field,
+          team.field_label,
+          ...(team.members ?? []).flatMap((m) => [
+            m.full_name,
+            m.email,
+            m.membership_number,
+          ]),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+
+      const primary = team.stages.primary
+      const final = team.stages.final
+      switch (phaseFilter) {
+        case 'primary_submitted':
+          return Boolean(primary)
+        case 'primary_missing':
+          return !primary
+        case 'final_submitted':
+          return Boolean(final)
+        case 'final_missing':
+          return !final
+        case 'primary_accepted':
+          return Boolean(primary?.score_accepted)
+        case 'final_accepted':
+          return Boolean(final?.score_accepted)
+        case 'pending_accept':
+          return Boolean(primary?.can_accept || final?.can_accept)
+        default:
+          return true
+      }
+    })
+
+    const collator = new Intl.Collator('ar')
+    list = [...list].sort((a, b) => {
+      switch (sortKey) {
+        case 'name_desc':
+          return collator.compare(b.team_name, a.team_name)
+        case 'members_desc':
+          return (b.member_count ?? 0) - (a.member_count ?? 0)
+        case 'primary_first': {
+          const ap = a.stages.primary ? 1 : 0
+          const bp = b.stages.primary ? 1 : 0
+          if (bp !== ap) return bp - ap
+          return collator.compare(a.team_name, b.team_name)
+        }
+        case 'final_first': {
+          const af = a.stages.final ? 1 : 0
+          const bf = b.stages.final ? 1 : 0
+          if (bf !== af) return bf - af
+          return collator.compare(a.team_name, b.team_name)
+        }
+        case 'pending_accept': {
+          const ap =
+            (a.stages.primary?.can_accept ? 1 : 0) + (a.stages.final?.can_accept ? 1 : 0)
+          const bp =
+            (b.stages.primary?.can_accept ? 1 : 0) + (b.stages.final?.can_accept ? 1 : 0)
+          if (bp !== ap) return bp - ap
+          return collator.compare(a.team_name, b.team_name)
+        }
+        case 'name_asc':
+        default:
+          return collator.compare(a.team_name, b.team_name)
+      }
+    })
+
+    return list
+  }, [teams, searchTerm, phaseFilter, sortKey])
+
+  const phaseCounts = useMemo(() => {
+    let primary = 0
+    let final = 0
+    let pending = 0
+    for (const t of teams) {
+      if (t.stages.primary) primary += 1
+      if (t.stages.final) final += 1
+      if (t.stages.primary?.can_accept || t.stages.final?.can_accept) pending += 1
+    }
+    return { primary, final, pending, total: teams.length }
+  }, [teams])
+
+  const handleDownloadFile = async (
+    projectId: number,
+    fileId: number,
+    filename: string,
+  ) => {
+    setDownloadingFileId(fileId)
+    try {
+      await projectsService.downloadFile(projectId, fileId, filename)
+    } catch {
+      toast.error('تعذر تحميل الملف')
+    } finally {
+      setDownloadingFileId(null)
+    }
+  }
 
   const handleSendTelegramLink = async (team: AdminTeamOverview) => {
     if (!telegramLink) {
@@ -177,22 +300,73 @@ export default function AdminTeams() {
         description="الأعضاء، التقديمات، درجات المحكّمين والملاحظات، واعتماد النتيجة للنشر في لوحة المتصدرين (لكل مرحلة على حدة)."
       />
 
-      <div className="relative">
-        <Search className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
-        <input
-          type="search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="بحث عن فريق أو مسابقة…"
-          className="input-field pr-12"
-        />
+      <div className="card space-y-4">
+        <div className="relative">
+          <Search className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="بحث عن فريق، مسابقة، عضو، بريد…"
+            className="input-field pr-12"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="block text-sm text-gray-400">
+            تصفية حسب المرحلة
+            <select
+              className="input-field mt-1"
+              value={phaseFilter}
+              onChange={(e) => setPhaseFilter(e.target.value as PhaseFilter)}
+            >
+              <option value="all">الكل ({phaseCounts.total})</option>
+              <option value="primary_submitted">
+                قدّم الأولية ({phaseCounts.primary})
+              </option>
+              <option value="primary_missing">
+                لم يقدّم الأولية ({phaseCounts.total - phaseCounts.primary})
+              </option>
+              <option value="final_submitted">
+                قدّم النهائية ({phaseCounts.final})
+              </option>
+              <option value="final_missing">
+                لم يقدّم النهائية ({phaseCounts.total - phaseCounts.final})
+              </option>
+              <option value="primary_accepted">أولية معتمدة</option>
+              <option value="final_accepted">نهائية معتمدة</option>
+              <option value="pending_accept">
+                بانتظار الاعتماد ({phaseCounts.pending})
+              </option>
+            </select>
+          </label>
+          <label className="block text-sm text-gray-400">
+            ترتيب
+            <select
+              className="input-field mt-1"
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as SortKey)}
+            >
+              <option value="name_asc">الاسم (أ → ي)</option>
+              <option value="name_desc">الاسم (ي → أ)</option>
+              <option value="members_desc">عدد الأعضاء</option>
+              <option value="primary_first">من أنهى الأولية أولاً</option>
+              <option value="final_first">من أنهى النهائية أولاً</option>
+              <option value="pending_accept">بانتظار الاعتماد أولاً</option>
+            </select>
+          </label>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          يظهر {filteredTeams.length} من {teams.length} فريق
+        </p>
       </div>
 
       <div className="space-y-4">
         {filteredTeams.length === 0 ? (
           <div className="card text-center py-12 text-gray-500">
             <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            لا توجد فرق
+            لا توجد فرق مطابقة
           </div>
         ) : (
           filteredTeams.map((team) => {
@@ -212,8 +386,24 @@ export default function AdminTeams() {
                       <Users className="w-5 h-5" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-white font-bold truncate flex items-center gap-2">
+                      <p className="text-white font-bold truncate flex flex-wrap items-center gap-2">
                         {team.team_name}
+                        {team.stages.primary ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-teknofest-cyan/15 text-teknofest-cyan font-medium">
+                            أولية
+                            {team.stages.primary.score_accepted ? ' ✓' : ''}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-teknofest-medium-blue/50 text-gray-500 font-medium">
+                            بلا أولية
+                          </span>
+                        )}
+                        {team.stages.final ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-teknofest-orange/20 text-teknofest-orange font-medium">
+                            نهائية
+                            {team.stages.final.score_accepted ? ' ✓' : ''}
+                          </span>
+                        ) : null}
                         {pendingAccept > 0 ? (
                           <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-teknofest-orange/20 text-teknofest-orange font-medium">
                             <Star className="w-3 h-3" />
@@ -233,6 +423,12 @@ export default function AdminTeams() {
                         <span className="inline-flex items-center gap-1">
                           <Gavel className="w-3.5 h-3.5 shrink-0" />
                           {team.assigned_juries.length} محكّم
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 shrink-0" />
+                          {(team.stages.primary?.files_count ?? 0) +
+                            (team.stages.final?.files_count ?? 0)}{' '}
+                          ملف
                         </span>
                       </p>
                     </div>
@@ -311,7 +507,9 @@ export default function AdminTeams() {
                           stage={team.stages[key]}
                           label={STAGE_LABEL[key]}
                           accepting={acceptingProjectId}
+                          downloadingFileId={downloadingFileId}
                           onAccept={handleAccept}
+                          onDownloadFile={handleDownloadFile}
                         />
                       ))}
                       {team.assigned_juries.length === 0 ? (
@@ -408,12 +606,16 @@ function StageBlock({
   stage,
   label,
   accepting,
+  downloadingFileId,
   onAccept,
+  onDownloadFile,
 }: {
   stage: AdminStageOverview | null
   label: string
   accepting: number | null
+  downloadingFileId: number | null
   onAccept: (stage: AdminStageOverview) => void
+  onDownloadFile: (projectId: number, fileId: number, filename: string) => void
 }) {
   if (!stage) {
     return (
@@ -422,6 +624,8 @@ function StageBlock({
       </div>
     )
   }
+
+  const files = stage.files ?? []
 
   return (
     <div className="rounded-xl border border-teknofest-light-blue/20 p-4 space-y-4">
@@ -462,6 +666,55 @@ function StageBlock({
       </div>
 
       <p className="text-sm text-gray-300 whitespace-pre-wrap">{stage.summary}</p>
+
+      <div className="space-y-2">
+        <p className="text-xs text-gray-500 flex items-center gap-1">
+          <FileText className="w-3.5 h-3.5" />
+          الملفات المرفقة
+        </p>
+        {files.length === 0 ? (
+          <p className="text-xs text-gray-600 bg-teknofest-dark-blue/40 rounded-lg p-3">
+            لا توجد ملفات لهذه المرحلة
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {files.map((f) => (
+              <li
+                key={f.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg bg-teknofest-dark-blue/50 p-3 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="text-white font-medium truncate">{f.display_name}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    {formatBytes(f.size_bytes)}
+                    {f.original_filename ? ` · ${f.original_filename}` : ''}
+                  </p>
+                  {f.description ? (
+                    <p className="text-gray-400 text-xs mt-1">{f.description}</p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary text-xs py-1.5 px-3 shrink-0 flex items-center gap-1"
+                  disabled={downloadingFileId === f.id}
+                  onClick={() =>
+                    onDownloadFile(
+                      stage.project_id,
+                      f.id,
+                      f.original_filename || f.display_name,
+                    )
+                  }
+                >
+                  {downloadingFileId === f.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : null}
+                  تحميل
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <div className="space-y-2">
         <p className="text-xs text-gray-500 flex items-center gap-1">

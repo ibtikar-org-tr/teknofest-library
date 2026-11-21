@@ -110,12 +110,24 @@ export type AdminStageJuryScore = {
   created_at: string | null
 }
 
+export type AdminStageFile = {
+  id: number
+  project_id: number
+  display_name: string
+  description: string | null
+  original_filename: string | null
+  content_type: string | null
+  size_bytes: number
+  created_at: string
+}
+
 export type AdminStageOverview = {
   project_id: number
   stage: 'primary' | 'final'
   title: string
   summary: string
   files_count: number
+  files: AdminStageFile[]
   jury_average: number | null
   required_jury_count: number
   scored_jury_count: number
