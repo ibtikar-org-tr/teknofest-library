@@ -6,6 +6,7 @@ import {
   Check,
   FileText,
   Loader2,
+  Pencil,
   Trophy,
   UserPlus,
   Users,
@@ -34,6 +35,9 @@ export default function MyTeam() {
   const [selectedCompetition, setSelectedCompetition] = useState('')
   const [savingCompetition, setSavingCompetition] = useState(false)
   const [editingCompetition, setEditingCompetition] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [teamNameDraft, setTeamNameDraft] = useState('')
+  const [savingName, setSavingName] = useState(false)
 
   useEffect(() => {
     if (!eventId) return
@@ -70,6 +74,35 @@ export default function MyTeam() {
   const hasCompetition = Boolean(team?.field?.trim())
   const hasPrimary = useMemo(() => projects.some((p) => p.stage === 'primary'), [projects])
   const hasFinal = useMemo(() => projects.some((p) => p.stage === 'final'), [projects])
+
+  const startRename = () => {
+    setTeamNameDraft(team?.team_name ?? '')
+    setEditingName(true)
+  }
+
+  const saveTeamName = async () => {
+    const name = teamNameDraft.trim()
+    if (!eventId) return
+    if (name.length < 2) {
+      toast.error('اسم الفريق قصير جداً')
+      return
+    }
+    if (name === team?.team_name) {
+      setEditingName(false)
+      return
+    }
+    setSavingName(true)
+    try {
+      const updated = await kitchensService.renameMyTeam(eventId, name)
+      setTeam(updated)
+      setEditingName(false)
+      toast.success('تم تحديث اسم الفريق')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'تعذر تحديث اسم الفريق')
+    } finally {
+      setSavingName(false)
+    }
+  }
 
   const saveCompetition = async () => {
     const competitionId = Number(selectedCompetition)
@@ -196,7 +229,53 @@ export default function MyTeam() {
 
         <div>
           <p className="text-teknofest-cyan text-sm mb-2">لوحتي · فريقي</p>
-          <h1 className="text-3xl font-bold text-white mb-2">{team.team_name}</h1>
+          {editingName ? (
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={teamNameDraft}
+                onChange={(e) => setTeamNameDraft(e.target.value)}
+                className="input-field text-xl font-bold"
+                placeholder="اسم الفريق"
+                maxLength={80}
+                autoFocus
+                disabled={savingName}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={savingName || teamNameDraft.trim().length < 2}
+                  onClick={() => void saveTeamName()}
+                >
+                  {savingName ? 'جاري الحفظ...' : 'حفظ الاسم'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={savingName}
+                  onClick={() => {
+                    setEditingName(false)
+                    setTeamNameDraft(team.team_name)
+                  }}
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-bold text-white">{team.team_name}</h1>
+              <button
+                type="button"
+                onClick={startRename}
+                className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                تعديل الاسم
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="card space-y-3">

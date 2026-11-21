@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   FileText,
   Gavel,
+  Pencil,
   Star,
   Trophy,
   Hash,
@@ -65,6 +66,9 @@ export default function AdminTeams() {
   const [sortKey, setSortKey] = useState<SortKey>('name_asc')
   const [expandedTeam, setExpandedTeam] = useState<number | null>(null)
   const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null)
+  const [renamingTeamId, setRenamingTeamId] = useState<number | null>(null)
+  const [renameDraft, setRenameDraft] = useState('')
+  const [savingRename, setSavingRename] = useState(false)
   const [telegramLink, setTelegramLink] = useState('')
   const [sendingEmail, setSendingEmail] = useState<number | null>(null)
   const [busyMemberId, setBusyMemberId] = useState<number | null>(null)
@@ -266,6 +270,31 @@ export default function AdminTeams() {
     }
   }
 
+  const startAdminRename = (team: AdminTeamOverview) => {
+    setRenamingTeamId(team.id!)
+    setRenameDraft(team.team_name)
+  }
+
+  const saveAdminRename = async () => {
+    if (!eventId || !renamingTeamId) return
+    const name = renameDraft.trim()
+    if (name.length < 2) {
+      toast.error('اسم الفريق قصير جداً')
+      return
+    }
+    setSavingRename(true)
+    try {
+      await kitchensService.renameTeam(eventId, renamingTeamId, name)
+      toast.success('تم تحديث اسم الفريق')
+      setRenamingTeamId(null)
+      await reload()
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'تعذر تحديث الاسم')
+    } finally {
+      setSavingRename(false)
+    }
+  }
+
   const handleAccept = async (stage: AdminStageOverview) => {
     if (!eventId || !stage.can_accept) return
     const ok = window.confirm(
@@ -442,6 +471,50 @@ export default function AdminTeams() {
 
                 {open ? (
                   <div className="border-t border-teknofest-light-blue/15 px-5 py-5 space-y-8">
+                    <section className="space-y-3">
+                      <h3 className="text-white font-semibold flex items-center gap-2">
+                        <Pencil className="w-4 h-4 text-teknofest-orange" />
+                        اسم الفريق
+                      </h3>
+                      {renamingTeamId === team.id ? (
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            className="input-field flex-1"
+                            value={renameDraft}
+                            maxLength={80}
+                            disabled={savingRename}
+                            onChange={(e) => setRenameDraft(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            disabled={savingRename || renameDraft.trim().length < 2}
+                            onClick={() => void saveAdminRename()}
+                          >
+                            {savingRename ? 'جاري الحفظ...' : 'حفظ'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            disabled={savingRename}
+                            onClick={() => setRenamingTeamId(null)}
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-secondary text-sm py-1.5 px-3 inline-flex items-center gap-1.5"
+                          onClick={() => startAdminRename(team)}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          تعديل الاسم
+                        </button>
+                      )}
+                    </section>
+
                     {/* Members */}
                     <section className="space-y-3">
                       <h3 className="text-white font-semibold flex items-center gap-2">

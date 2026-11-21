@@ -35,11 +35,13 @@ Returned on `GET …/fields` and the competitions catalog so the UI can gate CTA
 - Create returns **403** when `allow_create_teams` is false (managers bypass).
 - Join returns **403** when `allow_join_teams` is false.
 - There is **no** member self-leave endpoint.
+- `PUT …/my-team/name` `{ team_name }` — any team member may rename the team.
 
 ## Manager APIs
 
 - `DELETE /api/kitchens/:eventId/teams/:teamId/members/:memberId` — remove  
 - `POST /api/kitchens/:eventId/members/:memberId/move` `{ to_team_id }` — transfer  
+- `PUT /api/kitchens/:eventId/teams/:teamId/name` `{ team_name }` — rename  
 - `PUT /api/kitchens/:eventId/team-settings` `{ allow_create_teams, allow_join_teams, max_team_size }`  
 
 Admin UI: **إدارة الفرق** → expand team → إزالة / نقل.  

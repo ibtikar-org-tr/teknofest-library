@@ -37,6 +37,7 @@ import {
   teamHasPrimarySubmission,
   listPublicLeaderboard,
   listTeams,
+  updateTeamName,
 } from '../repositories/teams'
 import {
   acceptProjectStageScore,
@@ -739,6 +740,49 @@ kitchensRouter.put('/:eventId/my-team/competition', ...withEventAccess, async (c
     competition_locked: false,
     field_label: field_label ?? result.team.field,
   })
+})
+
+/** Any team member may rename their team. */
+kitchensRouter.put('/:eventId/my-team/name', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  const body = await c.req.json<{ team_name?: string }>()
+  const team = await findTeamForMemberInEvent(
+    c.env,
+    eventId,
+    member?.membership_number,
+    member?.email,
+  )
+  if (!team) {
+    return c.json({ message: 'You are not on a team in this event kitchen' }, 404)
+  }
+
+  const result = await updateTeamName(c.env, eventId, team.id, body.team_name ?? '')
+  if (!result.ok) return c.json({ message: result.message }, result.status)
+  const competition_locked = await teamHasPrimarySubmission(c.env, result.team.id)
+  const field_label = await resolveCompetitionLabel(c.env, result.team.field)
+  return c.json({
+    ...result.team,
+    competition_locked,
+    field_label: field_label ?? result.team.field,
+  })
+})
+
+/** Manager may rename any team in the kitchen. */
+kitchensRouter.put('/:eventId/teams/:teamId/name', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const teamId = Number(c.req.param('teamId'))
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can rename teams' }, 403)
+  }
+  if (!Number.isFinite(teamId) || teamId <= 0) {
+    return c.json({ message: 'Invalid team id' }, 400)
+  }
+  const body = await c.req.json<{ team_name?: string }>()
+  const result = await updateTeamName(c.env, eventId, teamId, body.team_name ?? '')
+  if (!result.ok) return c.json({ message: result.message }, result.status)
+  return c.json(result.team)
 })
 
 kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {

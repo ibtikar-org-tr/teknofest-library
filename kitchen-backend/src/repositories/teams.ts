@@ -270,6 +270,44 @@ export const setTeamCompetition = async (
   return { ok: true, team }
 }
 
+export type UpdateTeamNameResult =
+  | { ok: true; team: Team }
+  | { ok: false; status: 400 | 404; message: string }
+
+export const updateTeamName = async (
+  env: Environment,
+  eventId: string,
+  teamId: number,
+  teamName: string,
+): Promise<UpdateTeamNameResult> => {
+  const name = teamName.trim()
+  if (name.length < 2) {
+    return { ok: false, status: 400, message: 'team_name must be at least 2 characters' }
+  }
+  if (name.length > 80) {
+    return { ok: false, status: 400, message: 'team_name is too long' }
+  }
+
+  const existing = await getTeam(env, teamId)
+  if (!existing || existing.event_id !== eventId) {
+    return { ok: false, status: 404, message: 'Team not found in this event kitchen' }
+  }
+
+  const row = await env.D1_DB.prepare(
+    `UPDATE teams
+     SET team_name = ?, updated_at = datetime('now')
+     WHERE id = ? AND event_id = ?
+     RETURNING *`,
+  )
+    .bind(name, teamId, eventId)
+    .first()
+
+  if (!row) return { ok: false, status: 404, message: 'Team not found in this event kitchen' }
+  const team = mapTeam(row as Record<string, unknown>)
+  team.members = existing.members
+  return { ok: true, team }
+}
+
 export const addMemberToTeam = async (
   env: Environment,
   teamId: number,

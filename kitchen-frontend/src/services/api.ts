@@ -286,6 +286,21 @@ export const kitchensService = {
     return response.data
   },
 
+  renameMyTeam: async (eventId: string, teamName: string): Promise<Team> => {
+    const response = await api.put(`/kitchens/${encodeURIComponent(eventId)}/my-team/name`, {
+      team_name: teamName,
+    })
+    return response.data
+  },
+
+  renameTeam: async (eventId: string, teamId: number, teamName: string): Promise<Team> => {
+    const response = await api.put(
+      `/kitchens/${encodeURIComponent(eventId)}/teams/${teamId}/name`,
+      { team_name: teamName },
+    )
+    return response.data
+  },
+
   getMyVmsProfile: async (
     eventId: string,
   ): Promise<{
