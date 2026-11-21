@@ -8,6 +8,8 @@ Vite + React. Local: `http://localhost:9682`.
   local: `http://localhost:9680/ms/kitchen`  
   prod: typically `${VMS_URL}/ms/kitchen` if routed on the same host
 - `VITE_VMS_LOGIN_URL` — VMS login page (SSO entry)
+- `VITE_LIBRARY_URL` — TEKNOFEST library (TAL) public URL for competition links  
+  GitHub Actions: `vars.LIBRARY_URL` (e.g. `https://tal.ibtikar.tr`)
 
 ## SSO flow
 

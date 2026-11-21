@@ -35,6 +35,7 @@ jobs:
         env:
           VITE_API_TARGET: ${{ vars.VMS_URL }}/ms/kitchen
           VITE_VMS_LOGIN_URL: ${{ vars.VMS_URL }}/login
+          VITE_LIBRARY_URL: ${{ vars.LIBRARY_URL }}
         run: npm run build
 
       - name: Deploy to Cloudflare Workers

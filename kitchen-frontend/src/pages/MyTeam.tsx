@@ -12,7 +12,17 @@ import {
 } from 'lucide-react'
 import { kitchensService } from '../services/api'
 import { useProjectFields } from '../hooks/useProjectFields'
-import type { ProjectSubmission, Team } from '../types'
+import type { ProjectFieldOption, ProjectSubmission, Team } from '../types'
+
+const LIBRARY_PUBLIC_URL = (
+  import.meta.env.VITE_LIBRARY_URL as string | undefined
+)?.trim() || 'https://tal.ibtikar.tr'
+
+function libraryCompetitionUrl(field: string, competitions: ProjectFieldOption[]): string {
+  const match = competitions.find((c) => c.value === field || c.label === field)
+  const key = match ? String(match.id) : field
+  return `${LIBRARY_PUBLIC_URL.replace(/\/+$/, '')}/competition/${encodeURIComponent(key)}?lang=ar`
+}
 
 export default function MyTeam() {
   const { eventId = '' } = useParams()
@@ -150,7 +160,15 @@ export default function MyTeam() {
               <div className="min-w-0">
                 <p className="text-xs text-green-400 mb-1">الخطوة 1</p>
                 <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
-                <p className="text-gray-400 text-sm truncate">{team.field}</p>
+                <a
+                  href={libraryCompetitionUrl(team.field, competitions)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
+                  title="فتح صفحة المسابقة في المكتبة"
+                >
+                  {team.field}
+                </a>
               </div>
             </div>
           ) : (
