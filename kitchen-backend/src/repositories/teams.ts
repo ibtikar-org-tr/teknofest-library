@@ -3,6 +3,7 @@ import type { Team, TeamMember } from '../types/models'
 import { mapTeam, mapTeamMember } from '../utils/mappers'
 import { boolToInt } from '../utils/sql'
 import { averageJuryScores, listEvaluationsByProject } from './evaluations'
+import { getKitchenMaxTeamSize } from './event-kitchens'
 import { listJuriesAssignedToTeam } from './juries'
 
 export const listTeams = async (
@@ -400,9 +401,14 @@ export const moveMemberToTeam = async (
     return { ok: false, status: 404, message: 'Target team not found in this event kitchen' }
   }
 
+  const maxTeamSize = await getKitchenMaxTeamSize(env, eventId)
   const destCount = toTeam.members?.length ?? 0
-  if (destCount >= 6) {
-    return { ok: false, status: 409, message: 'Target team is full' }
+  if (destCount >= maxTeamSize) {
+    return {
+      ok: false,
+      status: 409,
+      message: `Target team is full (max ${maxTeamSize} members)`,
+    }
   }
 
   const wasLeader = member.is_leader

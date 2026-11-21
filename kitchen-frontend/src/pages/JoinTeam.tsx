@@ -9,7 +9,12 @@ import { useProjectFields } from '../hooks/useProjectFields'
 export default function JoinTeam() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
-  const { registrationOpen, loading: rulesLoading } = useProjectFields(eventId)
+  const {
+    registrationOpen,
+    allowJoinTeams,
+    allowCreateTeams,
+    loading: rulesLoading,
+  } = useProjectFields(eventId)
   const [teams, setTeams] = useState<TeamWithSpace[]>([])
   const [loading, setLoading] = useState(true)
   const [joiningId, setJoiningId] = useState<number | null>(null)
@@ -59,11 +64,13 @@ export default function JoinTeam() {
     )
   }
 
-  if (!registrationOpen) {
+  if (!registrationOpen || !allowJoinTeams) {
     return (
       <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4">
         <p className="text-teknofest-orange">
-          التسجيل مغلق — انتظر ضبط المدير للمسابقات وقواعد الاهتمام.
+          {!registrationOpen
+            ? 'التسجيل مغلق — انتظر ضبط المدير للمسابقات وقواعد الاهتمام.'
+            : 'الانضمام الذاتي للفرق معطّل في إعدادات هذا المطبخ.'}
         </p>
         <Link to={`/events/${eventId}/join`} className="text-teknofest-cyan hover:underline">
           العودة
@@ -100,10 +107,16 @@ export default function JoinTeam() {
         <div className="card text-center py-12">
           <Users className="w-10 h-10 text-gray-500 mx-auto mb-4" />
           <p className="text-gray-300 mb-2">لا توجد فرق متاحة حالياً</p>
-          <p className="text-gray-500 text-sm mb-6">يمكنك إنشاء فريق جديد بدل الانضمام</p>
-          <Link to={`/events/${eventId}/register/team`} className="btn-primary inline-flex">
-            إنشاء فريق
-          </Link>
+          {allowCreateTeams ? (
+            <>
+              <p className="text-gray-500 text-sm mb-6">يمكنك إنشاء فريق جديد بدل الانضمام</p>
+              <Link to={`/events/${eventId}/register/team`} className="btn-primary inline-flex">
+                إنشاء فريق
+              </Link>
+            </>
+          ) : (
+            <p className="text-gray-500 text-sm">انتظر إنشاء فرق من المدير أو الدخول لقائمة الانتظار</p>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

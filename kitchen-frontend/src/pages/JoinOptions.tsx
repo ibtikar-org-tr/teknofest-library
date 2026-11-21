@@ -4,7 +4,8 @@ import { useProjectFields } from '../hooks/useProjectFields'
 
 export default function JoinOptions() {
   const { eventId = '' } = useParams()
-  const { registrationOpen, loading } = useProjectFields(eventId)
+  const { registrationOpen, allowJoinTeams, allowCreateTeams, loading } =
+    useProjectFields(eventId)
 
   if (loading) {
     return (
@@ -36,14 +37,24 @@ export default function JoinOptions() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-5">
-          <Link
-            to={`/events/${eventId}/join/team`}
-            className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
-          >
-            <UserPlus className="w-8 h-8 text-teknofest-orange mb-4" />
-            <h2 className="text-xl font-bold text-white mb-2">الانضمام لفريق محدد</h2>
-            <p className="text-gray-400 text-sm">اختر فريقاً موجوداً فيه أماكن شاغرة</p>
-          </Link>
+          {allowJoinTeams ? (
+            <Link
+              to={`/events/${eventId}/join/team`}
+              className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
+            >
+              <UserPlus className="w-8 h-8 text-teknofest-orange mb-4" />
+              <h2 className="text-xl font-bold text-white mb-2">الانضمام لفريق محدد</h2>
+              <p className="text-gray-400 text-sm">اختر فريقاً موجوداً فيه أماكن شاغرة</p>
+            </Link>
+          ) : (
+            <div className="p-6 rounded-2xl border border-teknofest-light-blue/10 bg-teknofest-medium-blue/20 opacity-70">
+              <UserPlus className="w-8 h-8 text-gray-500 mb-4" />
+              <h2 className="text-xl font-bold text-gray-300 mb-2">الانضمام لفريق محدد</h2>
+              <p className="text-gray-500 text-sm">
+                معطّل من إعدادات المطبخ — المدير يفرز الأعضاء للفرق
+              </p>
+            </div>
+          )}
           <Link
             to={`/events/${eventId}/join/pool`}
             className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-cyan/40 transition-all"
@@ -56,6 +67,15 @@ export default function JoinOptions() {
           </Link>
         </div>
       )}
+
+      {registrationOpen && allowCreateTeams ? (
+        <p className="text-sm text-gray-500">
+          تريد إنشاء فريق؟{' '}
+          <Link to={`/events/${eventId}/register/team`} className="text-teknofest-cyan hover:underline">
+            إنشاء فريق جديد
+          </Link>
+        </p>
+      ) : null}
     </div>
   )
 }

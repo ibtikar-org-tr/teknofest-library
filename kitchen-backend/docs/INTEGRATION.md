@@ -34,9 +34,10 @@ CI var `VMS_SERVICE_NAME` must be the VMS membership Worker name (same value Car
 
 Catalog lives in Library. Kitchen stores an **allowlist** of library competition ids per event (`kitchen_competitions`) plus **interest min/max** on `event_kitchens`.
 
-- Members: `GET …/fields` → `{ competitions, interest_min, interest_max, registration_open }`.
-- Managers: `GET …/competitions/catalog`, `PUT …/competitions` `{ competition_ids, interest_min, interest_max }`.
+- Members: `GET …/fields` → `{ competitions, interest_min, interest_max, registration_open, allow_create_teams, allow_join_teams, max_team_size }`.
+- Managers: `GET …/competitions/catalog`, `PUT …/competitions` `{ competition_ids, interest_min, interest_max }`, `PUT …/team-settings` `{ allow_create_teams, allow_join_teams, max_team_size }`.
 - `registration_open` is false until allowlist + valid min/max are saved; create team / join / pool return **403** until then.
+- Member create/join also require `allow_create_teams` / `allow_join_teams` (both default **false**). Managers always create/assign. `max_team_size` defaults to **8**.
 - Pool registrants send `preferred_competition_ids` (length within min–max). Team `field` remains a single competition id chosen later on the dashboard.
 - Links use `/competition/:id` on the library (TAL) site.
 

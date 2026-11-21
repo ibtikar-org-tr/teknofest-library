@@ -31,7 +31,11 @@ const GENDER_LABELS = {
 }
 export default function AdminIndividuals() {
   const { eventId = '' } = useParams()
-  const { fields: projectFields, loading: fieldsLoading } = useProjectFields(eventId)
+  const {
+    fields: projectFields,
+    loading: fieldsLoading,
+    maxTeamSize,
+  } = useProjectFields(eventId)
   const [individuals, setIndividuals] = useState<Individual[]>([])
   const [teamsWithSpace, setTeamsWithSpace] = useState<TeamWithSpace[]>([])
   const [loading, setLoading] = useState(true)
@@ -128,8 +132,8 @@ export default function AdminIndividuals() {
         toast.error('يجب اختيار 3 أفراد على الأقل')
         return
       }
-      if (selectedIndividuals.length > 6) {
-        toast.error('الحد الأقصى 6 أفراد')
+      if (selectedIndividuals.length > maxTeamSize) {
+        toast.error(`الحد الأقصى ${maxTeamSize} أفراد`)
         return
       }
       if (!newTeamName.trim()) {
@@ -642,7 +646,7 @@ export default function AdminIndividuals() {
                   </div>
 
                   <p className="text-gray-500 text-sm">
-                    يجب اختيار 3-6 أفراد لإنشاء فريق جديد
+                    يجب اختيار 3–{maxTeamSize} أفراد لإنشاء فريق جديد
                   </p>
                 </>
               ) : (

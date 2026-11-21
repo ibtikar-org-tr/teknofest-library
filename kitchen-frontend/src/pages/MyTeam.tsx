@@ -20,7 +20,13 @@ import type { ProjectSubmission, Team } from '../types'
 
 export default function MyTeam() {
   const { eventId = '' } = useParams()
-  const { fields: competitions, loading: competitionsLoading } = useProjectFields(eventId)
+  const {
+    fields: competitions,
+    loading: competitionsLoading,
+    registrationOpen,
+    allowCreateTeams,
+    allowJoinTeams,
+  } = useProjectFields(eventId)
   const [team, setTeam] = useState<Team | null>(null)
   const [projects, setProjects] = useState<ProjectSubmission[]>([])
   const [loading, setLoading] = useState(true)
@@ -377,6 +383,9 @@ export default function MyTeam() {
     )
   }
 
+  const canCreate = registrationOpen && allowCreateTeams
+  const showJoinCard = registrationOpen
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
       <Link
@@ -389,27 +398,49 @@ export default function MyTeam() {
 
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">لوحتي</h1>
-        <p className="text-gray-400">لست في فريق بعد. أنشئ فريقاً أو انضم لأحد المسارين.</p>
+        <p className="text-gray-400">
+          {!registrationOpen
+            ? 'التسجيل مغلق حتى يضبط المدير المسابقات وقواعد الاهتمام.'
+            : !canCreate && !allowJoinTeams
+              ? 'إنشاء الفرق والانضمام الذاتي معطلان — يمكنك الدخول لقائمة الانتظار أو انتظار فرز المدير.'
+              : 'لست في فريق بعد. اختر المسار المتاح أدناه.'}
+        </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-5">
-        <Link
-          to={`/events/${eventId}/register/team`}
-          className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
-        >
-          <Users className="w-8 h-8 text-teknofest-orange mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">إنشاء فريق</h2>
-          <p className="text-gray-400 text-sm">أسّس فريقاً جديداً وادعُ أعضاءك</p>
-        </Link>
-        <Link
-          to={`/events/${eventId}/join`}
-          className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
-        >
-          <UserPlus className="w-8 h-8 text-teknofest-cyan mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">الانضمام لفريق</h2>
-          <p className="text-gray-400 text-sm">انضم لفريق موجود أو ادخل قائمة الانتظار</p>
-        </Link>
-      </div>
+      {!canCreate && !showJoinCard ? (
+        <div className="card border border-teknofest-orange/40 text-teknofest-orange text-sm">
+          لا خيارات تسجيل متاحة حالياً. تواصل مع مدير الفعالية.
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-5">
+          {canCreate ? (
+            <Link
+              to={`/events/${eventId}/register/team`}
+              className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
+            >
+              <Users className="w-8 h-8 text-teknofest-orange mb-4" />
+              <h2 className="text-xl font-bold text-white mb-2">إنشاء فريق</h2>
+              <p className="text-gray-400 text-sm">أسّس فريقاً جديداً وادعُ أعضاءك</p>
+            </Link>
+          ) : null}
+          {showJoinCard ? (
+            <Link
+              to={`/events/${eventId}/join`}
+              className="p-6 rounded-2xl border border-teknofest-light-blue/20 bg-teknofest-medium-blue/40 hover:border-teknofest-orange/40 transition-all"
+            >
+              <UserPlus className="w-8 h-8 text-teknofest-cyan mb-4" />
+              <h2 className="text-xl font-bold text-white mb-2">
+                {allowJoinTeams ? 'الانضمام لفريق' : 'قائمة الانتظار'}
+              </h2>
+              <p className="text-gray-400 text-sm">
+                {allowJoinTeams
+                  ? 'انضم لفريق موجود أو ادخل قائمة الانتظار'
+                  : 'سجّل اهتماماتك ليُوزَّع عليك فريق من المدير'}
+              </p>
+            </Link>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }

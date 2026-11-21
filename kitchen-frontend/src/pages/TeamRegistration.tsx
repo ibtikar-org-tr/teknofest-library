@@ -36,7 +36,12 @@ const GENDER_LABELS: Record<Gender, string> = {
 export default function TeamRegistration() {
   const { eventId = '' } = useParams()
   const navigate = useNavigate()
-  const { registrationOpen, loading: rulesLoading } = useProjectFields(eventId)
+  const {
+    registrationOpen,
+    allowCreateTeams,
+    maxTeamSize,
+    loading: rulesLoading,
+  } = useProjectFields(eventId)
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -159,7 +164,7 @@ export default function TeamRegistration() {
 
 
   const addMember = () => {
-    if (fields.length < 6) {
+    if (fields.length < maxTeamSize) {
       append({ full_name: '', membership_number: '', email: '', phone: '', is_leader: false })
     }
   }
@@ -363,11 +368,13 @@ export default function TeamRegistration() {
     )
   }
 
-  if (!registrationOpen) {
+  if (!registrationOpen || !allowCreateTeams) {
     return (
       <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4">
         <p className="text-teknofest-orange">
-          لا يمكن إنشاء فرق قبل أن يضبط المدير المسابقات وقواعد الاهتمام.
+          {!registrationOpen
+            ? 'لا يمكن إنشاء فرق قبل أن يضبط المدير المسابقات وقواعد الاهتمام.'
+            : 'إنشاء الفرق معطّل في إعدادات هذا المطبخ — المدير فقط يستطيع إنشاء الفرق أو فرزك.'}
         </p>
         <Link to={`/events/${eventId}/dashboard`} className="text-teknofest-cyan hover:underline">
           العودة للوحتي
@@ -547,11 +554,13 @@ export default function TeamRegistration() {
             <div className="card fade-in">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-white">أعضاء الفريق</h2>
-                <span className="text-gray-400">{fields.length}/6 أعضاء</span>
+                <span className="text-gray-400">
+                  {fields.length}/{maxTeamSize} أعضاء
+                </span>
               </div>
 
               <p className="text-gray-400 mb-6">
-                يجب أن يتكون الفريق من 3 إلى 6 أعضاء. حدد مشرف الفريق (القائد).
+                يجب أن يتكون الفريق من 3 إلى {maxTeamSize} أعضاء. حدد مشرف الفريق (القائد).
               </p>
 
               {/* Gender validation warning */}
@@ -720,7 +729,7 @@ export default function TeamRegistration() {
                 ))}
               </div>
 
-              {fields.length < 6 && (
+              {fields.length < maxTeamSize && (
                 <button
                   type="button"
                   onClick={addMember}

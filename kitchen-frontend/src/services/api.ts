@@ -181,6 +181,9 @@ export const kitchensService = {
     interest_min: number | null
     interest_max: number | null
     registration_open: boolean
+    allow_create_teams: boolean
+    allow_join_teams: boolean
+    max_team_size: number
   }> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/fields`)
     return response.data
@@ -195,6 +198,9 @@ export const kitchensService = {
     interest_min: number | null
     interest_max: number | null
     registration_open: boolean
+    allow_create_teams: boolean
+    allow_join_teams: boolean
+    max_team_size: number
     competitions: (ProjectFieldOption & { selected: boolean })[]
   }> => {
     const response = await api.get(
@@ -221,6 +227,26 @@ export const kitchensService = {
       interest_min: interestMin,
       interest_max: interestMax,
     })
+    return response.data
+  },
+
+  setKitchenTeamSettings: async (
+    eventId: string,
+    settings: {
+      allow_create_teams: boolean
+      allow_join_teams: boolean
+      max_team_size: number
+    },
+  ): Promise<{
+    event_id: string
+    allow_create_teams: boolean
+    allow_join_teams: boolean
+    max_team_size: number
+  }> => {
+    const response = await api.put(
+      `/kitchens/${encodeURIComponent(eventId)}/team-settings`,
+      settings,
+    )
     return response.data
   },
 

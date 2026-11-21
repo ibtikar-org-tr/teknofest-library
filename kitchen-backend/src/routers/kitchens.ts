@@ -4,7 +4,12 @@ import { requireEventKitchenAccess } from '../middleware/event-access'
 import { createIndividual, listIndividuals } from '../repositories/individuals'
 import { createProject, listProjects, listProjectsByTeam } from '../repositories/projects'
 import { listProjectFiles } from '../repositories/project-files'
-import { getEventKitchen, listEventKitchens } from '../repositories/event-kitchens'
+import {
+  getEventKitchen,
+  getKitchenMaxTeamSize,
+  listEventKitchens,
+  setKitchenTeamSettings,
+} from '../repositories/event-kitchens'
 import {
   addEventJury,
   isEventJury,
@@ -151,6 +156,9 @@ kitchensRouter.get('/:eventId/competitions/catalog', ...withEventAccess, async (
       interest_min: settings.interest_min,
       interest_max: settings.interest_max,
       registration_open: settings.registration_open,
+      allow_create_teams: settings.allow_create_teams,
+      allow_join_teams: settings.allow_join_teams,
+      max_team_size: settings.max_team_size,
       competitions: catalog.map((row) => ({
         ...row,
         selected: selected.has(row.id),
@@ -160,6 +168,43 @@ kitchensRouter.get('/:eventId/competitions/catalog', ...withEventAccess, async (
     console.error('Failed to load competition catalog', error)
     return c.json({ message: 'Could not load competitions from library' }, 502)
   }
+})
+
+/**
+ * Member self-service team policies (managers only).
+ * Body: `{ allow_create_teams, allow_join_teams, max_team_size }`
+ */
+kitchensRouter.put('/:eventId/team-settings', ...withEventAccess, async (c) => {
+  const eventId = c.req.param('eventId')
+  const member = c.get('member')
+  if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
+    return c.json({ message: 'Only VMS event managers can update team settings' }, 403)
+  }
+
+  const body = await c.req.json<{
+    allow_create_teams?: unknown
+    allow_join_teams?: unknown
+    max_team_size?: unknown
+  }>()
+
+  const maxRaw = Number(body.max_team_size)
+  if (!Number.isFinite(maxRaw) || maxRaw < 1 || maxRaw > 50) {
+    return c.json({ message: 'max_team_size must be between 1 and 50' }, 400)
+  }
+
+  const kitchen = await setKitchenTeamSettings(c.env, eventId, {
+    allow_create_teams: Boolean(body.allow_create_teams),
+    allow_join_teams: Boolean(body.allow_join_teams),
+    max_team_size: maxRaw,
+  })
+  if (!kitchen) return c.json({ message: 'Kitchen not found for this event' }, 404)
+
+  return c.json({
+    event_id: eventId,
+    allow_create_teams: kitchen.allow_create_teams,
+    allow_join_teams: kitchen.allow_join_teams,
+    max_team_size: kitchen.max_team_size,
+  })
 })
 
 /**
@@ -250,9 +295,19 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
   const member = c.get('member')
   const sessionEmail = member?.email?.trim().toLowerCase()
   const sessionMembership = member?.membership_number?.trim()
+  const isManager = await canManageVmsEvent(c.env, eventId, sessionMembership)
 
-  const registration = await requireRegistrationOpen(c.env, eventId)
-  if (!registration.ok) return c.json({ message: registration.message }, 403)
+  // Managers may create anytime; members need registration open + allow_create_teams.
+  if (!isManager) {
+    const registration = await requireRegistrationOpen(c.env, eventId)
+    if (!registration.ok) return c.json({ message: registration.message }, 403)
+    if (!registration.settings.allow_create_teams) {
+      return c.json(
+        { message: 'Creating teams is disabled for members. Ask an event manager.' },
+        403,
+      )
+    }
+  }
 
   if (sessionMembership && (await isEventJury(c.env, eventId, sessionMembership))) {
     return c.json({ message: 'Juries cannot create or join teams' }, 403)
@@ -296,6 +351,14 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
         },
       )
     : body.members
+
+  const maxTeamSize = await getKitchenMaxTeamSize(c.env, eventId)
+  if ((members?.length ?? 0) > maxTeamSize) {
+    return c.json(
+      { message: `A team may have at most ${maxTeamSize} members` },
+      400,
+    )
+  }
 
   for (const m of members ?? []) {
     if (!m.email) {
@@ -419,13 +482,14 @@ kitchensRouter.post('/:eventId/individuals', ...withEventAccess, async (c) => {
 
 kitchensRouter.get('/:eventId/teams-with-space', ...withEventAccess, async (c) => {
   const eventId = c.req.param('eventId')
+  const maxTeamSize = await getKitchenMaxTeamSize(c.env, eventId)
   const teams = await listTeams(c.env, eventId)
   const withSpace = []
   for (const team of teams) {
     if (!team.is_active) continue
     const full = await getTeam(c.env, team.id)
     const memberCount = full?.members?.length ?? 0
-    if (memberCount >= 6) continue
+    if (memberCount >= maxTeamSize) continue
     withSpace.push({
       id: team.id,
       team_name: team.team_name,
@@ -433,7 +497,8 @@ kitchensRouter.get('/:eventId/teams-with-space', ...withEventAccess, async (c) =
       field: team.field,
       event_id: team.event_id,
       member_count: memberCount,
-      available_slots: 6 - memberCount,
+      available_slots: maxTeamSize - memberCount,
+      max_team_size: maxTeamSize,
       members: (full?.members ?? []).map((m) => ({
         id: m.id,
         full_name: m.full_name,
@@ -457,6 +522,12 @@ kitchensRouter.post('/:eventId/teams/:teamId/join', ...withEventAccess, async (c
 
   const registration = await requireRegistrationOpen(c.env, eventId)
   if (!registration.ok) return c.json({ message: registration.message }, 403)
+  if (!registration.settings.allow_join_teams) {
+    return c.json(
+      { message: 'Joining teams is disabled for members. Ask an event manager.' },
+      403,
+    )
+  }
 
   if (!Number.isFinite(teamId) || teamId <= 0) {
     return c.json({ message: 'Invalid team id' }, 400)
@@ -488,8 +559,9 @@ kitchensRouter.post('/:eventId/teams/:teamId/join', ...withEventAccess, async (c
     return c.json({ message: 'Team not found in this event kitchen' }, 404)
   }
 
+  const maxTeamSize = registration.settings.max_team_size
   const memberCount = team.members?.length ?? 0
-  if (memberCount >= 6) {
+  if (memberCount >= maxTeamSize) {
     return c.json({ message: 'This team is full' }, 409)
   }
 

@@ -8,6 +8,7 @@ import {
   getIndividual,
   listIndividuals,
 } from '../repositories/individuals'
+import { getKitchenMaxTeamSize } from '../repositories/event-kitchens'
 import { createTeam, getTeam, listTeams } from '../repositories/teams'
 import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
 
@@ -92,13 +93,14 @@ studentsRouter.post('/individual', memberAuthMiddleware, async (c) => {
 studentsRouter.get('/teams-with-space', memberAuthMiddleware, async (c) => {
   const eventId = c.req.query('event_id')
   if (!eventId) return c.json({ message: 'event_id query is required' }, 400)
+  const maxTeamSize = await getKitchenMaxTeamSize(c.env, eventId)
   const teams = await listTeams(c.env, eventId)
   const withSpace = []
   for (const team of teams) {
     if (!team.is_active) continue
     const full = await getTeam(c.env, team.id)
     const memberCount = full?.members?.length ?? 0
-    if (memberCount >= 6) continue
+    if (memberCount >= maxTeamSize) continue
     withSpace.push({
       id: team.id,
       team_name: team.team_name,
@@ -106,7 +108,8 @@ studentsRouter.get('/teams-with-space', memberAuthMiddleware, async (c) => {
       field: team.field,
       event_id: team.event_id,
       member_count: memberCount,
-      available_slots: 6 - memberCount,
+      available_slots: maxTeamSize - memberCount,
+      max_team_size: maxTeamSize,
       members: (full?.members ?? []).map((m) => ({
         id: m.id,
         full_name: m.full_name,

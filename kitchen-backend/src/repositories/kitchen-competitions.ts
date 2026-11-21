@@ -1,5 +1,9 @@
 import type { Environment } from '../types/env'
-import { getEventKitchen, setKitchenInterestRules } from './event-kitchens'
+import {
+  DEFAULT_MAX_TEAM_SIZE,
+  getEventKitchen,
+  setKitchenInterestRules,
+} from './event-kitchens'
 import {
   getLibraryCompetitionById,
   listLibraryCompetitionFields,
@@ -12,6 +16,9 @@ export type KitchenCompetitionSettings = {
   interest_max: number | null
   /** True when admin set min/max and enough allowlisted competitions exist. */
   registration_open: boolean
+  allow_create_teams: boolean
+  allow_join_teams: boolean
+  max_team_size: number
 }
 
 export function isRegistrationOpen(settings: {
@@ -44,6 +51,9 @@ export async function getKitchenCompetitionSettings(
       interest_max,
       allowlist_count: competitions.length,
     }),
+    allow_create_teams: kitchen?.allow_create_teams ?? false,
+    allow_join_teams: kitchen?.allow_join_teams ?? false,
+    max_team_size: kitchen?.max_team_size ?? DEFAULT_MAX_TEAM_SIZE,
   }
 }
 

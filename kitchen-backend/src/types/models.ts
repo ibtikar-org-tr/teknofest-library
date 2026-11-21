@@ -47,6 +47,12 @@ export interface EventKitchen {
   interest_min: number | null
   /** Max competitions a pool registrant may select (null = rules not set). */
   interest_max: number | null
+  /** Members may create teams themselves (managers always can). */
+  allow_create_teams: boolean
+  /** Members may join existing teams themselves (managers always can assign). */
+  allow_join_teams: boolean
+  /** Max members per team (default 8). */
+  max_team_size: number
 }
 
 export interface VmsEventSummary {
