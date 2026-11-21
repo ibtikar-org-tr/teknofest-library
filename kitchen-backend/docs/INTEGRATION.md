@@ -32,8 +32,11 @@ CI var `VMS_SERVICE_NAME` must be the VMS membership Worker name (same value Car
 
 ## Competitions
 
-`GET /ms/kitchen/api/kitchens/:eventId/fields` proxies Library competitions.  
-Teams/individuals/projects still store the chosen field as a display string (`field` / `preferred_field`), not a library id.
+Catalog lives in Library. Kitchen stores an **allowlist** of library competition ids per event (`kitchen_competitions`).
+
+- Members: `GET …/fields` → only allowlisted competitions (`value` = id string).
+- Managers: `GET …/competitions/catalog`, `PUT …/competitions` `{ competition_ids: number[] }`.
+- Team / individual / project `field` / `preferred_field` store the **library competition id** (string). Responses may include `field_label` / `preferred_field_label` for display. Links use `/competition/:id` on the library (TAL) site.
 
 ## Important when modifying Kitchen BE
 

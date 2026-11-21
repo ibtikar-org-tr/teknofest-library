@@ -71,7 +71,10 @@ export interface Team {
   event_id: string | null
   team_name: string
   registration_type: RegistrationType
+  /** Library competition id (string). Prefer `field_label` for display. */
   field: string
+  /** Resolved Arabic (or fallback) name from Library when available. */
+  field_label?: string
   gender: Gender
   initial_idea: string | null
   program_version_id: number | null

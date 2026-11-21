@@ -361,7 +361,9 @@ export default function AdminIndividuals() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold">{individual.full_name} - {GENDER_LABELS[individual.gender]}</h3>
-                    <p className="text-gray-400 text-sm">{individual.preferred_field}</p>
+                    <p className="text-gray-400 text-sm">
+                      {individual.preferred_field_label || individual.preferred_field}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -407,7 +409,8 @@ export default function AdminIndividuals() {
                   <span className="text-gray-500">البريد:</span> {individual.email}
                 </p>
                 <p className="text-gray-400">
-                  <span className="text-gray-500">المجال:</span> {individual.preferred_field}
+                  <span className="text-gray-500">المجال:</span>{' '}
+                  {individual.preferred_field_label || individual.preferred_field}
                 </p>
                 <p className="text-gray-400">
                   <span className="text-gray-500">المهارات:</span>{' '}
@@ -462,7 +465,10 @@ export default function AdminIndividuals() {
                   <h3 className="text-xl text-white font-bold">
                     {selectedIndividualDetail.full_name}
                   </h3>
-                  <p className="text-gray-400">{selectedIndividualDetail.preferred_field}</p>
+                  <p className="text-gray-400">
+                    {selectedIndividualDetail.preferred_field_label ||
+                      selectedIndividualDetail.preferred_field}
+                  </p>
                   {selectedIndividualDetail.is_assigned && (
                     <span className="inline-flex items-center gap-1 mt-1 px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">
                       <UserCheck className="w-3 h-3" />
@@ -513,7 +519,10 @@ export default function AdminIndividuals() {
                     <Users className="w-5 h-5 text-teknofest-orange" />
                     <span className="text-white font-medium">المجال المفضل</span>
                   </div>
-                  <p className="text-gray-300">{selectedIndividualDetail.preferred_field}</p>
+                  <p className="text-gray-300">
+                    {selectedIndividualDetail.preferred_field_label ||
+                      selectedIndividualDetail.preferred_field}
+                  </p>
                 </div>
 
                 {selectedIndividualDetail.project_idea && (
@@ -618,7 +627,7 @@ export default function AdminIndividuals() {
                         {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
                       </option>
                       {projectFields.map((field) => (
-                        <option key={field.id} value={field.value}>
+                        <option key={field.id} value={String(field.id)}>
                           {field.label}
                         </option>
                       ))}
@@ -650,7 +659,9 @@ export default function AdminIndividuals() {
                               {team.available_slots} متاح
                             </span>
                           </div>
-                          <p className="text-gray-400 text-sm mb-2">{team.field}</p>
+                          <p className="text-gray-400 text-sm mb-2">
+                            {team.field_label || team.field || 'لم تُختر مسابقة بعد'}
+                          </p>
                           <div className="flex flex-wrap gap-1">
                             {team.members.map((member) => (
                               <span

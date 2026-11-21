@@ -259,7 +259,7 @@ export default function IndividualRegistration() {
                       {fieldsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة المفضلة'}
                     </option>
                     {projectFields.map((field) => (
-                      <option key={field.id} value={field.value}>
+                      <option key={field.id} value={String(field.id)}>
                         {field.label}
                       </option>
                     ))}

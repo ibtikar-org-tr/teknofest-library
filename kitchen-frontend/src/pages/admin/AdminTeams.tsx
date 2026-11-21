@@ -54,7 +54,8 @@ export default function AdminTeams() {
   const filteredTeams = teams.filter(
     (team) =>
       team.team_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (team.field || '').toLowerCase().includes(searchTerm.toLowerCase()),
+      (team.field || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (team.field_label || '').toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const handleSendTelegramLink = async (team: Team) => {
@@ -184,7 +185,9 @@ export default function AdminTeams() {
                     <h3 className="text-lg font-bold text-white">
                       {team.team_name} - {team.gender === 'male' ? 'ذكور' : 'إناث'}
                     </h3>
-                    <p className="text-gray-400 text-sm">{team.field || 'لم تُختر مسابقة بعد'}</p>
+                    <p className="text-gray-400 text-sm">
+                      {team.field_label || team.field || 'لم تُختر مسابقة بعد'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

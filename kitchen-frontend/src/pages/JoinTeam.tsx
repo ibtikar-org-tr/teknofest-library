@@ -91,7 +91,9 @@ export default function JoinTeam() {
             >
               <div>
                 <h2 className="text-lg font-bold text-white mb-1">{team.team_name}</h2>
-                <p className="text-gray-400 text-sm mb-2">{team.field}</p>
+                <p className="text-gray-400 text-sm mb-2">
+                  {team.field_label || team.field || 'لم تُختر مسابقة بعد'}
+                </p>
                 <p className="text-gray-500 text-sm">
                   {team.member_count} أعضاء · {team.available_slots} مقاعد متبقية
                 </p>

@@ -12,17 +12,11 @@ import {
 } from 'lucide-react'
 import { kitchensService } from '../services/api'
 import { useProjectFields } from '../hooks/useProjectFields'
-import type { ProjectFieldOption, ProjectSubmission, Team } from '../types'
-
-const LIBRARY_PUBLIC_URL = (
-  import.meta.env.VITE_LIBRARY_URL as string | undefined
-)?.trim() || 'https://tal.ibtikar.tr'
-
-function libraryCompetitionUrl(field: string, competitions: ProjectFieldOption[]): string {
-  const match = competitions.find((c) => c.value === field || c.label === field)
-  const key = match ? String(match.id) : field
-  return `${LIBRARY_PUBLIC_URL.replace(/\/+$/, '')}/competition/${encodeURIComponent(key)}?lang=ar`
-}
+import {
+  competitionLabel,
+  libraryCompetitionUrl,
+} from '../lib/competition'
+import type { ProjectSubmission, Team } from '../types'
 
 export default function MyTeam() {
   const { eventId = '' } = useParams()
@@ -72,13 +66,14 @@ export default function MyTeam() {
   const hasFinal = useMemo(() => projects.some((p) => p.stage === 'final'), [projects])
 
   const saveCompetition = async () => {
-    if (!eventId || !selectedCompetition.trim()) {
+    const competitionId = Number(selectedCompetition)
+    if (!eventId || !Number.isFinite(competitionId) || competitionId <= 0) {
       toast.error('اختر المسابقة أولاً')
       return
     }
     setSavingCompetition(true)
     try {
-      const updated = await kitchensService.setMyTeamCompetition(eventId, selectedCompetition.trim())
+      const updated = await kitchensService.setMyTeamCompetition(eventId, competitionId)
       setTeam(updated)
       setEditingCompetition(false)
       toast.success(hasCompetition ? 'تم تحديث المسابقة' : 'تم اختيار المسابقة')
@@ -89,6 +84,13 @@ export default function MyTeam() {
     }
   }
 
+  const teamCompetitionLabel = competitionLabel(
+    team?.field,
+    competitions,
+    team?.field_label,
+  )
+  const teamCompetitionHref = libraryCompetitionUrl(team?.field, competitions)
+
   const competitionPicker = (
     <div className="space-y-3">
       <select
@@ -98,10 +100,14 @@ export default function MyTeam() {
         onChange={(e) => setSelectedCompetition(e.target.value)}
       >
         <option value="">
-          {competitionsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
+          {competitionsLoading
+            ? 'جاري تحميل المسابقات...'
+            : competitions.length === 0
+              ? 'لا مسابقات متاحة — انتظر تفعيل المدير'
+              : 'اختر المسابقة'}
         </option>
         {competitions.map((c) => (
-          <option key={c.id} value={c.value}>
+          <option key={c.id} value={String(c.id)}>
             {c.label}
           </option>
         ))}
@@ -225,15 +231,19 @@ export default function MyTeam() {
               <div className="min-w-0">
                 <p className="text-xs text-green-400 mb-1">الخطوة 1</p>
                 <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
-                <a
-                  href={libraryCompetitionUrl(team.field!, competitions)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
-                  title="فتح صفحة المسابقة في المكتبة"
-                >
-                  {team.field}
-                </a>
+                {teamCompetitionHref ? (
+                  <a
+                    href={teamCompetitionHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
+                    title="فتح صفحة المسابقة في المكتبة"
+                  >
+                    {teamCompetitionLabel}
+                  </a>
+                ) : (
+                  <p className="text-gray-300 text-sm truncate">{teamCompetitionLabel}</p>
+                )}
                 <p className="text-gray-500 text-xs mt-1">
                   لا يمكن تغيير المسابقة بعد تقديم المرحلة الأولية
                 </p>
@@ -247,15 +257,19 @@ export default function MyTeam() {
                   <div className="min-w-0">
                     <p className="text-xs text-green-400 mb-1">الخطوة 1</p>
                     <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
-                    <a
-                      href={libraryCompetitionUrl(team.field!, competitions)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
-                      title="فتح صفحة المسابقة في المكتبة"
-                    >
-                      {team.field}
-                    </a>
+                    {teamCompetitionHref ? (
+                      <a
+                        href={teamCompetitionHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
+                        title="فتح صفحة المسابقة في المكتبة"
+                      >
+                        {teamCompetitionLabel}
+                      </a>
+                    ) : (
+                      <p className="text-gray-300 text-sm truncate">{teamCompetitionLabel}</p>
+                    )}
                   </div>
                 </div>
                 {!editingCompetition ? (

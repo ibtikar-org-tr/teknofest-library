@@ -150,7 +150,8 @@ export default function AdminEvaluations() {
                       <h3 className="text-lg font-bold text-white">{project.title}</h3>
                     </div>
                     <p className="text-gray-400 text-sm mb-2">
-                      {project.team?.team_name || `فريق ${project.team_id}`} | {project.field}
+                      {project.team?.team_name || `فريق ${project.team_id}`} |{' '}
+                      {project.field_label || project.field}
                     </p>
                     <p className="text-gray-300 text-sm line-clamp-2">
                       {project.summary || project.problem_statement}

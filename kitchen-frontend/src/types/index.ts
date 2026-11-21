@@ -5,12 +5,12 @@ export type RegistrationType =
   | 'individual_no_idea'
   | 'team_no_idea'
 
-/** Competition field value stored on teams / individuals / projects (from library). */
+/** Library competition id stored as string on teams / individuals / projects. */
 export type ProjectField = string
 
 export type CompetitionType = 'competitive' | 'innovative'
 
-/** Dropdown option sourced from library via kitchen `GET /kitchens/:eventId/fields`. */
+/** Dropdown option from kitchen allowlist (`GET /kitchens/:eventId/fields`). `value` = id string. */
 export type ProjectFieldOption = {
   id: number
   value: string
@@ -63,7 +63,11 @@ export interface Team {
   event_id?: string | null
   team_name: string
   registration_type: RegistrationType
+  /** Library competition id (string). */
   field: ProjectField
+  /** Resolved display name from Library when available. */
+  field_label?: string
+  competition_locked?: boolean
   initial_idea?: string
   telegram_group_link?: string
   is_active?: boolean
@@ -85,6 +89,7 @@ export interface Individual {
   interests: string
   experience_level?: string | null
   preferred_field: ProjectField
+  preferred_field_label?: string
   project_idea?: string
   assigned_team_id?: number
   is_assigned?: boolean
@@ -118,6 +123,7 @@ export interface ProjectSubmission {
   technical_description?: string
   scientific_reference?: string
   field: ProjectField
+  field_label?: string
   /** @deprecated use files */
   image_path?: string
   /** @deprecated use files */
@@ -188,6 +194,7 @@ export interface TeamWithSpace {
   id: number
   team_name: string
   field: ProjectField
+  field_label?: string
   member_count: number
   available_slots: number
   members: {

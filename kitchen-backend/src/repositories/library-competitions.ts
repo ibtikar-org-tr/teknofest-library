@@ -5,7 +5,7 @@ export type LibraryCompetitionType = 'competitive' | 'innovative'
 /** Slim competition row for kitchen dropdowns (sourced from library). */
 export type KitchenCompetitionField = {
   id: number
-  /** Stored on teams/individuals/projects as `field` / `preferred_field` (Arabic name preferred). */
+  /** Stored on teams/individuals/projects as `field` / `preferred_field` — library id as string. */
   value: string
   label: string
   labelEn: string
@@ -64,7 +64,7 @@ function mapCompetition(row: LibraryCompetitionRow): KitchenCompetitionField | n
 
   return {
     id,
-    value: label,
+    value: String(id),
     label,
     labelEn,
     labelTr,
@@ -91,4 +91,24 @@ export async function listLibraryCompetitionFields(
     .map(mapCompetition)
     .filter((row): row is KitchenCompetitionField => row != null)
     .sort((a, b) => a.label.localeCompare(b.label, 'ar'))
+}
+
+export async function getLibraryCompetitionById(
+  env: Environment,
+  competitionId: number,
+): Promise<KitchenCompetitionField | null> {
+  if (!Number.isFinite(competitionId) || competitionId <= 0) return null
+
+  const response = await libraryFetch(
+    env,
+    `/api/competitions/${encodeURIComponent(String(competitionId))}`,
+  )
+  if (response.status === 404) return null
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    throw new Error(`Library competition ${competitionId} failed (${response.status}): ${body}`)
+  }
+
+  const row = (await response.json()) as LibraryCompetitionRow
+  return mapCompetition(row)
 }

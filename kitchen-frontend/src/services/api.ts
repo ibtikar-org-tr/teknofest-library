@@ -122,9 +122,37 @@ export const kitchensService = {
     return response.data
   },
 
-  /** Competitions from the library app (proxied by kitchen). */
+  /** Competitions enabled for this kitchen (library ids). */
   getFields: async (eventId: string): Promise<ProjectFieldOption[]> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/fields`)
+    return response.data
+  },
+
+  /** Full library catalog + selection flags (managers). */
+  getCompetitionCatalog: async (
+    eventId: string,
+  ): Promise<{
+    event_id: string
+    selected_ids: number[]
+    competitions: (ProjectFieldOption & { selected: boolean })[]
+  }> => {
+    const response = await api.get(
+      `/kitchens/${encodeURIComponent(eventId)}/competitions/catalog`,
+    )
+    return response.data
+  },
+
+  setKitchenCompetitions: async (
+    eventId: string,
+    competitionIds: number[],
+  ): Promise<{
+    event_id: string
+    competition_ids: number[]
+    competitions: ProjectFieldOption[]
+  }> => {
+    const response = await api.put(`/kitchens/${encodeURIComponent(eventId)}/competitions`, {
+      competition_ids: competitionIds,
+    })
     return response.data
   },
 
@@ -145,9 +173,9 @@ export const kitchensService = {
     return response.data
   },
 
-  setMyTeamCompetition: async (eventId: string, field: string): Promise<Team> => {
+  setMyTeamCompetition: async (eventId: string, competitionId: number): Promise<Team> => {
     const response = await api.put(`/kitchens/${encodeURIComponent(eventId)}/my-team/competition`, {
-      field,
+      competition_id: competitionId,
     })
     return response.data
   },

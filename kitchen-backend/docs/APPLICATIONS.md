@@ -8,7 +8,7 @@ Files are free-form (not image/schema/design slots): each has a **display name**
 
 On the team dashboard the path is shown as **three steps**:
 
-1. **Choose competition** — stored on `teams.field` (not a jury stage); **editable until primary is submitted**, then locked
+1. **Choose competition** — stored on `teams.field` as **library competition id** (must be on the kitchen allowlist); **editable until primary is submitted**, then locked
 2. **Primary** application
 3. **Final** application
 
@@ -30,10 +30,12 @@ Each is a separate `project_submissions` row (`stage`, unique per team). Stages 
 
 ## APIs
 
-- Choose / change competition: `PUT /api/kitchens/:eventId/my-team/competition` `{ field }`  
-  — **409** once primary exists (final submit does not unlock changes)  
+- Kitchen allowlist (managers): `GET/PUT …/competitions` (+ `…/competitions/catalog`)
+- Member list: `GET …/fields` (allowlisted only)
+- Choose / change competition: `PUT …/my-team/competition` `{ competition_id }`  
+  — must be allowlisted; **409** once primary exists  
   — create-team always starts with empty `field`; this endpoint is the only way to set it
-- `GET …/my-team` includes `competition_locked: true` after primary is submitted
+- `GET …/my-team` includes `competition_locked` and `field_label`
 - Submit: `POST /api/kitchens/:eventId/projects` with `{ stage, summary, team_id? }`  
   — requires competition; final requires primary; one row per stage
 - Upload file: `POST /api/projects/:id/files` multipart (`file`, `display_name`, `description?`)

@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   Calendar,
   BookOpen,
+  Trophy,
 } from 'lucide-react'
 import Logo from './Logo'
 import { clearSession } from '../lib/auth-session'
@@ -45,6 +46,7 @@ function SidebarContent({
         { to: base, label: 'لوحة التحكم', icon: LayoutDashboard },
         { to: `${base}/teams`, label: 'الفرق', icon: Users },
         { to: `${base}/individuals`, label: 'الأفراد', icon: User },
+        { to: `${base}/competitions`, label: 'المسابقات', icon: Trophy },
         { to: `${base}/projects`, label: 'المشاريع', icon: FileText },
         { to: `${base}/juries`, label: 'المحكمون', icon: Gavel },
         { to: `${base}/evaluations`, label: 'التقييمات', icon: Star },

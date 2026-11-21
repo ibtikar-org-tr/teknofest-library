@@ -43,7 +43,8 @@ export default function AdminProjects() {
   const filteredProjects = projects.filter(
     (project) =>
       project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.field.toLowerCase().includes(searchTerm.toLowerCase())
+      project.field.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (project.field_label || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const handleDownloadPdf = async (projectId: number) => {
@@ -155,7 +156,7 @@ export default function AdminProjects() {
                   {(project.stage ?? 'primary') === 'final' ? 'نهائية' : 'أولية'}
                 </span>
                 <span className="px-2 py-1 bg-teknofest-orange/20 text-teknofest-orange rounded text-xs">
-                  {project.field}
+                  {project.field_label || project.field}
                 </span>
                 {project.has_attachments && (
                   <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
@@ -215,8 +216,11 @@ export default function AdminProjects() {
                 </div>
                 <div className="p-3 bg-teknofest-dark-blue/50 rounded-xl text-center">
                   <p className="text-gray-400 text-xs mb-1">المجال</p>
-                  <p className="text-white font-medium text-sm truncate" title={selectedProject.field}>
-                    {selectedProject.field}
+                  <p
+                    className="text-white font-medium text-sm truncate"
+                    title={selectedProject.field_label || selectedProject.field}
+                  >
+                    {selectedProject.field_label || selectedProject.field}
                   </p>
                 </div>
                 <div className="p-3 bg-teknofest-dark-blue/50 rounded-xl text-center">

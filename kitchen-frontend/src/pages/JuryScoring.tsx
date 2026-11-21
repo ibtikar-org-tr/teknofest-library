@@ -181,7 +181,9 @@ export default function JuryScoring() {
                               </span>
                               <p className="text-white font-medium">{project.title}</p>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">{project.field}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {project.field_label || project.field}
+                            </p>
                             {summary ? (
                               <p className="text-sm text-gray-300 mt-2 line-clamp-2">{summary}</p>
                             ) : null}
@@ -234,7 +236,9 @@ export default function JuryScoring() {
                   {STAGE_LABEL[detailProject.stage ?? 'primary']}
                 </span>
                 <h3 className="text-xl font-bold text-white">{detailProject.title}</h3>
-                <p className="text-sm text-gray-400 mt-1">{detailProject.field}</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  {detailProject.field_label || detailProject.field}
+                </p>
               </div>
               <button
                 type="button"

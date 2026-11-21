@@ -277,7 +277,9 @@ export default function ProjectSubmission() {
           <p className="text-gray-400">
             فريق <span className="text-teknofest-orange">{myTeam.team_name}</span> — ملخص وملفات
           </p>
-          <p className="text-gray-500 text-sm mt-1">{myTeam.field}</p>
+          <p className="text-gray-500 text-sm mt-1">
+            {myTeam.field_label || myTeam.field}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">

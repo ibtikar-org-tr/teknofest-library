@@ -147,18 +147,18 @@ export type SetTeamCompetitionResult =
   | { ok: false; status: 400 | 404 | 409; message: string }
 
 /**
- * Set / change competition (`field`).
+ * Set / change competition (`field` = library competition id as string).
  * Allowed until the primary stage is submitted; after that returns 409.
  * Final-stage submit does not unlock competition changes.
+ * Caller must validate the id is on the kitchen allowlist.
  */
 export const setTeamCompetition = async (
   env: Environment,
   teamId: number,
-  field: string,
+  competitionId: number,
 ): Promise<SetTeamCompetitionResult> => {
-  const trimmed = String(field ?? '').trim()
-  if (!trimmed) {
-    return { ok: false, status: 400, message: 'Competition field is required' }
+  if (!Number.isFinite(competitionId) || competitionId <= 0) {
+    return { ok: false, status: 400, message: 'competition_id is required' }
   }
 
   const existing = await getTeam(env, teamId)
@@ -172,13 +172,14 @@ export const setTeamCompetition = async (
     }
   }
 
+  const stored = String(competitionId)
   const row = await env.D1_DB.prepare(
     `UPDATE teams
      SET field = ?, updated_at = datetime('now')
      WHERE id = ?
      RETURNING *`,
   )
-    .bind(trimmed, teamId)
+    .bind(stored, teamId)
     .first()
 
   if (!row) return { ok: false, status: 404, message: 'Team not found' }

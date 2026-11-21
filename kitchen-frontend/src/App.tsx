@@ -15,6 +15,7 @@ import AdminIndividuals from './pages/admin/AdminIndividuals'
 import AdminProjects from './pages/admin/AdminProjects'
 import AdminEvaluations from './pages/admin/AdminEvaluations'
 import AdminJuries from './pages/admin/AdminJuries'
+import AdminCompetitions from './pages/admin/AdminCompetitions'
 import AdminKitchens from './pages/admin/AdminKitchens'
 import AuthCallback from './pages/AuthCallback'
 import Leaderboard from './pages/Leaderboard'
@@ -88,6 +89,7 @@ function App() {
           <Route path="events/:eventId/individuals" element={<AdminIndividuals />} />
           <Route path="events/:eventId/projects" element={<AdminProjects />} />
           <Route path="events/:eventId/juries" element={<AdminJuries />} />
+          <Route path="events/:eventId/competitions" element={<AdminCompetitions />} />
           <Route path="events/:eventId/evaluations" element={<AdminEvaluations />} />
           <Route path="management" element={<Navigate to="/admin/kitchens" replace />} />
           <Route path="teams" element={<Navigate to="/admin/kitchens" replace />} />
