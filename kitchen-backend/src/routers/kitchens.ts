@@ -1121,11 +1121,16 @@ kitchensRouter.get('/:eventId/projects', ...withEventAccess, async (c) => {
   if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
     return c.json({ message: 'Only VMS event managers can list projects' }, 403)
   }
-  const projects = await listProjects(c.env, eventId)
-  const withFiles = await Promise.all(
-    projects.map(async (p) => ({ ...p, files: await listProjectFiles(c.env, p.id) })),
-  )
-  return c.json(await enrichProjectsWithCompetitionLabels(c.env, withFiles))
+  try {
+    const projects = await listProjects(c.env, eventId)
+    const withFiles = await Promise.all(
+      projects.map(async (p) => ({ ...p, files: await listProjectFiles(c.env, p.id) })),
+    )
+    return c.json(await enrichProjectsWithCompetitionLabels(c.env, withFiles))
+  } catch (error) {
+    console.error('list projects failed', eventId, error)
+    return c.json({ message: 'Failed to load projects' }, 500)
+  }
 })
 
 kitchensRouter.get('/:eventId/stats', ...withEventAccess, async (c) => {

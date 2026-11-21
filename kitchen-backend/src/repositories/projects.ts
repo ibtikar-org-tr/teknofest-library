@@ -67,7 +67,35 @@ export const getProjectByTeamStage = async (
 
 export type CreateProjectResult =
   | { ok: true; project: ProjectSubmission }
-  | { ok: false; status: 400 | 404 | 409; message: string }
+  | { ok: false; status: 400 | 404 | 409 | 500; message: string }
+
+/** Ensure a program_versions row exists (FK required by project_submissions). */
+export const ensureProgramVersionId = async (
+  env: Environment,
+  preferredId = 1,
+): Promise<number> => {
+  const preferred = await env.D1_DB.prepare(
+    'SELECT id FROM program_versions WHERE id = ? LIMIT 1',
+  )
+    .bind(preferredId)
+    .first<{ id: number }>()
+  if (preferred) return Number(preferred.id)
+
+  const any = await env.D1_DB.prepare(
+    'SELECT id FROM program_versions ORDER BY id ASC LIMIT 1',
+  ).first<{ id: number }>()
+  if (any) return Number(any.id)
+
+  const created = await env.D1_DB.prepare(
+    `INSERT INTO program_versions (version_number, version_name, is_active)
+     VALUES (1, '2026', 1)
+     RETURNING id`,
+  ).first<{ id: number }>()
+  if (!created) {
+    throw new Error('Failed to create default program version')
+  }
+  return Number(created.id)
+}
 
 export const createProject = async (
   env: Environment,
@@ -135,34 +163,62 @@ export const createProject = async (
       ? `${team.team_name} — المرحلة الأولية`
       : `${team.team_name} — المرحلة النهائية`
 
-  const row = await env.D1_DB.prepare(
-    `INSERT INTO project_submissions (
-      event_id, team_id, program_version_id, submission_version, stage, summary,
-      title, problem_statement, technical_description, scientific_reference, field,
-      image_path, diagram_path, design_path, has_attachments, is_complete, character_count
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    RETURNING *`,
-  )
-    .bind(
-      payload.event_id,
-      payload.team_id,
-      payload.program_version_id,
-      stage === 'primary' ? 1 : 2,
-      stage,
-      summary,
-      title,
-      summary,
-      '',
-      '',
-      team.field,
-      payload.image_path ?? null,
-      payload.diagram_path ?? null,
-      payload.design_path ?? null,
-      boolToInt(hasAttachments),
-      1,
-      summary.length,
-    )
-    .first()
+  let programVersionId: number
+  try {
+    programVersionId = await ensureProgramVersionId(env, payload.program_version_id || 1)
+  } catch (error) {
+    console.error('ensureProgramVersionId failed', error)
+    return {
+      ok: false,
+      status: 500,
+      message: 'Program version is not configured — contact an event manager',
+    }
+  }
 
-  return { ok: true, project: mapProject(row as Record<string, unknown>) }
+  try {
+    const row = await env.D1_DB.prepare(
+      `INSERT INTO project_submissions (
+        event_id, team_id, program_version_id, submission_version, stage, summary,
+        title, problem_statement, technical_description, scientific_reference, field,
+        image_path, diagram_path, design_path, has_attachments, is_complete, character_count
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      RETURNING *`,
+    )
+      .bind(
+        payload.event_id,
+        payload.team_id,
+        programVersionId,
+        stage === 'primary' ? 1 : 2,
+        stage,
+        summary,
+        title,
+        summary,
+        '',
+        '',
+        team.field,
+        payload.image_path ?? null,
+        payload.diagram_path ?? null,
+        payload.design_path ?? null,
+        boolToInt(hasAttachments),
+        1,
+        summary.length,
+      )
+      .first()
+
+    if (!row) {
+      return { ok: false, status: 500, message: 'Failed to create project submission' }
+    }
+    return { ok: true, project: mapProject(row as Record<string, unknown>) }
+  } catch (error) {
+    console.error('createProject insert failed', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    if (/FOREIGN KEY/i.test(msg)) {
+      return {
+        ok: false,
+        status: 400,
+        message: 'Invalid team or program version for this submission',
+      }
+    }
+    return { ok: false, status: 500, message: 'Failed to create project submission' }
+  }
 }
