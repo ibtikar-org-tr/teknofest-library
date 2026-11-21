@@ -3,6 +3,7 @@ import { memberAuthMiddleware } from '../middleware/staff-auth'
 import { requireEventKitchenAccess } from '../middleware/event-access'
 import { createIndividual, listIndividuals } from '../repositories/individuals'
 import { createProject, listProjects, listProjectsByTeam } from '../repositories/projects'
+import { listProjectFiles } from '../repositories/project-files'
 import { getEventKitchen, listEventKitchens } from '../repositories/event-kitchens'
 import {
   addEventJury,
@@ -394,10 +395,7 @@ kitchensRouter.post('/:eventId/projects', ...withEventAccess, async (c) => {
     program_version_id: programVersionId,
     stage: body.stage,
     summary: body.summary ?? body.problem_statement ?? '',
-    image_path: body.image_path,
-    diagram_path: body.diagram_path,
-    design_path: body.design_path,
-    has_attachments: body.has_attachments,
+    has_attachments: false,
   })
   if (!result.ok) return c.json({ message: result.message }, result.status)
   return c.json(result.project, 201)
@@ -446,7 +444,11 @@ kitchensRouter.get('/:eventId/projects', ...withEventAccess, async (c) => {
   if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
     return c.json({ message: 'Only VMS event managers can list projects' }, 403)
   }
-  return c.json(await listProjects(c.env, eventId))
+  const projects = await listProjects(c.env, eventId)
+  const withFiles = await Promise.all(
+    projects.map(async (p) => ({ ...p, files: await listProjectFiles(c.env, p.id) })),
+  )
+  return c.json(withFiles)
 })
 
 kitchensRouter.get('/:eventId/stats', ...withEventAccess, async (c) => {
@@ -629,10 +631,13 @@ kitchensRouter.get('/:eventId/my-jury-assignments', ...withEventAccess, async (c
   const items = []
   for (const team of teams) {
     const projects = await listProjectsByTeam(c.env, team.team_id)
+    const withFiles = await Promise.all(
+      projects.map(async (p) => ({ ...p, files: await listProjectFiles(c.env, p.id) })),
+    )
     items.push({
       team_id: team.team_id,
       team_name: team.team_name,
-      projects,
+      projects: withFiles,
     })
   }
   return c.json({ event_id: eventId, assignments: items })

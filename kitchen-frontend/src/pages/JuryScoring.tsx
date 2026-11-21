@@ -5,6 +5,7 @@ import { Loader2, Save, Star, ArrowRight, FileText, X } from 'lucide-react'
 import {
   evaluationsService,
   kitchensService,
+  projectsService,
   type JuryAssignmentItem,
 } from '../services/api'
 import type { ApplicationStage, ProjectSubmission } from '../types'
@@ -244,11 +245,42 @@ export default function JuryScoring() {
 
             <div>
               <h4 className="text-white font-medium mb-2">الملفات</h4>
-              <ul className="text-sm text-gray-300 space-y-1 bg-teknofest-dark-blue/50 p-4 rounded-xl">
-                <li>صورة: {detailProject.image_path || '—'}</li>
-                <li>مخطط: {detailProject.diagram_path || '—'}</li>
-                <li>تصميم: {detailProject.design_path || '—'}</li>
-              </ul>
+              {(detailProject.files?.length ?? 0) === 0 ? (
+                <p className="text-sm text-gray-500 bg-teknofest-dark-blue/50 p-4 rounded-xl">
+                  لا توجد ملفات
+                </p>
+              ) : (
+                <ul className="space-y-2 bg-teknofest-dark-blue/50 p-4 rounded-xl">
+                  {detailProject.files!.map((f) => (
+                    <li
+                      key={f.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-white font-medium">{f.display_name}</p>
+                        {f.description ? (
+                          <p className="text-gray-400 text-xs mt-0.5">{f.description}</p>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-secondary text-xs py-1.5 shrink-0"
+                        onClick={() =>
+                          void projectsService
+                            .downloadFile(
+                              detailProject.id!,
+                              f.id,
+                              f.original_filename || f.display_name,
+                            )
+                            .catch(() => toast.error('تعذر تحميل الملف'))
+                        }
+                      >
+                        تحميل
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {selected ? (

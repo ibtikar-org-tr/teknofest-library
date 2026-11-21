@@ -4,6 +4,7 @@ import type {
   Individual,
   ProjectSubmission,
   ProjectSubmissionCreate,
+  ProjectFile,
   Evaluation,
   AuthToken,
   Admin,
@@ -378,11 +379,43 @@ export const projectsService = {
     return response.data
   },
 
+  /** @deprecated use uploadFile */
   uploadAttachments: async (projectId: number, files: FormData): Promise<ProjectSubmission> => {
     const response = await api.post(`/projects/${projectId}/attachments`, files, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     return response.data
+  },
+
+  uploadFile: async (
+    projectId: number,
+    payload: { file: File; display_name: string; description?: string },
+  ): Promise<ProjectFile> => {
+    const formData = new FormData()
+    formData.append('file', payload.file)
+    formData.append('display_name', payload.display_name)
+    if (payload.description) formData.append('description', payload.description)
+    const response = await api.post(`/projects/${projectId}/files`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  listFiles: async (projectId: number): Promise<ProjectFile[]> => {
+    const response = await api.get(`/projects/${projectId}/files`)
+    return response.data
+  },
+
+  downloadFile: async (projectId: number, fileId: number, filename: string): Promise<void> => {
+    const response = await api.get(`/projects/${projectId}/files/${fileId}`, {
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(response.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
   },
 
   getAll: async (eventId: string): Promise<ProjectSubmission[]> => {

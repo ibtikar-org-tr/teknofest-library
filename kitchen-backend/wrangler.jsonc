@@ -20,6 +20,12 @@
       "service": "ibtikar-membership-be"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "ATTACHMENTS",
+      "bucket_name": "teknofest-kitchen-attachments"
+    }
+  ],
   "d1_databases": [
     {
       "binding": "D1_DB",

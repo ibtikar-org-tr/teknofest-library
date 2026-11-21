@@ -5,12 +5,11 @@ import toast from 'react-hot-toast'
 import {
   FileText,
   Upload,
-  Image,
-  FileImage,
-  PenTool,
   Check,
   AlertCircle,
   Loader2,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import type { ApplicationStage, ProjectSubmission, Team } from '../types'
 import { kitchensService, projectsService } from '../services/api'
@@ -20,13 +19,29 @@ interface ProjectFormData {
   summary: string
 }
 
+type PendingFile = {
+  id: string
+  file: File
+  displayName: string
+  description: string
+}
+
 const STAGE_LABEL: Record<ApplicationStage, string> = {
   primary: 'المرحلة الأولية',
   final: 'المرحلة النهائية',
 }
 
+const MAX_FILES = 10
+const MAX_FILE_BYTES = 10 * 1024 * 1024
+
 function parseStage(raw: string | null): ApplicationStage {
   return raw === 'final' ? 'final' : 'primary'
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export default function ProjectSubmission() {
@@ -38,11 +53,7 @@ export default function ProjectSubmission() {
   const [checkingTeam, setCheckingTeam] = useState(true)
   const [myTeam, setMyTeam] = useState<Team | null>(null)
   const [existing, setExisting] = useState<ProjectSubmission[]>([])
-  const [attachments, setAttachments] = useState<{
-    image: File | null
-    diagram: File | null
-    design: File | null
-  }>({ image: null, diagram: null, design: null })
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
 
   const {
     register,
@@ -89,8 +100,38 @@ export default function ProjectSubmission() {
     }
   }, [eventId])
 
-  const handleFileChange = (type: 'image' | 'diagram' | 'design', file: File | null) => {
-    setAttachments((prev) => ({ ...prev, [type]: file }))
+  const addFiles = (list: FileList | null) => {
+    if (!list?.length) return
+    const next: PendingFile[] = []
+    for (const file of Array.from(list)) {
+      if (pendingFiles.length + next.length >= MAX_FILES) {
+        toast.error(`الحد الأقصى ${MAX_FILES} ملفات`)
+        break
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        toast.error(`${file.name}: أكبر من 10MB`)
+        continue
+      }
+      if (file.size <= 0) {
+        toast.error(`${file.name}: ملف فارغ`)
+        continue
+      }
+      next.push({
+        id: crypto.randomUUID(),
+        file,
+        displayName: file.name.replace(/\.[^.]+$/, '') || file.name,
+        description: '',
+      })
+    }
+    if (next.length) setPendingFiles((prev) => [...prev, ...next])
+  }
+
+  const updatePending = (id: string, patch: Partial<Pick<PendingFile, 'displayName' | 'description'>>) => {
+    setPendingFiles((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)))
+  }
+
+  const removePending = (id: string) => {
+    setPendingFiles((prev) => prev.filter((f) => f.id !== id))
   }
 
   const onSubmit = async (data: ProjectFormData) => {
@@ -110,8 +151,12 @@ export default function ProjectSubmission() {
       toast.error('تم تقديم هذه المرحلة مسبقاً')
       return
     }
-    if (!attachments.image && !attachments.diagram && !attachments.design) {
+    if (pendingFiles.length === 0) {
       toast.error('أرفق ملفاً واحداً على الأقل')
+      return
+    }
+    if (pendingFiles.some((f) => !f.displayName.trim())) {
+      toast.error('سمِّ كل ملف قبل التقديم')
       return
     }
     if (!getSession()?.user.email) {
@@ -129,14 +174,12 @@ export default function ProjectSubmission() {
         program_version_id: 1,
       })
 
-      const formData = new FormData()
-      if (attachments.image) formData.append('image', attachments.image)
-      if (attachments.diagram) formData.append('diagram', attachments.diagram)
-      if (attachments.design) formData.append('design', attachments.design)
-      try {
-        await projectsService.uploadAttachments(project.id!, formData)
-      } catch {
-        toast.error('تم حفظ الملخص لكن تعذر رفع الملفات — حاول لاحقاً من لوحتي')
+      for (const item of pendingFiles) {
+        await projectsService.uploadFile(project.id!, {
+          file: item.file,
+          display_name: item.displayName.trim(),
+          description: item.description.trim() || undefined,
+        })
       }
 
       toast.success(`تم تقديم ${STAGE_LABEL[stage]} بنجاح`)
@@ -232,8 +275,9 @@ export default function ProjectSubmission() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">{STAGE_LABEL[stage]}</h1>
           <p className="text-gray-400">
-            فريق <span className="text-teknofest-orange">{myTeam.team_name}</span> — ملخص وملفات فقط
+            فريق <span className="text-teknofest-orange">{myTeam.team_name}</span> — ملخص وملفات
           </p>
+          <p className="text-gray-500 text-sm mt-1">{myTeam.field}</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -255,73 +299,91 @@ export default function ProjectSubmission() {
             )}
           </div>
 
-          <div className="card">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Upload className="w-5 h-5 text-green-400" />
-              الملفات
-            </h2>
-            <p className="text-gray-400 text-sm mb-2">أرفق ملفاً واحداً على الأقل (مطلوب).</p>
-            <p className="text-gray-500 text-xs mb-6">الأنواع: PNG, JPG, JPEG, PDF, ZIP</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 border-2 border-dashed border-teknofest-light-blue/30 rounded-xl">
-                <div className="text-center">
-                  <Image className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-white font-medium mb-2">صورة</h3>
-                  <input
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.pdf,.zip"
-                    onChange={(e) => handleFileChange('image', e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className="cursor-pointer text-teknofest-orange hover:text-teknofest-orange-hover text-sm"
-                  >
-                    {attachments.image ? attachments.image.name : 'اختر ملف'}
-                  </label>
-                </div>
+          <div className="card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-green-400" />
+                  الملفات
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  حتى {MAX_FILES} ملفات · 10MB لكل ملف · اسم + وصف اختياري
+                </p>
               </div>
-              <div className="p-4 border-2 border-dashed border-teknofest-light-blue/30 rounded-xl">
-                <div className="text-center">
-                  <FileImage className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-white font-medium mb-2">مخطط</h3>
-                  <input
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.pdf,.zip"
-                    onChange={(e) => handleFileChange('diagram', e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="diagram-upload"
-                  />
-                  <label
-                    htmlFor="diagram-upload"
-                    className="cursor-pointer text-teknofest-orange hover:text-teknofest-orange-hover text-sm"
-                  >
-                    {attachments.diagram ? attachments.diagram.name : 'اختر ملف'}
-                  </label>
-                </div>
-              </div>
-              <div className="p-4 border-2 border-dashed border-teknofest-light-blue/30 rounded-xl">
-                <div className="text-center">
-                  <PenTool className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-white font-medium mb-2">تصميم</h3>
-                  <input
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.pdf,.zip"
-                    onChange={(e) => handleFileChange('design', e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="design-upload"
-                  />
-                  <label
-                    htmlFor="design-upload"
-                    className="cursor-pointer text-teknofest-orange hover:text-teknofest-orange-hover text-sm"
-                  >
-                    {attachments.design ? attachments.design.name : 'اختر ملف'}
-                  </label>
-                </div>
+              <div>
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  id="multi-file-upload"
+                  disabled={pendingFiles.length >= MAX_FILES}
+                  onChange={(e) => {
+                    addFiles(e.target.files)
+                    e.target.value = ''
+                  }}
+                />
+                <label
+                  htmlFor="multi-file-upload"
+                  className={`btn-secondary inline-flex items-center gap-2 cursor-pointer ${
+                    pendingFiles.length >= MAX_FILES ? 'opacity-50 pointer-events-none' : ''
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  إضافة ملفات
+                </label>
               </div>
             </div>
+
+            {pendingFiles.length === 0 ? (
+              <p className="text-gray-500 text-sm py-6 text-center border border-dashed border-teknofest-light-blue/30 rounded-xl">
+                لم تُضف ملفات بعد — أرفق ملفاً واحداً على الأقل
+              </p>
+            ) : (
+              <ul className="space-y-4">
+                {pendingFiles.map((item, index) => (
+                  <li
+                    key={item.id}
+                    className="p-4 rounded-xl bg-teknofest-medium-blue/40 space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500">ملف {index + 1}</p>
+                        <p className="text-sm text-gray-300 truncate">
+                          {item.file.name} · {formatSize(item.file.size)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePending(item.id)}
+                        className="p-2 text-gray-400 hover:text-red-400"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <label className="block text-sm text-gray-300">
+                      اسم الملف *
+                      <input
+                        type="text"
+                        className="input-field mt-1"
+                        value={item.displayName}
+                        onChange={(e) => updatePending(item.id, { displayName: e.target.value })}
+                        placeholder="مثال: مخطط النظام"
+                      />
+                    </label>
+                    <label className="block text-sm text-gray-300">
+                      وصف (اختياري)
+                      <textarea
+                        className="input-field mt-1 min-h-[72px]"
+                        value={item.description}
+                        onChange={(e) => updatePending(item.id, { description: e.target.value })}
+                        placeholder="ماذا يحتوي هذا الملف؟"
+                      />
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="flex justify-center">

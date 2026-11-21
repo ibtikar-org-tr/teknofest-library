@@ -118,8 +118,11 @@ export interface ProjectSubmission {
   technical_description?: string
   scientific_reference?: string
   field: ProjectField
+  /** @deprecated use files */
   image_path?: string
+  /** @deprecated use files */
   diagram_path?: string
+  /** @deprecated use files */
   design_path?: string
   has_attachments?: boolean
   is_complete?: boolean
@@ -128,9 +131,21 @@ export interface ProjectSubmission {
   created_at?: string
   updated_at?: string
   team?: Team
+  files?: ProjectFile[]
   total_score?: number
   admin_score?: number
   ai_score?: number
+}
+
+export interface ProjectFile {
+  id: number
+  project_id: number
+  display_name: string
+  description?: string | null
+  original_filename?: string | null
+  content_type?: string | null
+  size_bytes: number
+  created_at?: string
 }
 
 // Evaluation

@@ -11,12 +11,9 @@ import {
   Star,
   CheckCircle,
   AlertCircle,
-  Image,
-  FileImage,
   Paperclip,
-  ExternalLink,
 } from 'lucide-react'
-import { API_BASE_URL, projectsService } from '../../services/api'
+import { projectsService } from '../../services/api'
 import type { ProjectSubmission } from '../../types'
 
 export default function AdminProjects() {
@@ -273,113 +270,43 @@ export default function AdminProjects() {
                 </div>
               )}
 
-              {/* Attachments */}
-              {selectedProject.has_attachments && (
+              {(selectedProject.files?.length ?? 0) > 0 && (
                 <div>
                   <h3 className="text-white font-medium mb-3 flex items-center gap-2">
                     <Paperclip className="w-4 h-4 text-green-400" />
-                    المرفقات
+                    الملفات ({selectedProject.files!.length})
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {selectedProject.image_path && (
-                      <div className="bg-teknofest-dark-blue/50 rounded-xl p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                            <Image className="w-5 h-5 text-blue-400" />
-                          </div>
-                          <div>
-                            <p className="text-white font-medium text-sm">صورة المشروع</p>
-                            <p className="text-gray-500 text-xs">{selectedProject.image_path}</p>
-                          </div>
+                  <ul className="space-y-2">
+                    {selectedProject.files!.map((f) => (
+                      <li
+                        key={f.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-teknofest-dark-blue/50 rounded-xl p-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-white font-medium text-sm">{f.display_name}</p>
+                          {f.description ? (
+                            <p className="text-gray-400 text-xs mt-1">{f.description}</p>
+                          ) : null}
                         </div>
-                        <div className="flex gap-2">
-                          <a
-                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.image_path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            عرض
-                          </a>
-                          <a
-                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.image_path}`}
-                            download
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
-                          >
-                            <Download className="w-4 h-4" />
-                            تحميل
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedProject.diagram_path && (
-                      <div className="bg-teknofest-dark-blue/50 rounded-xl p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                            <FileImage className="w-5 h-5 text-purple-400" />
-                          </div>
-                          <div>
-                            <p className="text-white font-medium text-sm">المخطط</p>
-                            <p className="text-gray-500 text-xs">{selectedProject.diagram_path}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <a
-                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.diagram_path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors text-sm"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            عرض
-                          </a>
-                          <a
-                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.diagram_path}`}
-                            download
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
-                          >
-                            <Download className="w-4 h-4" />
-                            تحميل
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedProject.design_path && (
-                      <div className="bg-teknofest-dark-blue/50 rounded-xl p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-orange-400" />
-                          </div>
-                          <div>
-                            <p className="text-white font-medium text-sm">التصميم المبدئي</p>
-                            <p className="text-gray-500 text-xs">{selectedProject.design_path}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <a
-                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.design_path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors text-sm"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            عرض
-                          </a>
-                          <a
-                            href={`${API_BASE_URL}/api/projects/attachment/${selectedProject.design_path}`}
-                            download
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
-                          >
-                            <Download className="w-4 h-4" />
-                            تحميل
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                        <button
+                          type="button"
+                          className="btn-secondary text-sm py-2 flex items-center gap-1 shrink-0"
+                          onClick={() =>
+                            void projectsService
+                              .downloadFile(
+                                selectedProject.id!,
+                                f.id,
+                                f.original_filename || f.display_name,
+                              )
+                              .catch(() => toast.error('تعذر تحميل الملف'))
+                          }
+                        >
+                          <Download className="w-4 h-4" />
+                          تحميل
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 

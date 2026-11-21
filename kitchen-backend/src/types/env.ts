@@ -3,6 +3,8 @@ export interface Environment {
   VMS_DB: D1Database
   /** Membership users / user_info (names + emails for jury picker). */
   MEMBERS_DB?: D1Database
+  /** Application file uploads (local Miniflare R2 in offline mode). */
+  ATTACHMENTS?: R2Bucket
   LIBRARY?: Fetcher
   VMS_SERVICE?: Fetcher
   APP_NAME: string

@@ -2,6 +2,8 @@
 
 Teams apply with **summary + files only** (no long form fields).
 
+Files are free-form (not image/schema/design slots): each has a **display name** and optional **description**. Limits: **10 files** per application, **10MB** each (R2 `ATTACHMENTS`).
+
 ## Dashboard steps (frontend)
 
 On the team dashboard the path is shown as **three steps**:
@@ -30,5 +32,7 @@ Each is a separate `project_submissions` row (`stage`, unique per team). Stages 
 
 - Choose competition: `PUT /api/kitchens/:eventId/my-team/competition` `{ field }` (locked after primary is submitted)
 - Submit: `POST /api/kitchens/:eventId/projects` with `{ stage, summary, team_id? }`
+- Upload file: `POST /api/projects/:id/files` multipart (`file`, `display_name`, `description?`)
+- List/download: `GET /api/projects/:id/files`, `GET /api/projects/:id/files/:fileId`
 - Own apps: `GET /api/kitchens/:eventId/my-projects`
 - Score payload includes `stage_score`, `primary_average`, `final_average`, `overall_score`

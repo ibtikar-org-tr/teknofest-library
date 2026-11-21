@@ -135,8 +135,11 @@ export interface ProjectSubmission {
   /** @deprecated empty for new applications */
   scientific_reference: string
   field: string
+  /** @deprecated use project_files */
   image_path: string | null
+  /** @deprecated use project_files */
   diagram_path: string | null
+  /** @deprecated use project_files */
   design_path: string | null
   has_attachments: boolean
   is_complete: boolean
@@ -144,6 +147,19 @@ export interface ProjectSubmission {
   is_featured: boolean
   created_at: string
   updated_at: string | null
+  files?: ProjectFile[]
+}
+
+export interface ProjectFile {
+  id: number
+  project_id: number
+  display_name: string
+  description: string | null
+  storage_key: string
+  original_filename: string | null
+  content_type: string | null
+  size_bytes: number
+  created_at: string
 }
 
 export interface Evaluation {
