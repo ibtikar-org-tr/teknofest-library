@@ -21,6 +21,8 @@ export interface ReportFileItem {
   file_path: string;
 }
 
+type TemplateFilter = "all" | "templates" | "other";
+
 type FilterChipProps = {
   active: boolean;
   label: string;
@@ -59,10 +61,157 @@ function FilterRow({
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-      <span className="w-16 shrink-0 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="w-20 shrink-0 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </span>
       <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+type EnrichedItem = {
+  file: ReportFileItem;
+  meta: ReturnType<typeof getReportFileMeta>;
+};
+
+function FileCard({
+  file,
+  meta,
+  levelLabel,
+  kindLabel,
+  trackLabel,
+  downloadLabel,
+}: {
+  file: ReportFileItem;
+  meta: ReturnType<typeof getReportFileMeta>;
+  levelLabel: (value: ReportLevel) => string;
+  kindLabel: (value: ReportKind) => string;
+  trackLabel: (value: ReportTrack) => string;
+  downloadLabel: string;
+}) {
+  return (
+    <div className="group relative border border-border bg-linear-to-br from-card to-card/50 p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-lg">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="mb-3 flex items-start gap-3">
+            <div className="mt-0.5 shrink-0 rounded-lg bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
+              <FileText className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <div className="break-words text-base font-semibold leading-snug md:text-lg">
+                {meta.label}
+              </div>
+              {meta.fileName && (
+                <div
+                  className="mt-1 break-all font-mono text-xs text-muted-foreground"
+                  title={meta.fileName}
+                >
+                  {meta.fileName}
+                </div>
+              )}
+              <div className="mt-1 text-xs text-muted-foreground/80">
+                {[file.year, file.stage, file.rank].filter(Boolean).join(" · ")}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {meta.isTemplate && (
+              <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20">
+                {kindLabel("template")}
+              </Badge>
+            )}
+            {meta.extension && (
+              <Badge variant="outline" className="bg-secondary/50">
+                {meta.extension}
+              </Badge>
+            )}
+            <Badge variant="outline" className="bg-secondary/50">
+              {levelLabel(meta.level)}
+            </Badge>
+            {!meta.isTemplate && (
+              <Badge
+                variant="outline"
+                className="bg-blue-500/10 text-blue-700 dark:text-blue-400"
+              >
+                {kindLabel(meta.kind)}
+              </Badge>
+            )}
+            {meta.track !== "general" && (
+              <Badge variant="outline" className="bg-secondary/50">
+                {trackLabel(meta.track)}
+              </Badge>
+            )}
+            {file.language && (
+              <Badge variant="outline" className="bg-secondary/50">
+                {file.language.toUpperCase()}
+              </Badge>
+            )}
+          </div>
+        </div>
+        <Button
+          size="lg"
+          className="shrink-0 bg-primary text-white hover:bg-primary/90"
+          asChild
+        >
+          <a href={file.file_path} target="_blank" rel="noreferrer">
+            <Download className="me-2 h-4 w-4" />
+            {downloadLabel}
+          </a>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function GroupedSections({
+  items,
+  levelLabel,
+  kindLabel,
+  trackLabel,
+  downloadLabel,
+}: {
+  items: EnrichedItem[];
+  levelLabel: (value: ReportLevel) => string;
+  kindLabel: (value: ReportKind) => string;
+  trackLabel: (value: ReportTrack) => string;
+  downloadLabel: string;
+}) {
+  const grouped = useMemo(() => {
+    const map = new Map<string, EnrichedItem[]>();
+    for (const item of items) {
+      const key = item.meta.folderLabel;
+      const list = map.get(key) ?? [];
+      list.push(item);
+      map.set(key, list);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "tr"));
+  }, [items]);
+
+  return (
+    <div className="space-y-8">
+      {grouped.map(([groupLabel, groupItems]) => (
+        <section key={groupLabel}>
+          <div className="mb-3 flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-foreground">{groupLabel}</h4>
+            <Badge variant="outline" className="text-[11px]">
+              {groupItems.length}
+            </Badge>
+          </div>
+          <div className="grid gap-3">
+            {groupItems.map(({ file, meta }) => (
+              <FileCard
+                key={file.id}
+                file={file}
+                meta={meta}
+                levelLabel={levelLabel}
+                kindLabel={kindLabel}
+                trackLabel={trackLabel}
+                downloadLabel={downloadLabel}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
@@ -72,6 +221,7 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
   const isRtl = direction === "rtl";
 
   const [search, setSearch] = useState("");
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>("all");
   const [level, setLevel] = useState<ReportLevel | "all">("all");
   const [kind, setKind] = useState<ReportKind | "all">("all");
   const [track, setTrack] = useState<ReportTrack | "all">("all");
@@ -98,6 +248,12 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
     [files, t],
   );
 
+  const templateCount = useMemo(
+    () => enriched.filter(({ meta }) => meta.isTemplate).length,
+    [enriched],
+  );
+  const otherCount = enriched.length - templateCount;
+
   const counts = useMemo(() => {
     const levels = new Map<ReportLevel, number>();
     const kinds = new Map<ReportKind, number>();
@@ -119,6 +275,8 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return enriched.filter(({ file, meta }) => {
+      if (templateFilter === "templates" && !meta.isTemplate) return false;
+      if (templateFilter === "other" && meta.isTemplate) return false;
       if (level !== "all" && meta.level !== level) return false;
       if (kind !== "all" && meta.kind !== kind) return false;
       if (track !== "all" && meta.track !== track) return false;
@@ -134,27 +292,30 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
         levelLabel(meta.level),
         kindLabel(meta.kind),
         trackLabel(meta.track),
+        meta.isTemplate ? kindLabel("template") : "",
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [enriched, search, level, kind, track, extension, t]);
+  }, [enriched, search, templateFilter, level, kind, track, extension, t]);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, typeof filtered>();
-    for (const item of filtered) {
-      const key = item.meta.folderLabel;
-      const list = map.get(key) ?? [];
-      list.push(item);
-      map.set(key, list);
-    }
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "tr"));
-  }, [filtered]);
+  const templateItems = useMemo(
+    () => filtered.filter(({ meta }) => meta.isTemplate),
+    [filtered],
+  );
+  const nonTemplateItems = useMemo(
+    () => filtered.filter(({ meta }) => !meta.isTemplate),
+    [filtered],
+  );
+
+  const showSplitSections =
+    templateFilter === "all" && templateItems.length > 0 && nonTemplateItems.length > 0;
 
   const hasActiveFilters =
     search.trim() !== "" ||
+    templateFilter !== "all" ||
     level !== "all" ||
     kind !== "all" ||
     track !== "all" ||
@@ -162,6 +323,7 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
 
   const resetFilters = () => {
     setSearch("");
+    setTemplateFilter("all");
     setLevel("all");
     setKind("all");
     setTrack("all");
@@ -169,9 +331,19 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
   };
 
   const levelOptions = (Array.from(counts.levels.keys()) as ReportLevel[]).sort();
-  const kindOptions = (Array.from(counts.kinds.keys()) as ReportKind[]).sort();
+  // Hide redundant "template" chip when the dedicated Şablon filter is present.
+  const kindOptions = (Array.from(counts.kinds.keys()) as ReportKind[])
+    .filter((value) => !(templateCount > 0 && value === "template"))
+    .sort();
   const trackOptions = (Array.from(counts.tracks.keys()) as ReportTrack[]).sort();
   const extensionOptions = Array.from(counts.extensions.keys()).sort();
+
+  const cardProps = {
+    levelLabel,
+    kindLabel,
+    trackLabel,
+    downloadLabel: t("reports.download") ?? "Download",
+  };
 
   return (
     <div>
@@ -203,6 +375,31 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
         </div>
 
         <div className="space-y-3">
+          {templateCount > 0 && (
+            <FilterRow title={t("reports.templateFilter")}>
+              <FilterChip
+                active={templateFilter === "all"}
+                label={t("reports.all")}
+                count={files.length}
+                onClick={() => setTemplateFilter("all")}
+              />
+              <FilterChip
+                active={templateFilter === "templates"}
+                label={t("reports.templatesOnly")}
+                count={templateCount}
+                onClick={() => setTemplateFilter("templates")}
+              />
+              {otherCount > 0 && (
+                <FilterChip
+                  active={templateFilter === "other"}
+                  label={t("reports.otherFiles")}
+                  count={otherCount}
+                  onClick={() => setTemplateFilter("other")}
+                />
+              )}
+            </FilterRow>
+          )}
+
           {levelOptions.length > 1 && (
             <FilterRow title={t("reports.level")}>
               <FilterChip
@@ -300,6 +497,12 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
         )}
       </div>
 
+      {templateCount === 0 && files.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          {t("reports.noTemplatesNote")}
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-10 text-center">
           <p className="mb-3 text-muted-foreground">{t("reports.noMatches")}</p>
@@ -307,89 +510,31 @@ export default function ReportFilesPanel({ files }: { files: ReportFileItem[] })
             {t("reports.resetFilters")}
           </Button>
         </div>
-      ) : (
-        <div className="space-y-8">
-          {grouped.map(([groupLabel, items]) => (
-            <section key={groupLabel}>
-              <div className="mb-3 flex items-center gap-2">
-                <h4 className="text-sm font-semibold text-foreground">{groupLabel}</h4>
-                <Badge variant="outline" className="text-[11px]">
-                  {items.length}
-                </Badge>
-              </div>
-              <div className="grid gap-3">
-                {items.map(({ file, meta }) => (
-                  <div
-                    key={file.id}
-                    className="group relative border border-border bg-linear-to-br from-card to-card/50 p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-3 flex items-start gap-3">
-                          <div className="mt-0.5 shrink-0 rounded-lg bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
-                            <FileText className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="break-words text-base font-semibold leading-snug md:text-lg">
-                              {meta.label}
-                            </div>
-                            {meta.fileName && (
-                              <div
-                                className="mt-1 break-all font-mono text-xs text-muted-foreground"
-                                title={meta.fileName}
-                              >
-                                {meta.fileName}
-                              </div>
-                            )}
-                            <div className="mt-1 text-xs text-muted-foreground/80">
-                              {[file.year, file.stage, file.rank].filter(Boolean).join(" · ")}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {meta.extension && (
-                            <Badge variant="outline" className="bg-secondary/50">
-                              {meta.extension}
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className="bg-secondary/50">
-                            {levelLabel(meta.level)}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className="bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                          >
-                            {kindLabel(meta.kind)}
-                          </Badge>
-                          {meta.track !== "general" && (
-                            <Badge variant="outline" className="bg-secondary/50">
-                              {trackLabel(meta.track)}
-                            </Badge>
-                          )}
-                          {file.language && (
-                            <Badge variant="outline" className="bg-secondary/50">
-                              {file.language.toUpperCase()}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        size="lg"
-                        className="shrink-0 bg-primary text-white hover:bg-primary/90"
-                        asChild
-                      >
-                        <a href={file.file_path} target="_blank" rel="noreferrer">
-                          <Download className="me-2 h-4 w-4" />
-                          {t("reports.download")}
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+      ) : showSplitSections ? (
+        <div className="space-y-10">
+          <div>
+            <div className="mb-4 flex items-center gap-3">
+              <h4 className="font-display text-lg font-bold text-foreground">
+                {t("reports.templatesSection")}
+              </h4>
+              <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20">
+                {templateItems.length}
+              </Badge>
+            </div>
+            <GroupedSections items={templateItems} {...cardProps} />
+          </div>
+          <div>
+            <div className="mb-4 flex items-center gap-3">
+              <h4 className="font-display text-lg font-bold text-foreground">
+                {t("reports.otherSection")}
+              </h4>
+              <Badge variant="outline">{nonTemplateItems.length}</Badge>
+            </div>
+            <GroupedSections items={nonTemplateItems} {...cardProps} />
+          </div>
         </div>
+      ) : (
+        <GroupedSections items={filtered} {...cardProps} />
       )}
     </div>
   );

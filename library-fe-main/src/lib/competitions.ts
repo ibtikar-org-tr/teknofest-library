@@ -202,7 +202,13 @@ export interface ReportFileMeta {
   level: ReportLevel;
   kind: ReportKind;
   track: ReportTrack;
+  /** True when path/name marks the file as an official şablon / template. */
+  isTemplate: boolean;
 }
+
+/** Official TEKNOFEST report/template downloads (şablon / sablon / template). */
+export const isReportTemplatePath = (haystack: string): boolean =>
+  /sablon|şablon|template/.test(haystack);
 
 const detectLevel = (haystack: string): ReportLevel => {
   if (/orta\s*okul|middle\s*school/.test(haystack)) return "middle-school";
@@ -212,20 +218,24 @@ const detectLevel = (haystack: string): ReportLevel => {
   return "all-levels";
 };
 
-const detectKind = (haystack: string): ReportKind => {
-  if (/sablon|şablon|template/.test(haystack)) {
-    if (/odr|on[_\s-]*degerlendirme|ön[_\s-]*değerlendirme|preliminary/.test(haystack)) {
-      return "preliminary";
-    }
-    if (/pdr|detay[_\s-]*rapor|detail/.test(haystack)) return "detail";
-    if (/sunum|presentation|pptx/.test(haystack)) return "presentation";
-    if (/teknik|technical/.test(haystack)) return "technical";
-    return "template";
-  }
+/**
+ * Content kind for filters. Şablon files always resolve to `template` so they
+ * appear under the dedicated Templates filter (not ODR/PDR/finalist buckets).
+ */
+const detectKind = (haystack: string, isTemplate: boolean): ReportKind => {
+  if (isTemplate) return "template";
   if (/derece|ranking|award/.test(haystack)) return "ranking";
   if (/basarili|başarılı|finalist/.test(haystack)) return "finalist";
-  if (/odr|on[_\s-]*degerlendirme|ön[_\s-]*değerlendirme/.test(haystack)) return "preliminary";
-  if (/pdr|detay[_\s-]*rapor/.test(haystack)) return "detail";
+  if (
+    /odr|on[_\s-]*degerlendirme|ön[_\s-]*değerlendirme|preliminary|on[_\s-]*tasarim|ön[_\s-]*tasarım|\botr\b/.test(
+      haystack,
+    )
+  ) {
+    return "preliminary";
+  }
+  if (/pdr|detay[_\s-]*rapor|detail|final[_\s-]*tasarim|\bftr\b/.test(haystack)) {
+    return "detail";
+  }
   if (/sunum|presentation/.test(haystack)) return "presentation";
   if (/teknik|technical/.test(haystack)) return "technical";
   return "other";
@@ -248,6 +258,7 @@ export const getReportFileMeta = (
   const fileName = parts[parts.length - 1] ?? "";
   const folder = parts[parts.length - 2] ?? "";
   const haystack = `${folder} ${fileName}`.toLocaleLowerCase("tr-TR");
+  const isTemplate = isReportTemplatePath(haystack);
 
   return {
     folder,
@@ -256,7 +267,8 @@ export const getReportFileMeta = (
     label: getReportFileLabel(filePath, fallbackLabel),
     extension: getFileExtension(filePath),
     level: detectLevel(haystack),
-    kind: detectKind(haystack),
+    kind: detectKind(haystack, isTemplate),
     track: detectTrack(haystack),
+    isTemplate,
   };
 };
