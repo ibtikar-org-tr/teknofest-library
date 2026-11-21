@@ -52,6 +52,7 @@ export default function TeamRegistration() {
   const [memberGenders, setMemberGenders] = useState<{[key: number]: Gender | null}>({})
   const membershipRequestIds = useRef<{[key: number]: number}>({})  // Add this line
 
+  const session = getSession()
   const {
     register,
     handleSubmit,
@@ -63,9 +64,13 @@ export default function TeamRegistration() {
     defaultValues: {
       gender: 'male',
       members: [
-        { full_name: '', membership_number: '', email: '', phone: '', is_leader: true },
-        { full_name: '', membership_number: '', email: '', phone: '', is_leader: false },
-        { full_name: '', membership_number: '', email: '', phone: '', is_leader: false },
+        {
+          full_name: '',
+          membership_number: session?.user.membershipNumber?.trim() || '',
+          email: '',
+          phone: '',
+          is_leader: true,
+        },
       ],
     },
   })
@@ -102,7 +107,6 @@ export default function TeamRegistration() {
       return
     }
 
-    const session = getSession()
     const sessionEmail = session?.user.email?.trim()
     const sessionMembership = session?.user.membershipNumber?.trim()
     if (!sessionEmail) {
@@ -341,6 +345,15 @@ export default function TeamRegistration() {
 
   const debouncedVerify = useDebounce(verifyMembershipNumber, 800)
 
+  // Prefill/verify the logged-in creator as the first (solo) member.
+  useEffect(() => {
+    const membership = session?.user.membershipNumber?.trim()
+    if (membership) {
+      void verifyMembershipNumber(membership, 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for session leader
+  }, [])
+
   // Auto-fill member data when verified
   useEffect(() => {
     Object.entries(memberData).forEach(([indexStr, data]) => {
@@ -560,7 +573,7 @@ export default function TeamRegistration() {
               </div>
 
               <p className="text-gray-400 mb-6">
-                يجب أن يتكون الفريق من 3 إلى {maxTeamSize} أعضاء. حدد مشرف الفريق (القائد).
+                يمكنك إنشاء الفريق بنفسك فقط، أو إضافة أعضاء حتى {maxTeamSize}. حدد مشرف الفريق (القائد).
               </p>
 
               {/* Gender validation warning */}
@@ -628,7 +641,7 @@ export default function TeamRegistration() {
                           />
                           <span className="text-sm text-gray-300">مشرف</span>
                         </label>
-                        {fields.length > 3 && (
+                        {fields.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveMember(index)}
