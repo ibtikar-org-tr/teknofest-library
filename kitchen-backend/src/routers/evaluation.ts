@@ -180,11 +180,16 @@ evaluationRouter.post('/admin', memberAuthMiddleware, async (c) => {
     return c.json({ message: 'score must be between 0 and 100' }, 400)
   }
 
+  const notes = typeof body.notes === 'string' ? body.notes.trim() : ''
+  if (!notes) {
+    return c.json({ message: 'notes are required' }, 400)
+  }
+
   const evaluation = await upsertJuryEvaluation(c.env, {
     project_id: projectId,
     evaluator_membership_number: member!.membership_number,
     score,
-    notes: body.notes ?? null,
+    notes,
     detailed_scores: body.detailed_scores ?? null,
   })
   return c.json(evaluation, 201)

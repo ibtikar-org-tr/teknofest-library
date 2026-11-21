@@ -26,6 +26,7 @@ export default function JuryScoring() {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [myScores, setMyScores] = useState<Record<number, number>>({})
+  const [myNotes, setMyNotes] = useState<Record<number, string>>({})
 
   const load = useCallback(async () => {
     if (!eventId) return
@@ -36,6 +37,7 @@ export default function JuryScoring() {
       setAssignments(data.assignments)
 
       const scores: Record<number, number> = {}
+      const notesByProject: Record<number, string> = {}
       for (const item of data.assignments) {
         for (const project of item.projects) {
           if (!project.id) continue
@@ -43,6 +45,9 @@ export default function JuryScoring() {
             const details = await evaluationsService.getProjectEvaluationsWithDetails(project.id)
             if (details.current_admin_evaluation) {
               scores[project.id] = details.current_admin_evaluation.score
+              if (details.current_admin_evaluation.notes) {
+                notesByProject[project.id] = details.current_admin_evaluation.notes
+              }
             }
           } catch {
             /* ignore per-project */
@@ -50,6 +55,7 @@ export default function JuryScoring() {
         }
       }
       setMyScores(scores)
+      setMyNotes(notesByProject)
     } catch (err: any) {
       setError(err.response?.data?.message || 'لست محكماً معيّناً لهذه الفعالية')
     } finally {
@@ -65,7 +71,7 @@ export default function JuryScoring() {
     setViewing(null)
     setSelected(project)
     setScore(myScores[project.id!] ?? 50)
-    setNotes('')
+    setNotes(myNotes[project.id!] ?? '')
   }
 
   const handleSave = async () => {
@@ -74,16 +80,22 @@ export default function JuryScoring() {
       toast.error('الدرجة يجب أن تكون بين 0 و 100')
       return
     }
+    const trimmedNotes = notes.trim()
+    if (!trimmedNotes) {
+      toast.error('الملاحظات مطلوبة')
+      return
+    }
     setSaving(true)
     try {
       await evaluationsService.create({
         project_id: selected.id,
         score,
-        notes,
+        notes: trimmedNotes,
         is_ai_evaluation: false,
       })
       toast.success('تم حفظ تقييمك')
       setMyScores((prev) => ({ ...prev, [selected.id!]: score }))
+      setMyNotes((prev) => ({ ...prev, [selected.id!]: trimmedNotes }))
       setSelected(null)
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'تعذر حفظ التقييم')
@@ -298,11 +310,13 @@ export default function JuryScoring() {
                   />
                 </label>
                 <label className="block text-sm text-gray-300">
-                  ملاحظات (اختياري)
+                  ملاحظات <span className="text-teknofest-orange">*</span>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
+                    required
                     className="input-field mt-1 min-h-[100px]"
+                    placeholder="اكتب ملاحظاتك عن هذا التقديم…"
                   />
                 </label>
                 <div className="flex gap-2 justify-end">

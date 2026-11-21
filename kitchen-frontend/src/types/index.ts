@@ -155,7 +155,8 @@ export interface Evaluation {
   admin_id?: number
   is_ai_evaluation: boolean
   score: number
-  notes?: string
+  /** Required when submitting a jury score. */
+  notes: string
   detailed_scores?: Record<string, number>
   created_at?: string
 }
