@@ -53,6 +53,7 @@ import {
   getVmsEventsByIds,
   isMemberRegisteredForEvent,
   listEventRegistrants,
+  lookupMemberContact,
 } from '../repositories/vms-events'
 import type { AppBindings, Environment, KitchenMember } from '../types/env'
 import type { KitchenEventView } from '../types/models'
@@ -331,57 +332,92 @@ kitchensRouter.post('/:eventId/teams', ...withEventAccess, async (c) => {
     )
   }
 
-  const members = Array.isArray(body.members)
-    ? body.members.map(
-        (m: {
-          full_name?: string
-          email?: string
-          phone?: string
-          is_leader?: boolean
-          membership_number?: string | null
-        }) => {
-          const membershipNumber = m.membership_number?.trim() || null
-          const isSubmitter =
-            Boolean(sessionMembership) && membershipNumber === sessionMembership
-          return {
-            ...m,
-            membership_number: membershipNumber,
-            email: isSubmitter && sessionEmail ? sessionEmail : String(m.email ?? '').trim(),
-          }
-        },
-      )
-    : body.members
+  const rawMembers = Array.isArray(body.members) ? body.members : []
+  if (rawMembers.length === 0) {
+    return c.json({ message: 'At least one team member (membership number) is required' }, 400)
+  }
 
   const maxTeamSize = await getKitchenMaxTeamSize(c.env, eventId)
-  if ((members?.length ?? 0) > maxTeamSize) {
+  if (rawMembers.length > maxTeamSize) {
     return c.json(
       { message: `A team may have at most ${maxTeamSize} members` },
       400,
     )
   }
 
-  for (const m of members ?? []) {
-    if (!m.email) {
-      return c.json(
-        { message: 'Each team member needs a verified membership email (session or lookup)' },
-        400,
-      )
+  const members: Array<{
+    full_name: string
+    email: string
+    phone: string
+    is_leader: boolean
+    membership_number: string
+  }> = []
+
+  for (const raw of rawMembers) {
+    const membershipNumber = String(raw?.membership_number ?? '').trim()
+    if (!membershipNumber) {
+      return c.json({ message: 'Each team member needs a membership number' }, 400)
     }
+
+    const isSubmitter =
+      Boolean(sessionMembership) && membershipNumber === sessionMembership
+
+    // Prefer live VMS profile for the authenticated creator; MEMBERS_DB for others.
+    let fullName = ''
+    let email = ''
+    let phone = 'n/a'
+    if (isSubmitter) {
+      const profile = await fetchVmsMemberProfile(
+        c.env,
+        membershipNumber,
+        c.req.header('Authorization'),
+      )
+      if (profile) {
+        fullName = profile.full_name
+        email = sessionEmail || profile.email
+        phone = profile.phone
+      }
+    }
+    if (!email || !fullName) {
+      const contact = await lookupMemberContact(c.env, membershipNumber)
+      if (!contact) {
+        return c.json(
+          { message: `Membership ${membershipNumber} was not found in VMS` },
+          400,
+        )
+      }
+      fullName = fullName || contact.full_name
+      email = email || (isSubmitter && sessionEmail ? sessionEmail : contact.email)
+      phone = phone !== 'n/a' ? phone : contact.phone
+    }
+
     const onTeam = await findTeamForMemberInEvent(
       c.env,
       eventId,
-      m.membership_number ?? undefined,
-      m.email,
+      membershipNumber,
+      email,
     )
     if (onTeam) {
       return c.json(
         {
-          message: `${m.full_name || m.email} is already on a team. Only an event manager can move them.`,
+          message: `${fullName || email} is already on a team. Only an event manager can move them.`,
           team_id: onTeam.id,
         },
         409,
       )
     }
+
+    members.push({
+      full_name: fullName,
+      email,
+      phone,
+      membership_number: membershipNumber,
+      is_leader: Boolean(raw?.is_leader),
+    })
+  }
+
+  if (!members.some((m) => m.is_leader)) {
+    members[0].is_leader = true
   }
 
   // Competition is chosen later via PUT …/my-team/competition (locked after primary).

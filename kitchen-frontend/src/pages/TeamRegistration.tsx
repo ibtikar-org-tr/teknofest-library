@@ -58,7 +58,6 @@ export default function TeamRegistration() {
     handleSubmit,
     control,
     trigger,
-    setValue,
     formState: { errors },
   } = useForm<TeamFormData>({
     defaultValues: {
@@ -83,22 +82,19 @@ export default function TeamRegistration() {
   const onSubmit = async (data: TeamFormData) => {
     if (isSubmitting) return
 
-    // ✅ gender check: team gender (selected) must match any verified member gender from API
     const { isValid, mismatches } = validateTeamGender(data.gender, data.members)
 
-    // ✅ membership number is OPTIONAL:
-    // only members who entered a membership number must be verified as "valid"
-    const invalidMemberIndices = data.members
+    const unverified = data.members
       .map((m, index) => ({
         index,
-        hasMembership: !!m.membership_number?.trim(),
+        membership: m.membership_number?.trim() || '',
         isValid: membershipStatus[index] === 'valid',
       }))
-      .filter((x) => x.hasMembership && !x.isValid)
+      .filter((x) => !x.membership || !x.isValid)
       .map((x) => x.index + 1)
 
-    if (invalidMemberIndices.length > 0) {
-      toast.error(`يرجى التحقق من رقم العضوية للعضو رقم: ${invalidMemberIndices.join(', ')}`)
+    if (unverified.length > 0) {
+      toast.error(`يرجى إدخال رقم عضوية VMS صحيح للعضو رقم: ${unverified.join(', ')}`)
       return
     }
 
@@ -107,56 +103,33 @@ export default function TeamRegistration() {
       return
     }
 
-    const sessionEmail = session?.user.email?.trim()
-    const sessionMembership = session?.user.membershipNumber?.trim()
-    if (!sessionEmail) {
+    if (!session?.user.email?.trim()) {
       toast.error('تعذر قراءة البريد من جلسة VMS — أعد تسجيل الدخول')
+      return
+    }
+
+    if (!eventId) {
+      toast.error('معرف الفعالية مفقود')
       return
     }
 
     setIsSubmitting(true)
     try {
-      const membersWithLeader = data.members.map((member, index) => {
-        const membershipNumber = member.membership_number?.trim() || ''
-        const isSubmitter = Boolean(sessionMembership) && membershipNumber === sessionMembership
-        const email =
-          (isSubmitter ? sessionEmail : undefined) ||
-          memberData[index]?.email ||
-          member.email ||
-          ''
-        return {
-          membership_number: membershipNumber,
-          full_name: member.full_name,
-          email,
-          phone: member.phone,
-          is_leader: index === leaderIndex,
-        }
-      })
+      // Personal fields are filled server-side from VMS / membership DB.
+      const membersWithLeader = data.members.map((member, index) => ({
+        membership_number: member.membership_number?.trim() || '',
+        is_leader: index === leaderIndex,
+      }))
 
-      if (membersWithLeader.some((m) => !m.email)) {
-        toast.error('تحقق من أرقام عضوية الأعضاء لتعبئة البريد تلقائياً')
-        setIsSubmitting(false)
-        return
-      }
-
-      if (!eventId) {
-        toast.error('معرف الفعالية مفقود')
-        setIsSubmitting(false)
-        return
-      }
-
-      const teamData = {
+      await teamsService.create({
         event_id: eventId,
         team_name: data.team_name,
         registration_type: hasIdea ? 'team_with_idea' : 'team_no_idea',
-        // Competition is chosen later on the team dashboard (step 1 before primary/final).
         field: '',
         initial_idea: hasIdea ? data.initial_idea : null,
         members: membersWithLeader,
         gender: data.gender,
-      }
-
-      await teamsService.create(teamData as any)
+      } as any)
       toast.success('تم تسجيل الفريق بنجاح!')
       navigate(`/events/${eventId}/dashboard`)
     } catch (error: any) {
@@ -237,14 +210,7 @@ export default function TeamRegistration() {
       setMembershipStatus(prev => ({ ...prev, [index]: null }))
       setMemberGenders(prev => ({ ...prev, [index]: null }))
 
-      const wasAutofilled = !!memberData[index]
       setMemberData(prev => ({ ...prev, [index]: null }))
-
-      if (wasAutofilled) {
-        setValue(`members.${index}.full_name`, '')
-        setValue(`members.${index}.email`, '')
-        setValue(`members.${index}.phone`, '')
-      }
       return
     }
 
@@ -253,15 +219,7 @@ export default function TeamRegistration() {
       setMembershipStatus(prev => ({ ...prev, [index]: 'invalid' }))
       setVerifyingMembership(prev => ({ ...prev, [index]: false }))
       setMemberGenders(prev => ({ ...prev, [index]: null }))
-
-      const wasAutofilled = !!memberData[index]
       setMemberData(prev => ({ ...prev, [index]: null }))
-
-      if (wasAutofilled) {
-        setValue(`members.${index}.full_name`, '')
-        setValue(`members.${index}.email`, '')
-        setValue(`members.${index}.phone`, '')
-      }
       return
     }
 
@@ -299,9 +257,6 @@ export default function TeamRegistration() {
         setMemberData(prev => ({ ...prev, [index]: null }))
         setMemberGenders(prev => ({ ...prev, [index]: null }))
 
-        setValue(`members.${index}.full_name`, '')
-        setValue(`members.${index}.email`, '')
-        setValue(`members.${index}.phone`, '')
       }
     } catch {
       if (membershipRequestIds.current[index] !== requestId) {
@@ -311,10 +266,6 @@ export default function TeamRegistration() {
       setMembershipStatus(prev => ({ ...prev, [index]: 'invalid' }))
       setMemberData(prev => ({ ...prev, [index]: null }))
       setMemberGenders(prev => ({ ...prev, [index]: null }))
-
-      setValue(`members.${index}.full_name`, '')
-      setValue(`members.${index}.email`, '')
-      setValue(`members.${index}.phone`, '')
     } finally {
       if (membershipRequestIds.current[index] === requestId) {
         setVerifyingMembership(prev => ({ ...prev, [index]: false }))
@@ -353,25 +304,6 @@ export default function TeamRegistration() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for session leader
   }, [])
-
-  // Auto-fill member data when verified
-  useEffect(() => {
-    Object.entries(memberData).forEach(([indexStr, data]) => {
-      const index = parseInt(indexStr)
-      if (data) {
-        // Only set value if it's not empty
-        if (data.full_name) {
-          setValue(`members.${index}.full_name`, data.full_name)
-        }
-        if (data.email) {
-          setValue(`members.${index}.email`, data.email)
-        }
-        if (data.phone) {
-          setValue(`members.${index}.phone`, data.phone)
-        }
-      } 
-    })
-  }, [memberData, setValue])
 
   if (rulesLoading) {
     return (
@@ -573,7 +505,7 @@ export default function TeamRegistration() {
               </div>
 
               <p className="text-gray-400 mb-6">
-                يمكنك إنشاء الفريق بنفسك فقط، أو إضافة أعضاء حتى {maxTeamSize}. حدد مشرف الفريق (القائد).
+                أدخل أرقام عضوية VMS فقط — الاسم والبريد والهاتف يُجلبان تلقائياً. يمكنك إنشاء الفريق بنفسك أو إضافة أعضاء حتى {maxTeamSize}.
               </p>
 
               {/* Gender validation warning */}
@@ -655,88 +587,71 @@ export default function TeamRegistration() {
 
                     
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                            <div>
-                        <div className="relative">
-                          <input
-                            {...register(`members.${index}.membership_number`, {
-                              validate: (v) =>
-                                !v || v.length === 7 || 'رقم العضوية يجب أن يكون 7 أرقام',
-                              })}
-                            type="text"
-                            className="input-field"
-                            placeholder="رقم العضوية"
-                            dir="rtl"
-                            onChange={(e) => {
-                              register(`members.${index}.membership_number`).onChange(e)
-                              debouncedVerify(e.target.value, index)
-                            }}
-                          />
-                        </div>
-                        
-                        {/* Verification status */}
+                    <div className="space-y-3">
+                      <div>
+                        <input
+                          {...register(`members.${index}.membership_number`, {
+                            required: 'رقم العضوية مطلوب',
+                            validate: (v) =>
+                              (v?.trim().length === 7) || 'رقم العضوية يجب أن يكون 7 أرقام',
+                          })}
+                          type="text"
+                          className="input-field"
+                          placeholder="رقم العضوية"
+                          dir="ltr"
+                          readOnly={index === 0 && Boolean(session?.user.membershipNumber)}
+                          onChange={(e) => {
+                            register(`members.${index}.membership_number`).onChange(e)
+                            debouncedVerify(e.target.value, index)
+                          }}
+                        />
+
                         <div className="mt-2 flex items-center gap-2">
                           {verifyingMembership[index] && (
                             <div className="flex items-center gap-2 text-blue-400 text-xs">
                               <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                              <span>جاري التحقق...</span>
+                              <span>جاري التحقق من VMS...</span>
                             </div>
                           )}
                           {!verifyingMembership[index] && membershipStatus[index] === 'valid' && (
                             <div className="flex items-center gap-2 text-green-400 text-xs">
                               <CheckCircle2 className="w-4 h-4" />
-                              <span>رقم العضوية صحيح</span>
+                              <span>تم التحقق من العضوية</span>
                             </div>
                           )}
                           {!verifyingMembership[index] && membershipStatus[index] === 'invalid' && !errors.members?.[index]?.membership_number && (
                             <div className="flex items-center gap-2 text-red-400 text-xs">
                               <XCircle className="w-4 h-4" />
-                              <span>رقم العضوية غير صحيح</span>
+                              <span>رقم العضوية غير موجود في VMS</span>
                             </div>
                           )}
                         </div>
-                        
+
                         {errors.members?.[index]?.membership_number && (
                           <p className="text-red-400 text-xs mt-1">
                             {errors.members[index]?.membership_number?.message}
                           </p>
                         )}
                       </div>
-                      <div>
-                        <input
-                          {...register(`members.${index}.full_name`, {
-                            required: 'الاسم مطلوب',
-                          })}
-                          type="text"
-                          className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          placeholder="الاسم الكامل"
-                          disabled={!!(memberData[index]?.full_name)}
-                        />
-                        {errors.members?.[index]?.full_name && (
-                          <p className="text-red-400 text-xs mt-1">
-                            {errors.members[index]?.full_name?.message}
-                          </p>
-                        )}
-                      </div>
 
-                      <div>
-                        <input
-                          {...register(`members.${index}.phone`, {
-                            required: 'رقم الهاتف مطلوب',
-                            minLength: { value: 10, message: 'رقم الهاتف يجب أن يكون 10 أرقام على الأقل' },
-                          })}
-                          type="tel"
-                          className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          placeholder="رقم الهاتف"
-                          dir="ltr"
-                          disabled={!!(memberData[index]?.phone)}
-                        />
-                        {errors.members?.[index]?.phone && (
-                          <p className="text-red-400 text-xs mt-1">
-                            {errors.members[index]?.phone?.message}
+                      {membershipStatus[index] === 'valid' && memberData[index] && (
+                        <div className="rounded-lg bg-teknofest-medium-blue/40 px-3 py-2 text-sm text-gray-300 space-y-1">
+                          <p>
+                            <span className="text-gray-500">الاسم: </span>
+                            {memberData[index]?.full_name || '—'}
                           </p>
-                        )}
-                      </div>
+                          <p>
+                            <span className="text-gray-500">البريد: </span>
+                            {memberData[index]?.email || '—'}
+                          </p>
+                          {memberData[index]?.phone && memberData[index]?.phone !== 'n/a' && (
+                            <p>
+                              <span className="text-gray-500">الهاتف: </span>
+                              {memberData[index]?.phone}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -765,15 +680,15 @@ export default function TeamRegistration() {
                 <button
                   type="submit"
                   disabled={
-                  isSubmitting ||
-                  !validateTeamGender(
-                    (control._formValues?.gender as Gender) || 'male',
-                    control._formValues?.members || []
-                  ).isValid ||
-                  (control._formValues?.members || []).some((m: any, index: number) => {
-                    const has = !!m?.membership_number?.trim()
-                    return has && membershipStatus[index] !== 'valid'
-                  })
+                    isSubmitting ||
+                    !validateTeamGender(
+                      (control._formValues?.gender as Gender) || 'male',
+                      control._formValues?.members || [],
+                    ).isValid ||
+                    (control._formValues?.members || []).some(
+                      (m: TeamMember, index: number) =>
+                        !m?.membership_number?.trim() || membershipStatus[index] !== 'valid',
+                    )
                   }
 
                   className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"

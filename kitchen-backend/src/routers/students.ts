@@ -11,6 +11,7 @@ import {
 import { getKitchenMaxTeamSize } from '../repositories/event-kitchens'
 import { createTeam, getTeam, listTeams } from '../repositories/teams'
 import { fetchVmsMemberProfile } from '../repositories/vms-member-profile'
+import { lookupMemberContact } from '../repositories/vms-events'
 
 const studentsRouter = new Hono<AppBindings>()
 
@@ -122,10 +123,25 @@ studentsRouter.get('/teams-with-space', memberAuthMiddleware, async (c) => {
 })
 
 studentsRouter.get('/verify-membership-number/:membership_number', memberAuthMiddleware, async (c) => {
-  const membershipNumber = c.req.param('membership_number')
+  const membershipNumber = c.req.param('membership_number')?.trim() || ''
+  const contact = await lookupMemberContact(c.env, membershipNumber)
+  if (!contact) {
+    return c.json({
+      success: false,
+      valid: false,
+      membership_number: membershipNumber,
+    })
+  }
   return c.json({
-    valid: Boolean(membershipNumber && membershipNumber.length >= 3),
-    membership_number: membershipNumber,
+    success: true,
+    valid: true,
+    membership_number: contact.membership_number,
+    member: {
+      ar_name: contact.full_name,
+      email: contact.email,
+      phone: contact.phone,
+      sex: contact.gender,
+    },
   })
 })
 

@@ -86,11 +86,13 @@ export type EventRegistrant = {
   status: string
 }
 
-type MemberContact = {
+export type MemberContact = {
   membership_number: string
   email: string | null
   ar_name: string | null
   en_name: string | null
+  phone_number: string | null
+  sex: string | null
 }
 
 const MEMBERSHIP_BATCH = 80
@@ -114,7 +116,9 @@ async function loadMemberContacts(
              u.membership_number AS membership_number,
              u.email AS email,
              ui.ar_name AS ar_name,
-             ui.en_name AS en_name
+             ui.en_name AS en_name,
+             ui.phone_number AS phone_number,
+             ui.sex AS sex
            FROM users u
            LEFT JOIN user_info ui ON ui.membership_number = u.membership_number
            WHERE u.membership_number IN (${placeholders})`,
@@ -130,6 +134,36 @@ async function loadMemberContacts(
     }
   }
   return map
+}
+
+/** Resolve one VMS/membership identity for team create / membership verify. */
+export async function lookupMemberContact(
+  env: Environment,
+  membershipNumber: string,
+): Promise<{
+  membership_number: string
+  full_name: string
+  email: string
+  phone: string
+  gender: 'male' | 'female' | null
+} | null> {
+  const trimmed = membershipNumber.trim()
+  if (!trimmed) return null
+  const contacts = await loadMemberContacts(env, [trimmed])
+  const contact = contacts.get(trimmed)
+  if (!contact) return null
+  const fullName =
+    contact.ar_name?.trim() || contact.en_name?.trim() || trimmed
+  const email = contact.email?.trim() || ''
+  if (!email) return null
+  const sex = contact.sex?.trim()
+  return {
+    membership_number: trimmed,
+    full_name: fullName,
+    email,
+    phone: contact.phone_number?.trim() || 'n/a',
+    gender: sex === 'female' ? 'female' : sex === 'male' ? 'male' : null,
+  }
 }
 
 /**
