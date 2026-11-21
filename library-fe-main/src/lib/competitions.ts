@@ -208,7 +208,9 @@ export interface ReportFileMeta {
 
 /** Official TEKNOFEST report/template downloads (şablon / sablon / template). */
 export const isReportTemplatePath = (haystack: string): boolean =>
-  /sablon|şablon|template/.test(haystack);
+  /sablon|şablon|template|\bsabl(?:onu?)?\b|_sabl(?:on)?(?=[_.\s-]|$)/.test(
+    haystack,
+  );
 
 const detectLevel = (haystack: string): ReportLevel => {
   if (/orta\s*okul|middle\s*school/.test(haystack)) return "middle-school";
