@@ -4,6 +4,7 @@ import { mapTeam, mapTeamMember } from '../utils/mappers'
 import { boolToInt } from '../utils/sql'
 import { averageJuryScores, listEvaluationsByProject } from './evaluations'
 import { getKitchenMaxTeamSize } from './event-kitchens'
+import { markMatchingIndividualAssigned } from './individuals'
 import { listJuriesAssignedToTeam } from './juries'
 
 export const listTeams = async (
@@ -193,7 +194,15 @@ export const createTeam = async (
           member.membership_number ?? null,
         )
         .first()
-      members.push(mapTeamMember(created as Record<string, unknown>))
+      const mapped = mapTeamMember(created as Record<string, unknown>)
+      members.push(mapped)
+      await markMatchingIndividualAssigned(
+        env,
+        payload.event_id,
+        team.id,
+        mapped.membership_number,
+        mapped.email,
+      )
     }
     team.members = members
   }
@@ -288,7 +297,20 @@ export const addMemberToTeam = async (
     )
     .first()
 
-  return mapTeamMember(created as Record<string, unknown>)
+  const mapped = mapTeamMember(created as Record<string, unknown>)
+  const teamRow = await env.D1_DB.prepare('SELECT event_id FROM teams WHERE id = ?')
+    .bind(teamId)
+    .first<{ event_id: string | null }>()
+  if (teamRow?.event_id) {
+    await markMatchingIndividualAssigned(
+      env,
+      teamRow.event_id,
+      teamId,
+      mapped.membership_number,
+      mapped.email,
+    )
+  }
+  return mapped
 }
 
 export const getTeamMember = async (

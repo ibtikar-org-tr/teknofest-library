@@ -138,3 +138,72 @@ export const markIndividualUnassigned = async (
     .bind(individualId)
     .run()
 }
+
+/** When someone joins/creates a team, mark matching pool individual as assigned. */
+export const markMatchingIndividualAssigned = async (
+  env: Environment,
+  eventId: string,
+  teamId: number,
+  membershipNumber: string | null | undefined,
+  email: string | null | undefined,
+): Promise<void> => {
+  const normalizedEmail = email?.trim().toLowerCase() || null
+  const normalizedMembership = membershipNumber?.trim() || null
+  if (!normalizedEmail && !normalizedMembership) return
+
+  await env.D1_DB.prepare(
+    `UPDATE individuals
+     SET is_assigned = 1, assigned_team_id = ?, updated_at = datetime('now')
+     WHERE event_id = ?
+       AND (
+         (? IS NOT NULL AND lower(email) = ?)
+         OR (? IS NOT NULL AND membership_number = ?)
+       )`,
+  )
+    .bind(
+      teamId,
+      eventId,
+      normalizedEmail,
+      normalizedEmail ?? '',
+      normalizedMembership,
+      normalizedMembership ?? '',
+    )
+    .run()
+}
+
+/**
+ * Heal stale pool flags: individuals who are on an active team but still
+ * marked unassigned (common after self create/join without pool sync).
+ */
+export const syncIndividualAssignmentsForEvent = async (
+  env: Environment,
+  eventId: string,
+): Promise<void> => {
+  const { results } = await env.D1_DB.prepare(
+    `SELECT i.id AS individual_id, t.id AS team_id
+     FROM individuals i
+     JOIN team_members tm
+       ON (
+         (i.membership_number IS NOT NULL AND TRIM(i.membership_number) != ''
+           AND tm.membership_number = i.membership_number)
+         OR (i.email != '' AND lower(tm.email) = lower(i.email))
+       )
+     JOIN teams t ON t.id = tm.team_id
+     WHERE i.event_id = ?
+       AND t.event_id = ?
+       AND t.is_active = 1
+       AND (i.is_assigned = 0 OR i.assigned_team_id IS NULL OR i.assigned_team_id != t.id)`,
+  )
+    .bind(eventId, eventId)
+    .all<{ individual_id: number; team_id: number }>()
+
+  for (const row of results ?? []) {
+    await env.D1_DB.prepare(
+      `UPDATE individuals
+       SET is_assigned = 1, assigned_team_id = ?, updated_at = datetime('now')
+       WHERE id = ?`,
+    )
+      .bind(row.team_id, row.individual_id)
+      .run()
+  }
+}

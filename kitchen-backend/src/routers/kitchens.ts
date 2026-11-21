@@ -8,6 +8,7 @@ import {
   listIndividuals,
   markIndividualUnassigned,
   markIndividualsAssigned,
+  syncIndividualAssignmentsForEvent,
 } from '../repositories/individuals'
 import { createProject, listProjects, listProjectsByTeam } from '../repositories/projects'
 import { listProjectFiles } from '../repositories/project-files'
@@ -851,6 +852,8 @@ kitchensRouter.get('/:eventId/individuals', ...withEventAccess, async (c) => {
   if (!(await canManageVmsEvent(c.env, eventId, member?.membership_number))) {
     return c.json({ message: 'Only VMS event managers can list individuals' }, 403)
   }
+  // Heal pool flags when people already self-created/joined a team.
+  await syncIndividualAssignmentsForEvent(c.env, eventId)
   const unassignedOnly = c.req.query('unassigned_only') === 'true'
   const individuals = await listIndividuals(c.env, eventId)
   const filtered = unassignedOnly
@@ -909,7 +912,22 @@ kitchensRouter.post('/:eventId/assign-individuals', ...withEventAccess, async (c
   }
   const teamGender = [...genders][0]
 
-  for (const ind of individuals) {
+  await syncIndividualAssignmentsForEvent(c.env, eventId)
+  const refreshed = await getIndividualsByIds(c.env, eventId, individualIds)
+  if (refreshed.some((ind) => ind.is_assigned)) {
+    const names = refreshed
+      .filter((ind) => ind.is_assigned)
+      .map((ind) => ind.full_name)
+      .join('، ')
+    return c.json(
+      {
+        message: `هؤلاء الأفراد منضمون لفريق مسبقاً: ${names}`,
+      },
+      409,
+    )
+  }
+
+  for (const ind of refreshed) {
     const onTeam = await findTeamForMemberInEvent(
       c.env,
       eventId,
@@ -919,7 +937,7 @@ kitchensRouter.post('/:eventId/assign-individuals', ...withEventAccess, async (c
     if (onTeam) {
       return c.json(
         {
-          message: `${ind.full_name} is already on a team`,
+          message: `${ind.full_name} منضم مسبقاً للفريق «${onTeam.team_name}»`,
           team_id: onTeam.id,
         },
         409,
@@ -933,7 +951,7 @@ kitchensRouter.post('/:eventId/assign-individuals', ...withEventAccess, async (c
     registration_type: 'team_no_idea',
     field,
     gender: teamGender,
-    members: individuals.map((ind, index) => ({
+    members: refreshed.map((ind, index) => ({
       full_name: ind.full_name,
       email: ind.email,
       phone: ind.phone,
@@ -944,7 +962,7 @@ kitchensRouter.post('/:eventId/assign-individuals', ...withEventAccess, async (c
 
   await markIndividualsAssigned(
     c.env,
-    individuals.map((ind) => ind.id),
+    refreshed.map((ind) => ind.id),
     team.id,
   )
 

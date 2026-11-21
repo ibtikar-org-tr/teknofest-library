@@ -167,7 +167,11 @@ export default function AdminIndividuals() {
         setNewTeamName('')
         setNewTeamField('')
       } catch (error: any) {
-        toast.error(error.response?.data?.detail || 'حدث خطأ في فرز الأفراد')
+        toast.error(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            'حدث خطأ في فرز الأفراد',
+        )
       } finally {
         setAssigning(false)
       }
@@ -209,7 +213,11 @@ export default function AdminIndividuals() {
         setShowAssignModal(false)
         setSelectedExistingTeam(null)
       } catch (error: any) {
-        toast.error(error.response?.data?.detail || 'حدث خطأ في إضافة الأفراد')
+        toast.error(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            'حدث خطأ في إضافة الأفراد',
+        )
       } finally {
         setAssigning(false)
       }
@@ -236,7 +244,8 @@ export default function AdminIndividuals() {
       // Clean selection if needed
       setSelectedIndividuals((prev) => prev.filter((id) => id !== individual.id))
     } catch (error: any) {
-      const detail = error?.response?.data?.detail
+      const detail =
+        error?.response?.data?.message || error?.response?.data?.detail
       toast.error(typeof detail === 'string' ? detail : 'حدث خطأ أثناء إلغاء الفرز')
     } finally {
       setAssigning(false)
