@@ -33,6 +33,7 @@ export default function MyTeam() {
   const [error, setError] = useState<string | null>(null)
   const [selectedCompetition, setSelectedCompetition] = useState('')
   const [savingCompetition, setSavingCompetition] = useState(false)
+  const [editingCompetition, setEditingCompetition] = useState(false)
 
   useEffect(() => {
     if (!eventId) return
@@ -79,13 +80,61 @@ export default function MyTeam() {
     try {
       const updated = await kitchensService.setMyTeamCompetition(eventId, selectedCompetition.trim())
       setTeam(updated)
-      toast.success('تم اختيار المسابقة')
+      setEditingCompetition(false)
+      toast.success(hasCompetition ? 'تم تحديث المسابقة' : 'تم اختيار المسابقة')
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'تعذر حفظ المسابقة')
     } finally {
       setSavingCompetition(false)
     }
   }
+
+  const competitionPicker = (
+    <div className="space-y-3">
+      <select
+        className="input-field"
+        value={selectedCompetition}
+        disabled={competitionsLoading || competitions.length === 0}
+        onChange={(e) => setSelectedCompetition(e.target.value)}
+      >
+        <option value="">
+          {competitionsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
+        </option>
+        {competitions.map((c) => (
+          <option key={c.id} value={c.value}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button
+          type="button"
+          onClick={() => void saveCompetition()}
+          disabled={
+            savingCompetition ||
+            !selectedCompetition ||
+            selectedCompetition === team?.field
+          }
+          className="btn-primary flex-1 disabled:opacity-50"
+        >
+          {savingCompetition ? 'جاري الحفظ...' : hasCompetition ? 'حفظ التغيير' : 'تأكيد المسابقة'}
+        </button>
+        {hasCompetition && editingCompetition ? (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingCompetition(false)
+              setSelectedCompetition(team?.field ?? '')
+            }}
+            className="btn-secondary"
+            disabled={savingCompetition}
+          >
+            إلغاء
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
 
   if (loading) {
     return (
@@ -153,25 +202,8 @@ export default function MyTeam() {
             مرحلتين فقط (أولية 40% + نهائية 60%).
           </p>
 
-          {/* Step 1 — competition (FE only; not a jury stage) */}
-          {hasCompetition ? (
-            <div className="card flex items-center gap-4 border border-green-500/30">
-              <Check className="w-10 h-10 text-green-400 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-green-400 mb-1">الخطوة 1</p>
-                <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
-                <a
-                  href={libraryCompetitionUrl(team.field, competitions)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
-                  title="فتح صفحة المسابقة في المكتبة"
-                >
-                  {team.field}
-                </a>
-              </div>
-            </div>
-          ) : (
+          {/* Step 1 — competition (editable until primary is submitted) */}
+          {!hasCompetition ? (
             <div className="card space-y-4 border border-teknofest-orange/40">
               <div className="flex items-center gap-4">
                 <Trophy className="w-10 h-10 text-teknofest-orange shrink-0" />
@@ -181,29 +213,66 @@ export default function MyTeam() {
                   <p className="text-gray-400 text-sm">يجب اختيار المسابقة قبل أي تقديم</p>
                 </div>
               </div>
-              <select
-                className="input-field"
-                value={selectedCompetition}
-                disabled={competitionsLoading || competitions.length === 0}
-                onChange={(e) => setSelectedCompetition(e.target.value)}
-              >
-                <option value="">
-                  {competitionsLoading ? 'جاري تحميل المسابقات...' : 'اختر المسابقة'}
-                </option>
-                {competitions.map((c) => (
-                  <option key={c.id} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => void saveCompetition()}
-                disabled={savingCompetition || !selectedCompetition}
-                className="btn-primary w-full disabled:opacity-50"
-              >
-                {savingCompetition ? 'جاري الحفظ...' : 'تأكيد المسابقة'}
-              </button>
+              {competitionPicker}
+            </div>
+          ) : hasPrimary ? (
+            <div className="card flex items-center gap-4 border border-green-500/30">
+              <Check className="w-10 h-10 text-green-400 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs text-green-400 mb-1">الخطوة 1</p>
+                <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
+                <a
+                  href={libraryCompetitionUrl(team.field!, competitions)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
+                  title="فتح صفحة المسابقة في المكتبة"
+                >
+                  {team.field}
+                </a>
+                <p className="text-gray-500 text-xs mt-1">
+                  لا يمكن تغيير المسابقة بعد تقديم المرحلة الأولية
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="card space-y-4 border border-green-500/30">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div className="flex items-center gap-4 min-w-0">
+                  <Check className="w-10 h-10 text-green-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-green-400 mb-1">الخطوة 1</p>
+                    <h3 className="text-lg font-bold text-white">اختيار المسابقة</h3>
+                    <a
+                      href={libraryCompetitionUrl(team.field!, competitions)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-teknofest-cyan text-sm hover:underline truncate inline-block max-w-full"
+                      title="فتح صفحة المسابقة في المكتبة"
+                    >
+                      {team.field}
+                    </a>
+                  </div>
+                </div>
+                {!editingCompetition ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCompetition(team.field ?? '')
+                      setEditingCompetition(true)
+                    }}
+                    className="btn-secondary text-sm py-2 shrink-0"
+                  >
+                    تغيير المسابقة
+                  </button>
+                ) : null}
+              </div>
+              {editingCompetition ? competitionPicker : null}
+              {!editingCompetition ? (
+                <p className="text-gray-500 text-xs">
+                  يمكنك تغيير المسابقة حتى تقديم المرحلة الأولية
+                </p>
+              ) : null}
             </div>
           )}
 

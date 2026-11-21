@@ -8,7 +8,7 @@ Files are free-form (not image/schema/design slots): each has a **display name**
 
 On the team dashboard the path is shown as **three steps**:
 
-1. **Choose competition** — stored on `teams.field` (not a jury stage)
+1. **Choose competition** — stored on `teams.field` (not a jury stage); **editable until primary is submitted**, then locked
 2. **Primary** application
 3. **Final** application
 
@@ -30,7 +30,7 @@ Each is a separate `project_submissions` row (`stage`, unique per team). Stages 
 
 ## APIs
 
-- Choose competition: `PUT /api/kitchens/:eventId/my-team/competition` `{ field }` (locked after primary is submitted)
+- Choose / change competition: `PUT /api/kitchens/:eventId/my-team/competition` `{ field }` (409 after primary is submitted)
 - Submit: `POST /api/kitchens/:eventId/projects` with `{ stage, summary, team_id? }`
 - Upload file: `POST /api/projects/:id/files` multipart (`file`, `display_name`, `description?`)
 - List/download: `GET /api/projects/:id/files`, `GET /api/projects/:id/files/:fileId`
