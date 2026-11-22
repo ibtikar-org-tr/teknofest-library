@@ -58,8 +58,13 @@ export default function AdminDashboard() {
           kitchensService.getStats(eventId),
           kitchensService.getFields(eventId).catch(() => null),
           kitchensService.getTeams(eventId).catch(() => [] as AdminTeamOverview[]),
-          kitchensService.listJuries(eventId).catch(() => []),
+          kitchensService.listJuries(eventId).catch(() => ({
+            juries: [],
+            manager: { membership_number: null, telegram_username: null },
+          })),
         ])
+
+        const juryList = Array.isArray(juries) ? juries : juries.juries
 
         let pendingAccept = 0
         let awaitingJury = 0
@@ -85,8 +90,8 @@ export default function AdminDashboard() {
             unassigned:
               Number(stats.individuals_count ?? 0) - Number(stats.assigned_individuals ?? 0),
             projects: Number(stats.projects_count ?? 0),
-            juries: juries.length,
-            juriesWithoutTeams: juries.filter((j) => (j.team_ids?.length ?? 0) === 0).length,
+            juries: juryList.length,
+            juriesWithoutTeams: juryList.filter((j) => (j.team_ids?.length ?? 0) === 0).length,
             registrationOpen: Boolean(fields?.registration_open),
             interestMin: fields?.interest_min ?? null,
             interestMax: fields?.interest_max ?? null,
