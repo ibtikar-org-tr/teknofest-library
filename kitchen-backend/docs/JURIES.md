@@ -9,3 +9,4 @@
 - Jury UI: `GET /api/kitchens/:eventId/my-jury-assignments` + `POST /api/evaluation/admin` (upsert per jury per stage submission).
 - Admin evaluations page is read-only summaries; manage juries at `/admin/events/:eventId/juries`.
 - `GET /juries` includes per-jury `duty_done` / `duty_required` (submitted stages on assigned teams that this jury scored), `team_duties`, and event-wide `teams_index` (which teams submitted primary/final) for compact stage icons in the admin UI.
+- Managers can bot-DM a jury via `POST /juries/:membershipNumber/notify` → Kitchen → VMS `POST /telegram/notify` (manager Bearer) → telegram-ms. Requires the jury’s `telegram_id` (bot `/start`). Manual `t.me` open remains available when `@username` exists. No kitchen↔telegram shared secret.

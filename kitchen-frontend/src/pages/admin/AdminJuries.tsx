@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
+  Bot,
   Check,
   Copy,
   Gavel,
@@ -140,6 +141,7 @@ export default function AdminJuries() {
   const [selectedMember, setSelectedMember] = useState('')
   const [adding, setAdding] = useState(false)
   const [savingMember, setSavingMember] = useState<string | null>(null)
+  const [notifyingMember, setNotifyingMember] = useState<string | null>(null)
   const [draftTeams, setDraftTeams] = useState<Record<string, number[]>>({})
 
   const load = useCallback(async () => {
@@ -273,6 +275,26 @@ export default function AdminJuries() {
       '_blank',
       'noopener,noreferrer',
     )
+  }
+
+  const sendBotMessage = async (jury: EventJury) => {
+    if (!eventId) return
+    if (!jury.telegram_id?.trim()) {
+      toast.error('المحكم غير مربوط بالبوت — اطلب منه /start أولاً')
+      return
+    }
+    setNotifyingMember(jury.membership_number)
+    try {
+      await kitchensService.notifyJuryTelegram(eventId, jury.membership_number)
+      toast.success('أُرسلت الرسالة عبر البوت')
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'تعذر الإرسال عبر البوت'
+      toast.error(msg)
+    } finally {
+      setNotifyingMember(null)
+    }
   }
 
   if (loading) {
@@ -460,12 +482,34 @@ export default function AdminJuries() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
+                      onClick={() => void sendBotMessage(jury)}
+                      disabled={
+                        !jury.telegram_id?.trim() ||
+                        notifyingMember === jury.membership_number
+                      }
+                      className="btn-primary text-sm py-2 flex items-center gap-1 disabled:opacity-50"
+                      title={
+                        jury.telegram_id?.trim()
+                          ? 'إرسال رسالة مباشرة عبر بوت التلغرام'
+                          : 'المحكم غير مربوط بالبوت'
+                      }
+                    >
+                      {notifyingMember === jury.membership_number ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Bot className="w-4 h-4" />
+                      )}
+                      بوت
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openTelegram(jury)}
-                      className="btn-secondary text-sm py-2 flex items-center gap-1"
-                      title="فتح محادثة تلغرام مع رسالة تتضمن حسابك"
+                      disabled={!username}
+                      className="btn-secondary text-sm py-2 flex items-center gap-1 disabled:opacity-50"
+                      title="فتح محادثة تلغرام يدوية مع رسالة تتضمن حسابك"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      تلغرام
+                      فتح محادثة
                     </button>
                     <button
                       type="button"

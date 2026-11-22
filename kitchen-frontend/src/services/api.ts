@@ -499,6 +499,18 @@ export const kitchensService = {
     )
   },
 
+  notifyJuryTelegram: async (
+    eventId: string,
+    membershipNumber: string,
+    message?: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/juries/${encodeURIComponent(membershipNumber)}/notify`,
+      message?.trim() ? { message: message.trim() } : {},
+    )
+    return response.data
+  },
+
   setJuryTeams: async (
     eventId: string,
     membershipNumber: string,

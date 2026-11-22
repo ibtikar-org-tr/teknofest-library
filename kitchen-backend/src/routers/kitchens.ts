@@ -43,6 +43,10 @@ import {
   acceptProjectStageScore,
   listAdminTeamsOverview,
 } from '../repositories/admin-team-overview'
+import {
+  buildJuryManagerMessage,
+  notifyMemberViaVms,
+} from '../utils/telegram-notify'
 import { listLibraryCompetitionFields } from '../repositories/library-competitions'
 import {
   enrichIndividualsWithCompetitionLabels,
@@ -1357,6 +1361,70 @@ kitchensRouter.put(
       member?.membership_number ?? null,
     )
     return c.json({ membership_number: membershipNumber, team_ids: saved })
+  },
+)
+
+/** Send a Telegram bot DM to a jury via VMS → telegram-ms (no shared kitchen/telegram secret). */
+kitchensRouter.post(
+  '/:eventId/juries/:membershipNumber/notify',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const membershipNumber = decodeURIComponent(c.req.param('membershipNumber'))
+    const member = c.get('member')
+    if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can message juries' }, 403)
+    }
+    if (!(await isEventJury(c.env, eventId, membershipNumber))) {
+      return c.json({ message: 'Jury not found' }, 404)
+    }
+
+    const authorizationHeader = c.req.header('Authorization') || ''
+    if (!authorizationHeader.startsWith('Bearer ')) {
+      return c.json({ message: 'Unauthorized' }, 401)
+    }
+
+    const body = await c.req.json<{ message?: string }>().catch(() => ({} as { message?: string }))
+    const extra = typeof body.message === 'string' ? body.message : undefined
+
+    const managerMembership = member?.membership_number?.trim() || null
+    const contacts = await loadMemberContacts(c.env, [
+      membershipNumber,
+      ...(managerMembership ? [managerMembership] : []),
+    ])
+    const juryContact = contacts.get(membershipNumber.trim())
+    if (!juryContact?.telegram_id?.trim()) {
+      return c.json(
+        {
+          message:
+            'هذا المحكم غير مربوط ببوت التلغرام (لا يوجد telegram_id). اطلب منه /start على البوت أولاً.',
+        },
+        400,
+      )
+    }
+
+    const managerContact = managerMembership ? contacts.get(managerMembership) : null
+    const text = buildJuryManagerMessage({
+      managerUsername: normalizeTelegramUsername(managerContact?.telegram_username),
+      managerMembership,
+      juryUsername: normalizeTelegramUsername(juryContact.telegram_username),
+      extra,
+    })
+
+    const result = await notifyMemberViaVms(c.env, {
+      authorizationHeader,
+      membership_number: membershipNumber,
+      message: text,
+    })
+
+    if (!result.success) {
+      return c.json(
+        { message: result.error || 'تعذر إرسال رسالة التلغرام عبر البوت' },
+        result.status === 400 ? 400 : 502,
+      )
+    }
+
+    return c.json({ success: true, message: 'تم إرسال الرسالة عبر بوت التلغرام' })
   },
 )
 

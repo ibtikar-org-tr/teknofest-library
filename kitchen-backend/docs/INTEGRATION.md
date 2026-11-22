@@ -24,11 +24,13 @@ Config:
 - `VMS_SERVICE` — Worker service binding to the VMS membership Worker (required in production when Kitchen shares the VMS host; same-zone `fetch(VMS_URL)` often misses the Worker)
 - `VMS_API_BASE` — HTTP fallback for local/dev (`VMS_URL` + `/ms/membership-app/api`)
 - `VMS_DB` — read-only D1 for events / registrations / manager checks
-- `MEMBERS_DB` — read-only D1 for member names/emails (jury registrant picker)
+- `MEMBERS_DB` — read-only D1 for member names/emails/telegram (jury registrant picker + bot DM)
 - `D1_DB` — kitchen data
 - `LIBRARY` — service binding to library worker for competitions
 
 CI var `VMS_SERVICE_NAME` must be the VMS membership Worker name (same value Career uses as `THIS_APP_NAME_BE`).
+
+Telegram bot DMs (jury notify) go **Kitchen → VMS `POST /telegram/notify` (caller Bearer) → telegram-ms**. VMS already owns `TELEGRAM_MS_SERVICE` + `INTERNAL_SECRET`; Kitchen does not bind telegram-ms and does not share that secret across repos.
 
 ## Competitions
 
