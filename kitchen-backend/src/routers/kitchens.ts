@@ -1224,7 +1224,7 @@ kitchensRouter.get('/:eventId/juries', ...withEventAccess, async (c) => {
   if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
     return c.json({ message: 'Only VMS event managers can list juries' }, 403)
   }
-  const juries = await listEventJuries(c.env, eventId)
+  const { juries, teams_index } = await listEventJuries(c.env, eventId)
   let manager_telegram_username: string | null = null
   const managerMembership = member?.membership_number?.trim()
   if (managerMembership) {
@@ -1235,6 +1235,7 @@ kitchensRouter.get('/:eventId/juries', ...withEventAccess, async (c) => {
   }
   return c.json({
     juries,
+    teams_index,
     manager: {
       membership_number: managerMembership ?? null,
       telegram_username: manager_telegram_username,

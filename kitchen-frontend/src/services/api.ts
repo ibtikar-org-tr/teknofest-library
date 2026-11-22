@@ -69,6 +69,26 @@ export type EventRegistrant = {
   status: string
 }
 
+export type JuryStageStatus = {
+  submitted: boolean
+  scored: boolean
+  project_id: number | null
+}
+
+export type JuryTeamDuty = {
+  team_id: number
+  team_name: string
+  primary: JuryStageStatus
+  final: JuryStageStatus
+}
+
+export type EventTeamStageIndex = {
+  team_id: number
+  team_name: string
+  primary_submitted: boolean
+  final_submitted: boolean
+}
+
 export type EventJury = {
   event_id: string
   membership_number: string
@@ -80,10 +100,14 @@ export type EventJury = {
   telegram_username?: string | null
   telegram_id?: string | null
   has_telegram?: boolean
+  duty_required?: number
+  duty_done?: number
+  team_duties?: JuryTeamDuty[]
 }
 
 export type JuriesListResponse = {
   juries: EventJury[]
+  teams_index?: EventTeamStageIndex[]
   manager: {
     membership_number: string | null
     telegram_username: string | null
@@ -451,10 +475,14 @@ export const kitchensService = {
     if (Array.isArray(data)) {
       return {
         juries: data,
+        teams_index: [],
         manager: { membership_number: null, telegram_username: null },
       }
     }
-    return data
+    return {
+      ...data,
+      teams_index: data.teams_index ?? [],
+    }
   },
 
   addJury: async (

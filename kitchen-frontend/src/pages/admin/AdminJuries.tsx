@@ -2,17 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
+  Check,
   Copy,
   Gavel,
   Loader2,
   MessageCircle,
+  Minus,
   Save,
   Search,
   Trash2,
   UserPlus,
 } from 'lucide-react'
-import { kitchensService, type EventJury, type EventRegistrant } from '../../services/api'
-import type { Team } from '../../types'
+import {
+  kitchensService,
+  type EventJury,
+  type EventRegistrant,
+  type EventTeamStageIndex,
+  type JuryTeamDuty,
+} from '../../services/api'
 import AdminPageHeader from '../../components/AdminPageHeader'
 
 function buildJuryTelegramDmUrl(
@@ -36,13 +43,98 @@ function buildJuryTelegramDmUrl(
   return `https://t.me/${encodeURIComponent(juryUsername)}?text=${encodeURIComponent(lines.join('\n'))}`
 }
 
+/** Compact stage mark: empty = no report, cyan = report in, green check = this jury scored. */
+function StageMark({
+  label,
+  submitted,
+  scored,
+  title,
+}: {
+  label: string
+  submitted: boolean
+  scored: boolean
+  title: string
+}) {
+  const tip = (status: string) => (title ? `${title}: ${status}` : status)
+  if (!submitted) {
+    return (
+      <span
+        title={tip('لم يُسلَّم')}
+        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-gray-600/70 text-[10px] font-bold text-gray-500"
+      >
+        {label}
+      </span>
+    )
+  }
+  if (scored) {
+    return (
+      <span
+        title={tip('سُلّم · حكّم')}
+        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-500/60 bg-emerald-500/20 text-emerald-300"
+      >
+        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+      </span>
+    )
+  }
+  return (
+    <span
+      title={tip('سُلّم · بانتظار التحكيم')}
+      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-teknofest-cyan/70 bg-teknofest-cyan/15 text-[10px] font-bold text-teknofest-cyan"
+    >
+      {label}
+    </span>
+  )
+}
+
+function DutyBar({ done, required }: { done: number; required: number }) {
+  if (required <= 0) {
+    return (
+      <div
+        className="flex items-center gap-1.5 text-xs text-gray-500"
+        title="لا تقارير مُسلَّمة على الفرق المعيّنة بعد"
+      >
+        <Minus className="h-3.5 w-3.5" />
+        <span>لا واجب بعد</span>
+      </div>
+    )
+  }
+  const pct = Math.min(100, Math.round((done / required) * 100))
+  const complete = done >= required
+  return (
+    <div className="min-w-[140px] space-y-1" title={`أنجز ${done} من ${required}`}>
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className={complete ? 'text-emerald-300 font-semibold' : 'text-gray-300'}>
+          {done}/{required}
+        </span>
+        <span className="text-gray-500">{pct}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-teknofest-dark-blue/80 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${
+            complete ? 'bg-emerald-400' : 'bg-teknofest-orange'
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function teamDutyMap(jury: EventJury): Map<number, JuryTeamDuty> {
+  const map = new Map<number, JuryTeamDuty>()
+  for (const d of jury.team_duties ?? []) {
+    map.set(d.team_id, d)
+  }
+  return map
+}
+
 export default function AdminJuries() {
   const { eventId = '' } = useParams()
   const [juries, setJuries] = useState<EventJury[]>([])
+  const [teamsIndex, setTeamsIndex] = useState<EventTeamStageIndex[]>([])
   const [managerTelegram, setManagerTelegram] = useState<string | null>(null)
   const [managerMembership, setManagerMembership] = useState<string | null>(null)
   const [registrants, setRegistrants] = useState<EventRegistrant[]>([])
-  const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedMember, setSelectedMember] = useState('')
@@ -54,16 +146,15 @@ export default function AdminJuries() {
     if (!eventId) return
     setLoading(true)
     try {
-      const [juryPayload, registrantList, teamList] = await Promise.all([
+      const [juryPayload, registrantList] = await Promise.all([
         kitchensService.listJuries(eventId),
         kitchensService.getRegistrants(eventId),
-        kitchensService.getTeams(eventId),
       ])
       setJuries(juryPayload.juries)
+      setTeamsIndex(juryPayload.teams_index ?? [])
       setManagerTelegram(juryPayload.manager.telegram_username)
       setManagerMembership(juryPayload.manager.membership_number)
       setRegistrants(registrantList)
-      setTeams(teamList)
       const drafts: Record<string, number[]> = {}
       for (const j of juryPayload.juries) {
         drafts[j.membership_number] = [...j.team_ids]
@@ -99,91 +190,95 @@ export default function AdminJuries() {
       })
   }, [registrants, appointed, search])
 
-  const copyText = async (value: string, label: string) => {
-    try {
-      await navigator.clipboard.writeText(value)
-      toast.success(`تم نسخ ${label}`)
-    } catch {
-      toast.error('تعذر النسخ')
-    }
-  }
-
   const handleAdd = async () => {
-    if (!selectedMember) {
-      toast.error('اختر مسجلاً لتعيينه محكماً')
-      return
-    }
+    if (!eventId || !selectedMember) return
     const reg = registrants.find((r) => r.membership_number === selectedMember)
+    if (!reg) return
     setAdding(true)
     try {
       await kitchensService.addJury(eventId, {
-        membership_number: selectedMember,
-        full_name: reg?.full_name,
-        email: reg?.email,
+        membership_number: reg.membership_number,
+        full_name: reg.full_name,
+        email: reg.email,
       })
       toast.success('تم تعيين المحكم')
       setSelectedMember('')
       await load()
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'تعذر تعيين المحكم')
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'تعذر التعيين'
+      toast.error(msg)
     } finally {
       setAdding(false)
     }
   }
 
   const handleRemove = async (membershipNumber: string) => {
-    if (!confirm('إزالة هذا المحكم وجميع تعيينات الفرق؟')) return
+    if (!eventId) return
+    if (!window.confirm('إزالة هذا المحكم وجميع تعيينات فرقه؟')) return
     try {
       await kitchensService.removeJury(eventId, membershipNumber)
-      toast.success('تمت إزالة المحكم')
+      toast.success('تمت الإزالة')
       await load()
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'تعذر إزالة المحكم')
+    } catch {
+      toast.error('تعذر الإزالة')
     }
   }
 
   const toggleTeam = (membershipNumber: string, teamId: number) => {
     setDraftTeams((prev) => {
-      const current = prev[membershipNumber] ?? []
-      const next = current.includes(teamId)
-        ? current.filter((id) => id !== teamId)
-        : [...current, teamId]
-      return { ...prev, [membershipNumber]: next }
+      const current = new Set(prev[membershipNumber] ?? [])
+      if (current.has(teamId)) current.delete(teamId)
+      else current.add(teamId)
+      return { ...prev, [membershipNumber]: [...current] }
     })
   }
 
   const handleSaveTeams = async (membershipNumber: string) => {
+    if (!eventId) return
     setSavingMember(membershipNumber)
     try {
-      const teamIds = draftTeams[membershipNumber] ?? []
-      await kitchensService.setJuryTeams(eventId, membershipNumber, teamIds)
-      toast.success('تم حفظ تعيينات الفرق')
+      await kitchensService.setJuryTeams(
+        eventId,
+        membershipNumber,
+        draftTeams[membershipNumber] ?? [],
+      )
+      toast.success('تم حفظ الفرق')
       await load()
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'تعذر حفظ التعيينات')
+    } catch {
+      toast.error('تعذر حفظ الفرق')
     } finally {
       setSavingMember(null)
     }
   }
 
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(`تم نسخ ${label}`)
+    } catch {
+      toast.error('تعذر النسخ')
+    }
+  }
+
   const openTelegram = (jury: EventJury) => {
-    const username = jury.telegram_username?.trim().replace(/^@+/, '') || ''
+    const username = jury.telegram_username?.trim().replace(/^@+/, '')
     if (!username) {
-      toast.error(
-        jury.has_telegram
-          ? 'المحكم مربوط بتلغرام بدون اسم مستخدم عام — اطلب منه إضافة @username'
-          : 'لا يوجد حساب تلغرام معروف لهذا المحكم',
-      )
+      toast.error('لا يوجد @username لهذا المحكم')
       return
     }
-    const url = buildJuryTelegramDmUrl(username, managerTelegram, managerMembership)
-    window.open(url, '_blank', 'noopener,noreferrer')
+    window.open(
+      buildJuryTelegramDmUrl(username, managerTelegram, managerMembership),
+      '_blank',
+      'noopener,noreferrer',
+    )
   }
 
   if (loading) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="w-8 h-8 text-teknofest-orange animate-spin" />
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-teknofest-cyan" />
       </div>
     )
   }
@@ -193,7 +288,7 @@ export default function AdminJuries() {
       <AdminPageHeader
         icon={Gavel}
         title="المحكمون"
-        description="عيّن محكمين من مسجلي الفعالية، ثم اربط كل محكم بالفرق التي يقيّمها. رقم العضوية ظاهر دائماً، ويمكن مراسلة المحكم على تلغرام إن وُجد اسم مستخدم."
+        description="عيّن محكمين من مسجلي الفعالية، اربط كل محكم بالفرق، وتابع إنجاز التحكيم عبر رموز المراحل بجانب كل فريق."
         tone="cyan"
       />
 
@@ -210,31 +305,51 @@ export default function AdminJuries() {
         </p>
       )}
 
+      <div className="card flex flex-wrap items-center gap-3 text-xs text-gray-400">
+        <span className="text-gray-300 font-medium">دليل الرموز:</span>
+        <span className="inline-flex items-center gap-1.5">
+          <StageMark label="١" submitted={false} scored={false} title="" />
+          لم يُسلَّم
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <StageMark label="١" submitted scored={false} title="" />
+          تقرير أول بانتظار التحكيم
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <StageMark label="ن" submitted scored={false} title="" />
+          نهائي بانتظار التحكيم
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <StageMark label="١" submitted scored title="" />
+          حكّمه هذا المحكم
+        </span>
+      </div>
+
       <div className="card space-y-4">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+        <h2 className="text-white font-bold flex items-center gap-2">
           <UserPlus className="w-5 h-5 text-teknofest-cyan" />
-          إضافة محكم
+          إضافة محكم من المسجلين
         </h2>
         <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
-            className="input-field pr-10"
-            placeholder="بحث بالاسم أو رقم العضوية أو البريد..."
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث بالاسم أو البريد أو رقم العضوية…"
+            className="input-field w-full pr-10"
           />
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-2">
           <select
-            className="input-field flex-1"
             value={selectedMember}
             onChange={(e) => setSelectedMember(e.target.value)}
+            className="input-field flex-1 min-w-0"
           >
-            <option value="">اختر مسجلاً...</option>
+            <option value="">اختر مسجلاً…</option>
             {availableRegistrants.map((r) => (
               <option key={r.membership_number} value={r.membership_number}>
-                {r.full_name} — {r.membership_number}
-                {r.email ? ` (${r.email})` : ''}
+                {r.full_name || r.membership_number} — {r.membership_number}
               </option>
             ))}
           </select>
@@ -263,6 +378,10 @@ export default function AdminJuries() {
           {juries.map((jury) => {
             const selected = new Set(draftTeams[jury.membership_number] ?? [])
             const username = jury.telegram_username?.trim().replace(/^@+/, '') || null
+            const duties = teamDutyMap(jury)
+            const required = jury.duty_required ?? 0
+            const done = jury.duty_done ?? 0
+
             return (
               <div key={jury.membership_number} className="card space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -271,9 +390,12 @@ export default function AdminJuries() {
                       <Gavel className="w-5 h-5" />
                     </span>
                     <div className="min-w-0 space-y-2">
-                      <h3 className="text-white font-bold truncate">
-                        {jury.full_name || jury.membership_number}
-                      </h3>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-white font-bold truncate">
+                          {jury.full_name || jury.membership_number}
+                        </h3>
+                        <DutyBar done={done} required={required} />
+                      </div>
 
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs text-gray-500">رقم العضوية</span>
@@ -370,18 +492,30 @@ export default function AdminJuries() {
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-400 mb-2">الفرق المعيّنة للتحكيم</p>
-                  {teams.length === 0 ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <p className="text-sm text-gray-400">الفرق المعيّنة للتحكيم</p>
+                    <span className="text-[11px] text-gray-500 inline-flex items-center gap-2" dir="ltr">
+                      <span>١ = أول</span>
+                      <span>ن = نهائي</span>
+                    </span>
+                  </div>
+                  {teamsIndex.length === 0 ? (
                     <p className="text-sm text-gray-500">لا توجد فرق في هذا المطبخ بعد.</p>
                   ) : (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {teams.map((team) => {
-                        const id = team.id!
+                      {teamsIndex.map((team) => {
+                        const id = team.team_id
                         const checked = selected.has(id)
+                        const duty = duties.get(id)
+                        const primarySubmitted = duty?.primary.submitted ?? team.primary_submitted
+                        const finalSubmitted = duty?.final.submitted ?? team.final_submitted
+                        const primaryScored = checked ? Boolean(duty?.primary.scored) : false
+                        const finalScored = checked ? Boolean(duty?.final.scored) : false
+
                         return (
                           <label
                             key={id}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors min-w-0 ${
                               checked
                                 ? 'border-teknofest-orange bg-teknofest-orange/10'
                                 : 'border-teknofest-light-blue/20 hover:border-teknofest-cyan/40'
@@ -391,9 +525,25 @@ export default function AdminJuries() {
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleTeam(jury.membership_number, id)}
-                              className="accent-teknofest-orange"
+                              className="accent-teknofest-orange shrink-0"
                             />
-                            <span className="text-sm text-white truncate">{team.team_name}</span>
+                            <span className="text-sm text-white truncate flex-1 min-w-0">
+                              {team.team_name}
+                            </span>
+                            <span className="inline-flex items-center gap-1 shrink-0" dir="ltr">
+                              <StageMark
+                                label="١"
+                                submitted={primarySubmitted}
+                                scored={primaryScored}
+                                title="التقرير الأول"
+                              />
+                              <StageMark
+                                label="ن"
+                                submitted={finalSubmitted}
+                                scored={finalScored}
+                                title="التقرير النهائي"
+                              />
+                            </span>
                           </label>
                         )
                       })}

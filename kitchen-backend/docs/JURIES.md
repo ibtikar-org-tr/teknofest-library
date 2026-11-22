@@ -8,3 +8,4 @@
 - **Overall** team score = 40% primary stage + 60% final stage (see [APPLICATIONS.md](./APPLICATIONS.md)).
 - Jury UI: `GET /api/kitchens/:eventId/my-jury-assignments` + `POST /api/evaluation/admin` (upsert per jury per stage submission).
 - Admin evaluations page is read-only summaries; manage juries at `/admin/events/:eventId/juries`.
+- `GET /juries` includes per-jury `duty_done` / `duty_required` (submitted stages on assigned teams that this jury scored), `team_duties`, and event-wide `teams_index` (which teams submitted primary/final) for compact stage icons in the admin UI.
