@@ -310,7 +310,7 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {[
           { label: 'الفرق', value: data.teams, to: `${base}/teams`, icon: Users },
           { label: 'تقديمات', value: data.projects, to: `${base}/teams`, icon: FileText },
@@ -327,13 +327,15 @@ export default function AdminDashboard() {
             <Link
               key={card.label}
               to={card.to}
-              className="rounded-2xl border border-teknofest-light-blue/15 bg-teknofest-medium-blue/30 px-4 py-4 hover:border-teknofest-orange/40 transition-colors"
+              className="rounded-2xl border border-teknofest-light-blue/15 bg-teknofest-medium-blue/30 px-3 sm:px-4 py-3 sm:py-4 hover:border-teknofest-orange/40 transition-colors min-h-[5.5rem]"
             >
-              <div className="flex items-center justify-between mb-3">
-                <Icon className="w-4 h-4 text-teknofest-cyan" />
-                <span className="text-2xl font-bold text-white tabular-nums">{card.value}</span>
+              <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                <Icon className="w-4 h-4 text-teknofest-cyan shrink-0" />
+                <span className="text-xl sm:text-2xl font-bold text-white tabular-nums">
+                  {card.value}
+                </span>
               </div>
-              <p className="text-gray-400 text-sm">{card.label}</p>
+              <p className="text-gray-400 text-xs sm:text-sm leading-snug">{card.label}</p>
             </Link>
           )
         })}

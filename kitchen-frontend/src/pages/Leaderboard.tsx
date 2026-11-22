@@ -120,32 +120,38 @@ export default function Leaderboard() {
           <EmptyState text="لا توجد فرق مسجّلة بعد" />
         ) : (
           <div className="card overflow-hidden p-0">
-            <table className="w-full text-right">
-              <thead>
-                <tr className="border-b border-teknofest-light-blue/20 text-gray-400 text-sm">
-                  <th className="px-6 py-4 font-medium">#</th>
-                  <th className="px-6 py-4 font-medium">اسم الفريق</th>
-                  <th className="px-6 py-4 font-medium">عدد الأعضاء</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teams.map((team, index) => (
-                  <tr
-                    key={`${team.team_name}-${index}`}
-                    className="border-b border-teknofest-light-blue/10 last:border-0 hover:bg-teknofest-medium-blue/30"
-                  >
-                    <td className="px-6 py-4 text-gray-500 tabular-nums">{index + 1}</td>
-                    <td className="px-6 py-4 text-white font-medium">{team.team_name}</td>
-                    <td className="px-6 py-4 text-teknofest-cyan">
-                      <span className="inline-flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        {team.member_count}
-                      </span>
-                    </td>
+            <div className="table-scroll">
+              <table className="w-full min-w-[28rem] text-right">
+                <thead>
+                  <tr className="border-b border-teknofest-light-blue/20 text-gray-400 text-sm">
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 font-medium">#</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 font-medium">اسم الفريق</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 font-medium">عدد الأعضاء</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {teams.map((team, index) => (
+                    <tr
+                      key={`${team.team_name}-${index}`}
+                      className="border-b border-teknofest-light-blue/10 last:border-0 hover:bg-teknofest-medium-blue/30"
+                    >
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-gray-500 tabular-nums">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-white font-medium">
+                        {team.team_name}
+                      </td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-teknofest-cyan">
+                        <span className="inline-flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          {team.member_count}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )
       ) : scored.length === 0 ? (
@@ -158,33 +164,39 @@ export default function Leaderboard() {
         />
       ) : (
         <div className="card overflow-hidden p-0">
-          <table className="w-full text-right">
-            <thead>
-              <tr className="border-b border-teknofest-light-blue/20 text-gray-400 text-sm">
-                <th className="px-6 py-4 font-medium">الترتيب</th>
-                <th className="px-6 py-4 font-medium">اسم الفريق</th>
-                <th className="px-6 py-4 font-medium">الدرجة</th>
-                <th className="px-6 py-4 font-medium">الأعضاء</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scored.map((row) => (
-                <tr
-                  key={`${row.stage}-${row.team_id}`}
-                  className="border-b border-teknofest-light-blue/10 last:border-0 hover:bg-teknofest-medium-blue/30"
-                >
-                  <td className="px-6 py-4 text-teknofest-orange font-bold tabular-nums">
-                    {row.rank}
-                  </td>
-                  <td className="px-6 py-4 text-white font-medium">{row.team_name}</td>
-                  <td className="px-6 py-4 text-teknofest-cyan font-semibold tabular-nums">
-                    {row.score.toFixed(1)}
-                  </td>
-                  <td className="px-6 py-4 text-gray-400 tabular-nums">{row.member_count}</td>
+          <div className="table-scroll">
+            <table className="w-full min-w-[32rem] text-right">
+              <thead>
+                <tr className="border-b border-teknofest-light-blue/20 text-gray-400 text-sm">
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 font-medium">الترتيب</th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 font-medium">اسم الفريق</th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 font-medium">الدرجة</th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 font-medium">الأعضاء</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {scored.map((row) => (
+                  <tr
+                    key={`${row.stage}-${row.team_id}`}
+                    className="border-b border-teknofest-light-blue/10 last:border-0 hover:bg-teknofest-medium-blue/30"
+                  >
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-teknofest-orange font-bold tabular-nums">
+                      {row.rank}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-white font-medium">
+                      {row.team_name}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-teknofest-cyan font-semibold tabular-nums">
+                      {row.score.toFixed(1)}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-gray-400 tabular-nums">
+                      {row.member_count}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

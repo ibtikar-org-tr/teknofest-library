@@ -24,18 +24,20 @@ export default function AdminPageHeader({
   tone = 'orange',
 }: AdminPageHeaderProps) {
   return (
-    <div className="card flex flex-col sm:flex-row sm:items-start gap-4">
+    <div className="card flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
       <div
-        className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${TONE[tone]} flex items-center justify-center shrink-0`}
+        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br ${TONE[tone]} flex items-center justify-center shrink-0`}
       >
-        <Icon className="w-6 h-6 text-white" />
+        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
       </div>
       <div className="min-w-0 flex-1 space-y-1">
-        <h1 className="text-2xl font-bold text-white">{title}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-white">{title}</h1>
         {description ? (
           <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
         ) : null}
-        {children}
+        {children ? (
+          <div className="pt-2 flex flex-col sm:flex-row sm:flex-wrap gap-2">{children}</div>
+        ) : null}
       </div>
     </div>
   )

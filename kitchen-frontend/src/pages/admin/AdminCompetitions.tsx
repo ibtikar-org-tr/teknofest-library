@@ -331,8 +331,8 @@ export default function AdminCompetitions() {
         </label>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3">
+        <div className="relative w-full">
           <Search className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
           <input
             type="search"
@@ -342,21 +342,31 @@ export default function AdminCompetitions() {
             className="input-field pr-10"
           />
         </div>
-        <button type="button" onClick={selectVisible} className="btn-secondary text-sm">
-          تحديد الظاهر
-        </button>
-        <button type="button" onClick={clearVisible} className="btn-secondary text-sm">
-          إلغاء الظاهر
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={saving || !dirty}
-          className="btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          حفظ القواعد
-        </button>
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={selectVisible}
+            className="btn-secondary text-sm w-full sm:w-auto"
+          >
+            تحديد الظاهر
+          </button>
+          <button
+            type="button"
+            onClick={clearVisible}
+            className="btn-secondary text-sm w-full sm:w-auto"
+          >
+            إلغاء الظاهر
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSave()}
+            disabled={saving || !dirty}
+            className="btn-primary flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto sm:mr-auto"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            حفظ القواعد
+          </button>
+        </div>
       </div>
 
       <div className="card p-0 overflow-hidden">

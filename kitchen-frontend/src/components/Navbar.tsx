@@ -106,8 +106,9 @@ export default function Navbar() {
 
           <button
             type="button"
-            className="lg:hidden p-2 text-gray-300"
+            className="lg:hidden min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -115,7 +116,7 @@ export default function Navbar() {
       </div>
 
       {isOpen ? (
-        <div className="lg:hidden border-t border-teknofest-light-blue/20 px-4 py-4 space-y-2">
+        <div className="lg:hidden border-t border-teknofest-light-blue/20 px-4 py-4 space-y-1.5">
           {navLinks.map((link) => {
             const Icon = link.icon
             return (
@@ -123,7 +124,7 @@ export default function Navbar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+                className="flex items-center gap-2 px-3 py-3 min-h-11 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
               >
                 <Icon className="w-4 h-4" />
                 {link.label}
@@ -134,7 +135,7 @@ export default function Navbar() {
             <Link
               to="/admin/kitchens"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-teknofest-cyan hover:bg-teknofest-medium-blue"
+              className="flex items-center gap-2 px-3 py-3 min-h-11 rounded-lg text-teknofest-cyan hover:bg-teknofest-medium-blue"
             >
               <Shield className="w-4 h-4" />
               إدارة
@@ -147,16 +148,20 @@ export default function Navbar() {
                 setIsOpen(false)
                 logout()
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+              className="flex items-center gap-2 w-full px-3 py-3 min-h-11 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
             >
               <LogOut className="w-4 h-4" />
               خروج
             </button>
           ) : (
             <Link
-              to="/login"
+              to={
+                eventId
+                  ? `/login?next=${encodeURIComponent(`/events/${eventId}/dashboard`)}`
+                  : '/login'
+              }
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-teknofest-orange hover:bg-teknofest-medium-blue"
+              className="flex items-center gap-2 px-3 py-3 min-h-11 rounded-lg text-teknofest-orange hover:bg-teknofest-medium-blue"
             >
               <LogIn className="w-4 h-4" />
               دخول

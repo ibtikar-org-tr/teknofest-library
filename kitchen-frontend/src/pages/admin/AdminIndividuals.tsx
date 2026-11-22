@@ -288,8 +288,8 @@ export default function AdminIndividuals() {
       </AdminPageHeader>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="card space-y-3">
+        <div className="relative">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
@@ -299,7 +299,7 @@ export default function AdminIndividuals() {
             className="input-field pr-12"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {[
             { value: 'all', label: 'الكل' },
             { value: 'unassigned', label: 'غير مفرز' },
@@ -307,8 +307,9 @@ export default function AdminIndividuals() {
           ].map((f) => (
             <button
               key={f.value}
+              type="button"
               onClick={() => setFilter(f.value as typeof filter)}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`min-h-10 px-4 py-2 rounded-lg transition-colors ${
                 filter === f.value
                   ? 'bg-teknofest-orange text-white'
                   : 'bg-teknofest-medium-blue text-gray-300 hover:bg-teknofest-light-blue'
@@ -317,18 +318,16 @@ export default function AdminIndividuals() {
               {f.label}
             </button>
           ))}
+          <select
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value as 'all' | 'male' | 'female')}
+            className="input-field w-full sm:w-auto sm:min-w-[10rem]"
+          >
+            <option value="all">كلا الجنسين</option>
+            <option value="male">ذكور فقط</option>
+            <option value="female">إناث فقط</option>
+          </select>
         </div>
-              <div>
-        <select
-          value={genderFilter}
-          onChange={(e) => setGenderFilter(e.target.value as 'all' | 'male' | 'female')}
-          className="input-field"
-        >
-          <option value="all">كلا الجنسين</option>
-          <option value="male">ذكور فقط</option>
-          <option value="female">إناث فقط</option>
-        </select>
-      </div>
       </div>
 
 

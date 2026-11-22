@@ -548,7 +548,7 @@ export default function AdminTeams() {
                                   setMovingMember({ member: m, fromTeamId: team.id! })
                                   setMoveTargetId('')
                                 }}
-                                className="btn-secondary text-xs py-1.5 px-2 flex items-center gap-1"
+                                className="btn-secondary text-xs py-2 px-3 min-h-10 flex items-center gap-1"
                               >
                                 <ArrowLeftRight className="w-3.5 h-3.5" />
                                 نقل
@@ -557,7 +557,7 @@ export default function AdminTeams() {
                                 type="button"
                                 disabled={busyMemberId === m.id}
                                 onClick={() => void handleRemove(team.id!, m)}
-                                className="btn-secondary text-xs py-1.5 px-2 flex items-center gap-1 text-red-300"
+                                className="btn-secondary text-xs py-2 px-3 min-h-10 flex items-center gap-1 text-red-300"
                               >
                                 <UserMinus className="w-3.5 h-3.5" />
                                 إزالة
@@ -634,8 +634,8 @@ export default function AdminTeams() {
       </div>
 
       {movingMember ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="card max-w-md w-full space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4">
+          <div className="card max-w-md w-full max-h-[90dvh] overflow-y-auto rounded-b-none sm:rounded-2xl space-y-4">
             <h3 className="text-white font-bold">نقل {movingMember.member.full_name}</h3>
             <select
               className="input-field"

@@ -26,6 +26,9 @@ interface SidebarContentProps {
   pathname: string
   eventId?: string
   onLogout: () => void
+  onNavigate?: () => void
+  showClose?: boolean
+  onClose?: () => void
 }
 
 function SidebarContent({
@@ -33,6 +36,9 @@ function SidebarContent({
   pathname,
   eventId,
   onLogout,
+  onNavigate,
+  showClose,
+  onClose,
 }: SidebarContentProps) {
   const sidebarLinks = useMemo(() => {
     const links = [
@@ -54,22 +60,34 @@ function SidebarContent({
 
   return (
     <>
-      {/* Logo */}
-      <div className="p-6 border-b border-teknofest-light-blue/20">
-        <Link to="/admin/kitchens" className="flex items-center gap-3">
+      <div className="p-4 sm:p-6 border-b border-teknofest-light-blue/20 flex items-center justify-between gap-2">
+        <Link
+          to="/admin/kitchens"
+          onClick={onNavigate}
+          className="flex items-center gap-3 min-w-0"
+        >
           <Logo size="sm" />
           {sidebarOpen && (
-            <div>
-              <h1 className="text-lg font-bold text-white">تكنوفيست</h1>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-white truncate">تكنوفيست</h1>
               <p className="text-xs text-teknofest-cyan">لوحة الإدارة</p>
             </div>
           )}
         </Link>
+        {showClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="lg:hidden min-h-10 min-w-10 inline-flex items-center justify-center rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+            aria-label="إغلاق القائمة"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        ) : null}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
+      <nav className="flex-1 p-3 sm:p-4 overflow-y-auto">
+        <ul className="space-y-1.5">
           {sidebarLinks.map((link) => {
             const Icon = link.icon
             const isDashboard = Boolean(eventId) && link.to === `/admin/events/${eventId}`
@@ -80,7 +98,8 @@ function SidebarContent({
               <li key={link.to}>
                 <Link
                   to={link.to}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  onClick={onNavigate}
+                  className={`flex items-center gap-3 px-4 py-3 min-h-11 rounded-lg transition-all ${
                     isActive
                       ? 'bg-teknofest-orange text-white'
                       : 'text-gray-300 hover:bg-teknofest-medium-blue'
@@ -95,18 +114,19 @@ function SidebarContent({
         </ul>
       </nav>
 
-      {/* Logout */}
-      <div className="p-4 border-t border-teknofest-light-blue/20">
+      <div className="p-3 sm:p-4 border-t border-teknofest-light-blue/20">
         <button
+          type="button"
           onClick={onLogout}
-          className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+          className="flex items-center gap-3 w-full px-4 py-3 min-h-11 text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {sidebarOpen && <span className="font-medium">تسجيل الخروج</span>}
         </button>
         <Link
           to="/"
-          className="flex items-center gap-3 w-full px-4 py-3 mt-2 text-teknofest-cyan hover:bg-teknofest-cyan/10 rounded-lg transition-all"
+          onClick={onNavigate}
+          className="flex items-center gap-3 w-full px-4 py-3 min-h-11 mt-1 text-teknofest-cyan hover:bg-teknofest-cyan/10 rounded-lg transition-all"
         >
           <ChevronLeft className="w-5 h-5 flex-shrink-0" />
           {sidebarOpen && <span className="font-medium">العودة للموقع</span>}
@@ -125,6 +145,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const handleLogout = () => {
     clearSession()
+    setMobileOpen(false)
     navigate('/login')
   }
 
@@ -146,7 +167,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const PageIcon = pageMeta.icon
 
   return (
-    <div className="min-h-screen bg-teknofest-dark-blue flex">
+    <div className="min-h-[100dvh] min-h-screen bg-teknofest-dark-blue flex">
       <aside
         className={`hidden lg:flex flex-col bg-teknofest-blue border-l border-teknofest-light-blue/20 transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-20'
@@ -166,44 +187,53 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             className="absolute inset-0 bg-black/50"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute right-0 top-0 h-full w-64 bg-teknofest-blue flex flex-col">
+          <aside className="absolute right-0 top-0 h-full w-[min(18rem,88vw)] max-w-xs bg-teknofest-blue flex flex-col shadow-2xl">
             <SidebarContent
               sidebarOpen={true}
               pathname={location.pathname}
               eventId={eventId}
               onLogout={handleLogout}
+              onNavigate={() => setMobileOpen(false)}
+              showClose
+              onClose={() => setMobileOpen(false)}
             />
           </aside>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col">
-        <header className="bg-teknofest-blue/50 backdrop-blur-md border-b border-teknofest-light-blue/20 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="sticky top-0 z-40 bg-teknofest-blue/80 backdrop-blur-md border-b border-teknofest-light-blue/20 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <button
+                type="button"
                 onClick={() => setMobileOpen(true)}
-                className="lg:hidden p-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+                className="lg:hidden min-h-10 min-w-10 inline-flex items-center justify-center rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+                aria-label="فتح القائمة"
               >
                 <Menu className="w-6 h-6" />
               </button>
               <button
+                type="button"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="hidden lg:block p-2 rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+                className="hidden lg:inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg text-gray-300 hover:bg-teknofest-medium-blue"
+                aria-label={sidebarOpen ? 'طي الشريط الجانبي' : 'توسيع الشريط الجانبي'}
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="hidden sm:inline-flex w-9 h-9 rounded-xl bg-teknofest-orange/15 text-teknofest-orange items-center justify-center shrink-0">
-                  <PageIcon className="w-4.5 h-4.5 w-4 h-4" />
+                  <PageIcon className="w-4 h-4" />
                 </span>
-                <h2 className="text-xl font-bold text-white truncate">{pageMeta.title}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-white truncate">
+                  {pageMeta.title}
+                </h2>
               </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>
       </div>
     </div>
   )
