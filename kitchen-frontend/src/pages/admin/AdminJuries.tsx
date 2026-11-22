@@ -509,119 +509,130 @@ export default function AdminJuries() {
 
             return (
               <div key={jury.membership_number} className="card space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
                     <span className="w-10 h-10 rounded-xl bg-teknofest-cyan/15 text-teknofest-cyan flex items-center justify-center shrink-0">
                       <Gavel className="w-5 h-5" />
                     </span>
-                    <div className="min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-white font-bold truncate">
-                          {jury.full_name || jury.membership_number}
-                        </h3>
-                        <DutyBar done={done} required={required} />
+
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1 space-y-1.5">
+                          <h3 className="text-white font-bold truncate leading-tight">
+                            {jury.full_name || jury.membership_number}
+                          </h3>
+                          <DutyBar done={done} required={required} />
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => void sendBotMessage(jury)}
+                            disabled={
+                              !jury.telegram_id?.trim() ||
+                              notifyingMember === jury.membership_number
+                            }
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teknofest-orange/15 text-teknofest-orange hover:bg-teknofest-orange/25 disabled:opacity-40 disabled:hover:bg-teknofest-orange/15 transition-colors"
+                            title={
+                              jury.telegram_id?.trim()
+                                ? 'إرسال عبر بوت التلغرام'
+                                : 'المحكم غير مربوط بالبوت'
+                            }
+                            aria-label="إرسال عبر بوت التلغرام"
+                          >
+                            {notifyingMember === jury.membership_number ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Bot className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openTelegram(jury)}
+                            disabled={!username}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teknofest-cyan/15 text-teknofest-cyan hover:bg-teknofest-cyan/25 disabled:opacity-40 disabled:hover:bg-teknofest-cyan/15 transition-colors"
+                            title="فتح محادثة تلغرام"
+                            aria-label="فتح محادثة تلغرام"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleRemoveJury(jury.membership_number)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                            title="إزالة المحكم"
+                            aria-label="إزالة المحكم"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-gray-500">رقم العضوية</span>
-                        <code
-                          className="text-sm text-teknofest-cyan bg-teknofest-dark-blue/60 px-2 py-1 rounded"
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          className="inline-flex items-center gap-1 rounded-lg bg-teknofest-dark-blue/70 border border-teknofest-light-blue/15 px-2 py-1 text-xs"
                           dir="ltr"
+                          title="رقم العضوية"
                         >
-                          {jury.membership_number}
-                        </code>
-                        <button
-                          type="button"
-                          className="btn-secondary text-xs py-1 px-2 flex items-center gap-1"
-                          onClick={() =>
-                            void copyText(jury.membership_number, 'رقم العضوية')
-                          }
-                          title="نسخ رقم العضوية"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                          نسخ
-                        </button>
-                      </div>
+                          <code className="text-teknofest-cyan tabular-nums">
+                            {jury.membership_number}
+                          </code>
+                          <button
+                            type="button"
+                            className="p-0.5 rounded text-gray-400 hover:text-white"
+                            onClick={() =>
+                              void copyText(jury.membership_number, 'رقم العضوية')
+                            }
+                            title="نسخ رقم العضوية"
+                            aria-label="نسخ رقم العضوية"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </span>
 
-                      {jury.email ? (
-                        <p className="text-sm text-gray-400 truncate" dir="ltr">
-                          {jury.email}
-                        </p>
-                      ) : null}
+                        {jury.email ? (
+                          <span
+                            className="inline-flex max-w-full items-center rounded-lg bg-teknofest-dark-blue/70 border border-teknofest-light-blue/15 px-2 py-1 text-xs text-gray-300 truncate"
+                            dir="ltr"
+                            title={jury.email}
+                          >
+                            {jury.email}
+                          </span>
+                        ) : null}
 
-                      <div className="flex flex-wrap items-center gap-2 text-sm">
                         {username ? (
-                          <>
-                            <span className="text-gray-500">تلغرام</span>
+                          <span
+                            className="inline-flex items-center gap-1 rounded-lg bg-teknofest-dark-blue/70 border border-teknofest-light-blue/15 px-2 py-1 text-xs"
+                            dir="ltr"
+                            title="تلغرام"
+                          >
                             <a
                               href={`https://t.me/${encodeURIComponent(username)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-teknofest-cyan hover:underline"
-                              dir="ltr"
                             >
                               @{username}
                             </a>
                             <button
                               type="button"
-                              className="btn-secondary text-xs py-1 px-2 flex items-center gap-1"
+                              className="p-0.5 rounded text-gray-400 hover:text-white"
                               onClick={() => void copyText(`@${username}`, 'اسم التلغرام')}
+                              title="نسخ @username"
+                              aria-label="نسخ اسم التلغرام"
                             >
-                              <Copy className="w-3.5 h-3.5" />
-                              نسخ @
+                              <Copy className="w-3 h-3" />
                             </button>
-                          </>
+                          </span>
                         ) : (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-[11px] text-gray-500 px-1">
                             {jury.has_telegram
-                              ? 'تلغرام مربوط بدون @username عام'
-                              : 'لا يوجد تلغرام معروف في VMS'}
+                              ? 'تلغرام مربوط بدون @'
+                              : 'بدون تلغرام'}
                           </span>
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void sendBotMessage(jury)}
-                      disabled={
-                        !jury.telegram_id?.trim() ||
-                        notifyingMember === jury.membership_number
-                      }
-                      className="btn-primary text-sm py-2 flex items-center gap-1 disabled:opacity-50"
-                      title={
-                        jury.telegram_id?.trim()
-                          ? 'إرسال رسالة مباشرة عبر بوت التلغرام'
-                          : 'المحكم غير مربوط بالبوت'
-                      }
-                    >
-                      {notifyingMember === jury.membership_number ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Bot className="w-4 h-4" />
-                      )}
-                      بوت
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openTelegram(jury)}
-                      disabled={!username}
-                      className="btn-secondary text-sm py-2 flex items-center gap-1 disabled:opacity-50"
-                      title="فتح محادثة تلغرام يدوية مع رسالة تتضمن حسابك"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      فتح محادثة
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleRemoveJury(jury.membership_number)}
-                      className="btn-secondary text-sm py-2 text-red-400 flex items-center gap-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      إزالة
-                    </button>
                   </div>
                 </div>
 
