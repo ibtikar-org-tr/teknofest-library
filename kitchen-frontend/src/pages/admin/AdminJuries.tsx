@@ -9,10 +9,11 @@ import {
   Loader2,
   MessageCircle,
   Minus,
-  Save,
+  Plus,
   Search,
   Trash2,
   UserPlus,
+  X,
 } from 'lucide-react'
 import {
   kitchensService,
@@ -22,6 +23,7 @@ import {
   type JuryTeamDuty,
 } from '../../services/api'
 import AdminPageHeader from '../../components/AdminPageHeader'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 function buildJuryTelegramDmUrl(
   juryUsername: string,
@@ -129,6 +131,28 @@ function teamDutyMap(jury: EventJury): Map<number, JuryTeamDuty> {
   return map
 }
 
+function teamHasJuryScore(duty: JuryTeamDuty | undefined): boolean {
+  return Boolean(duty?.primary.scored || duty?.final.scored)
+}
+
+type PendingConfirm =
+  | {
+      kind: 'add'
+      membershipNumber: string
+      juryName: string
+      teamId: number
+      teamName: string
+    }
+  | {
+      kind: 'remove'
+      membershipNumber: string
+      juryName: string
+      teamId: number
+      teamName: string
+      hasScores: boolean
+      step: 1 | 2
+    }
+
 export default function AdminJuries() {
   const { eventId = '' } = useParams()
   const [juries, setJuries] = useState<EventJury[]>([])
@@ -140,9 +164,11 @@ export default function AdminJuries() {
   const [search, setSearch] = useState('')
   const [selectedMember, setSelectedMember] = useState('')
   const [adding, setAdding] = useState(false)
-  const [savingMember, setSavingMember] = useState<string | null>(null)
   const [notifyingMember, setNotifyingMember] = useState<string | null>(null)
-  const [draftTeams, setDraftTeams] = useState<Record<string, number[]>>({})
+  const [addPick, setAddPick] = useState<Record<string, string>>({})
+  const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [pending, setPending] = useState<PendingConfirm | null>(null)
+  const [confirmBusy, setConfirmBusy] = useState(false)
 
   const load = useCallback(async () => {
     if (!eventId) return
@@ -157,11 +183,6 @@ export default function AdminJuries() {
       setManagerTelegram(juryPayload.manager.telegram_username)
       setManagerMembership(juryPayload.manager.membership_number)
       setRegistrants(registrantList)
-      const drafts: Record<string, number[]> = {}
-      for (const j of juryPayload.juries) {
-        drafts[j.membership_number] = [...j.team_ids]
-      }
-      setDraftTeams(drafts)
     } catch {
       toast.error('تعذر تحميل المحكمين')
     } finally {
@@ -177,6 +198,12 @@ export default function AdminJuries() {
     () => new Set(juries.map((j) => j.membership_number)),
     [juries],
   )
+
+  const teamsById = useMemo(() => {
+    const map = new Map<number, EventTeamStageIndex>()
+    for (const t of teamsIndex) map.set(t.team_id, t)
+    return map
+  }, [teamsIndex])
 
   const availableRegistrants = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -216,7 +243,7 @@ export default function AdminJuries() {
     }
   }
 
-  const handleRemove = async (membershipNumber: string) => {
+  const handleRemoveJury = async (membershipNumber: string) => {
     if (!eventId) return
     if (!window.confirm('إزالة هذا المحكم وجميع تعيينات فرقه؟')) return
     try {
@@ -228,30 +255,79 @@ export default function AdminJuries() {
     }
   }
 
-  const toggleTeam = (membershipNumber: string, teamId: number) => {
-    setDraftTeams((prev) => {
-      const current = new Set(prev[membershipNumber] ?? [])
-      if (current.has(teamId)) current.delete(teamId)
-      else current.add(teamId)
-      return { ...prev, [membershipNumber]: [...current] }
+  const requestAddTeam = (jury: EventJury) => {
+    const raw = addPick[jury.membership_number]
+    const teamId = Number(raw)
+    if (!Number.isFinite(teamId) || teamId <= 0) {
+      toast.error('اختر فريقاً أولاً')
+      return
+    }
+    const team = teamsById.get(teamId)
+    if (!team) return
+    setPending({
+      kind: 'add',
+      membershipNumber: jury.membership_number,
+      juryName: jury.full_name || jury.membership_number,
+      teamId,
+      teamName: team.team_name,
     })
   }
 
-  const handleSaveTeams = async (membershipNumber: string) => {
-    if (!eventId) return
-    setSavingMember(membershipNumber)
+  const requestRemoveTeam = (jury: EventJury, teamId: number, teamName: string, hasScores: boolean) => {
+    setPending({
+      kind: 'remove',
+      membershipNumber: jury.membership_number,
+      juryName: jury.full_name || jury.membership_number,
+      teamId,
+      teamName,
+      hasScores,
+      step: 1,
+    })
+  }
+
+  const closeConfirm = () => {
+    if (confirmBusy) return
+    setPending(null)
+  }
+
+  const runConfirmedAction = async () => {
+    if (!eventId || !pending) return
+
+    if (pending.kind === 'remove' && pending.hasScores && pending.step === 1) {
+      setPending({ ...pending, step: 2 })
+      return
+    }
+
+    setConfirmBusy(true)
+    const key = `${pending.membershipNumber}:${pending.teamId}`
+    setBusyKey(key)
     try {
-      await kitchensService.setJuryTeams(
-        eventId,
-        membershipNumber,
-        draftTeams[membershipNumber] ?? [],
-      )
-      toast.success('تم حفظ الفرق')
+      if (pending.kind === 'add') {
+        await kitchensService.assignJuryTeam(eventId, pending.membershipNumber, pending.teamId)
+        toast.success('تمت إضافة الفريق')
+        setAddPick((prev) => ({ ...prev, [pending.membershipNumber]: '' }))
+      } else {
+        const result = await kitchensService.unassignJuryTeam(
+          eventId,
+          pending.membershipNumber,
+          pending.teamId,
+        )
+        toast.success(
+          result.deleted_evaluations > 0
+            ? `أُزيل الفريق وحُذفت ${result.deleted_evaluations} تقييمات`
+            : 'أُزيل الفريق من المحكم',
+        )
+      }
+      setPending(null)
       await load()
-    } catch {
-      toast.error('تعذر حفظ الفرق')
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (pending.kind === 'add' ? 'تعذر إضافة الفريق' : 'تعذر إزالة الفريق')
+      toast.error(msg)
     } finally {
-      setSavingMember(null)
+      setConfirmBusy(false)
+      setBusyKey(null)
     }
   }
 
@@ -297,6 +373,28 @@ export default function AdminJuries() {
     }
   }
 
+  const confirmTitle =
+    pending?.kind === 'add'
+      ? 'إضافة فريق للمحكم'
+      : pending?.kind === 'remove' && pending.step === 2
+        ? 'حذف التقييمات'
+        : 'إزالة فريق من المحكم'
+
+  const confirmMessage = !pending
+    ? ''
+    : pending.kind === 'add'
+      ? `هل أنت متأكد أنك تريد إضافة الفريق «${pending.teamName}» إلى المحكم «${pending.juryName}»؟`
+      : pending.step === 1
+        ? `هل أنت متأكد أنك تريد إزالة الفريق «${pending.teamName}» من المحكم «${pending.juryName}»؟`
+        : `هذا المحكم قيّم بالفعل الفريق «${pending.teamName}».\nسيؤدي المتابعة إلى حذف تقييماته لهذا الفريق نهائياً ولا يمكن التراجع.`
+
+  const confirmTone =
+    pending?.kind === 'remove' && pending.step === 2
+      ? 'danger'
+      : pending?.kind === 'remove'
+        ? 'warning'
+        : 'default'
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -307,6 +405,19 @@ export default function AdminJuries() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={Boolean(pending)}
+        title={confirmTitle}
+        message={confirmMessage}
+        tone={confirmTone}
+        busy={confirmBusy}
+        confirmLabel={
+          pending?.kind === 'remove' && pending.step === 2 ? 'نعم، احذف التقييمات' : 'تأكيد'
+        }
+        onCancel={closeConfirm}
+        onConfirm={() => void runConfirmedAction()}
+      />
+
       <AdminPageHeader
         icon={Gavel}
         title="المحكمون"
@@ -398,9 +509,11 @@ export default function AdminJuries() {
       ) : (
         <div className="space-y-4">
           {juries.map((jury) => {
-            const selected = new Set(draftTeams[jury.membership_number] ?? [])
             const username = jury.telegram_username?.trim().replace(/^@+/, '') || null
             const duties = teamDutyMap(jury)
+            const assignedIds = jury.team_ids ?? []
+            const assignedSet = new Set(assignedIds)
+            const availableTeams = teamsIndex.filter((t) => !assignedSet.has(t.team_id))
             const required = jury.duty_required ?? 0
             const done = jury.duty_done ?? 0
 
@@ -513,20 +626,7 @@ export default function AdminJuries() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void handleSaveTeams(jury.membership_number)}
-                      disabled={savingMember === jury.membership_number}
-                      className="btn-primary text-sm py-2 flex items-center gap-1 disabled:opacity-50"
-                    >
-                      {savingMember === jury.membership_number ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      حفظ الفرق
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleRemove(jury.membership_number)}
+                      onClick={() => void handleRemoveJury(jury.membership_number)}
                       className="btn-secondary text-sm py-2 text-red-400 flex items-center gap-1"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -535,44 +635,42 @@ export default function AdminJuries() {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <p className="text-sm text-gray-400">الفرق المعيّنة للتحكيم</p>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm text-gray-400">
+                      الفرق المعيّنة ({assignedIds.length})
+                    </p>
                     <span className="text-[11px] text-gray-500 inline-flex items-center gap-2" dir="ltr">
                       <span>١ = أول</span>
                       <span>ن = نهائي</span>
                     </span>
                   </div>
-                  {teamsIndex.length === 0 ? (
-                    <p className="text-sm text-gray-500">لا توجد فرق في هذا المطبخ بعد.</p>
+
+                  {assignedIds.length === 0 ? (
+                    <p className="text-sm text-gray-500">لا فرق معيّنة لهذا المحكم بعد.</p>
                   ) : (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {teamsIndex.map((team) => {
-                        const id = team.team_id
-                        const checked = selected.has(id)
+                      {assignedIds.map((id) => {
+                        const team = teamsById.get(id)
                         const duty = duties.get(id)
-                        const primarySubmitted = duty?.primary.submitted ?? team.primary_submitted
-                        const finalSubmitted = duty?.final.submitted ?? team.final_submitted
-                        const primaryScored = checked ? Boolean(duty?.primary.scored) : false
-                        const finalScored = checked ? Boolean(duty?.final.scored) : false
+                        const teamName = duty?.team_name || team?.team_name || `فريق #${id}`
+                        const primarySubmitted =
+                          duty?.primary.submitted ?? team?.primary_submitted ?? false
+                        const finalSubmitted =
+                          duty?.final.submitted ?? team?.final_submitted ?? false
+                        const primaryScored = Boolean(duty?.primary.scored)
+                        const finalScored = Boolean(duty?.final.scored)
+                        const hasScores = teamHasJuryScore(duty)
+                        const key = `${jury.membership_number}:${id}`
+                        const busy = busyKey === key
 
                         return (
-                          <label
+                          <div
                             key={id}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors min-w-0 ${
-                              checked
-                                ? 'border-teknofest-orange bg-teknofest-orange/10'
-                                : 'border-teknofest-light-blue/20 hover:border-teknofest-cyan/40'
-                            }`}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-teknofest-orange/40 bg-teknofest-orange/10 min-w-0"
                           >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleTeam(jury.membership_number, id)}
-                              className="accent-teknofest-orange shrink-0"
-                            />
                             <span className="text-sm text-white truncate flex-1 min-w-0">
-                              {team.team_name}
+                              {teamName}
                             </span>
                             <span className="inline-flex items-center gap-1 shrink-0" dir="ltr">
                               <StageMark
@@ -588,11 +686,64 @@ export default function AdminJuries() {
                                 title="التقرير النهائي"
                               />
                             </span>
-                          </label>
+                            <button
+                              type="button"
+                              className="shrink-0 p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                              title="إزالة الفريق"
+                              disabled={busy || confirmBusy}
+                              onClick={() =>
+                                requestRemoveTeam(jury, id, teamName, hasScores)
+                              }
+                            >
+                              {busy ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <X className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                         )
                       })}
                     </div>
                   )}
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    <select
+                      value={addPick[jury.membership_number] ?? ''}
+                      onChange={(e) =>
+                        setAddPick((prev) => ({
+                          ...prev,
+                          [jury.membership_number]: e.target.value,
+                        }))
+                      }
+                      className="input-field flex-1 min-w-0"
+                      disabled={availableTeams.length === 0}
+                    >
+                      <option value="">
+                        {availableTeams.length === 0
+                          ? 'لا فرق متاحة للإضافة'
+                          : 'إضافة فريق…'}
+                      </option>
+                      {availableTeams.map((t) => (
+                        <option key={t.team_id} value={String(t.team_id)}>
+                          {t.team_name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => requestAddTeam(jury)}
+                      disabled={
+                        !addPick[jury.membership_number] ||
+                        availableTeams.length === 0 ||
+                        confirmBusy
+                      }
+                      className="btn-secondary text-sm py-2 flex items-center justify-center gap-1 disabled:opacity-50"
+                    >
+                      <Plus className="w-4 h-4" />
+                      إضافة
+                    </button>
+                  </div>
                 </div>
               </div>
             )

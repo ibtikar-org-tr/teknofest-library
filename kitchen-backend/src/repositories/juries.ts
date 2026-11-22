@@ -325,6 +325,43 @@ export const setJuryTeamAssignments = async (
   return uniqueTeamIds
 }
 
+export const assignJuryTeam = async (
+  env: Environment,
+  eventId: string,
+  membershipNumber: string,
+  teamId: number,
+  createdBy?: string | null,
+): Promise<boolean> => {
+  const member = membershipNumber.trim()
+  const id = Number(teamId)
+  if (!Number.isFinite(id) || id <= 0) return false
+
+  await env.D1_DB.prepare(
+    `INSERT INTO jury_team_assignments (event_id, membership_number, team_id, created_by)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(event_id, membership_number, team_id) DO NOTHING`,
+  )
+    .bind(eventId, member, id, createdBy?.trim() || null)
+    .run()
+
+  return true
+}
+
+export const unassignJuryTeam = async (
+  env: Environment,
+  eventId: string,
+  membershipNumber: string,
+  teamId: number,
+): Promise<boolean> => {
+  const result = await env.D1_DB.prepare(
+    `DELETE FROM jury_team_assignments
+     WHERE event_id = ? AND membership_number = ? AND team_id = ?`,
+  )
+    .bind(eventId, membershipNumber.trim(), Number(teamId))
+    .run()
+  return (result.meta?.changes ?? 0) > 0
+}
+
 export const isEventJury = async (
   env: Environment,
   eventId: string,

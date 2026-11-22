@@ -103,6 +103,48 @@ export const upsertJuryEvaluation = async (
   })
 }
 
+/** Non-AI evaluations by this jury for all submissions of a team in an event. */
+export const deleteJuryEvaluationsForTeam = async (
+  env: Environment,
+  eventId: string,
+  teamId: number,
+  evaluatorMembershipNumber: string,
+): Promise<number> => {
+  const membership = evaluatorMembershipNumber.trim()
+  const result = await env.D1_DB.prepare(
+    `DELETE FROM evaluations
+     WHERE is_ai_evaluation = 0
+       AND evaluator_membership_number = ?
+       AND project_id IN (
+         SELECT id FROM project_submissions WHERE event_id = ? AND team_id = ?
+       )`,
+  )
+    .bind(membership, eventId, teamId)
+    .run()
+  return result.meta?.changes ?? 0
+}
+
+export const countJuryEvaluationsForTeam = async (
+  env: Environment,
+  eventId: string,
+  teamId: number,
+  evaluatorMembershipNumber: string,
+): Promise<number> => {
+  const membership = evaluatorMembershipNumber.trim()
+  const row = await env.D1_DB.prepare(
+    `SELECT COUNT(*) AS n
+     FROM evaluations e
+     INNER JOIN project_submissions p ON p.id = e.project_id
+     WHERE e.is_ai_evaluation = 0
+       AND e.evaluator_membership_number = ?
+       AND p.event_id = ?
+       AND p.team_id = ?`,
+  )
+    .bind(membership, eventId, teamId)
+    .first<{ n: number }>()
+  return Number(row?.n ?? 0)
+}
+
 export const averageJuryScores = (
   evaluations: Evaluation[],
   juryMembershipNumbers: Set<string>,

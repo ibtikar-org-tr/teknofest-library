@@ -523,6 +523,33 @@ export const kitchensService = {
     return response.data
   },
 
+  assignJuryTeam: async (
+    eventId: string,
+    membershipNumber: string,
+    teamId: number,
+  ): Promise<{ membership_number: string; team_id: number; team_ids: number[] }> => {
+    const response = await api.post(
+      `/kitchens/${encodeURIComponent(eventId)}/juries/${encodeURIComponent(membershipNumber)}/teams/${teamId}`,
+    )
+    return response.data
+  },
+
+  unassignJuryTeam: async (
+    eventId: string,
+    membershipNumber: string,
+    teamId: number,
+  ): Promise<{
+    membership_number: string
+    team_id: number
+    team_ids: number[]
+    deleted_evaluations: number
+  }> => {
+    const response = await api.delete(
+      `/kitchens/${encodeURIComponent(eventId)}/juries/${encodeURIComponent(membershipNumber)}/teams/${teamId}`,
+    )
+    return response.data
+  },
+
   getMyJuryAssignments: async (
     eventId: string,
   ): Promise<{ event_id: string; assignments: JuryAssignmentItem[] }> => {

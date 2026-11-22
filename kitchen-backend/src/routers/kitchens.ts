@@ -20,12 +20,19 @@ import {
 } from '../repositories/event-kitchens'
 import {
   addEventJury,
+  assignJuryTeam,
   isEventJury,
   listAssignedTeamsForJury,
   listEventJuries,
+  listJuryTeamIds,
   removeEventJury,
   setJuryTeamAssignments,
+  unassignJuryTeam,
 } from '../repositories/juries'
+import {
+  countJuryEvaluationsForTeam,
+  deleteJuryEvaluationsForTeam,
+} from '../repositories/evaluations'
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import {
   addMemberToTeam,
@@ -1353,6 +1360,13 @@ kitchensRouter.put(
     const validIds = new Set(eventTeams.map((t) => t.id))
     const filtered = teamIds.filter((id) => validIds.has(id))
 
+    const previous = await listJuryTeamIds(c.env, eventId, membershipNumber)
+    const nextSet = new Set(filtered)
+    const removed = previous.filter((id) => !nextSet.has(id))
+    for (const teamId of removed) {
+      await deleteJuryEvaluationsForTeam(c.env, eventId, teamId, membershipNumber)
+    }
+
     const saved = await setJuryTeamAssignments(
       c.env,
       eventId,
@@ -1361,6 +1375,85 @@ kitchensRouter.put(
       member?.membership_number ?? null,
     )
     return c.json({ membership_number: membershipNumber, team_ids: saved })
+  },
+)
+
+kitchensRouter.post(
+  '/:eventId/juries/:membershipNumber/teams/:teamId',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const membershipNumber = decodeURIComponent(c.req.param('membershipNumber'))
+    const teamId = Number(c.req.param('teamId'))
+    const member = c.get('member')
+    if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can assign jury teams' }, 403)
+    }
+    if (!(await isEventJury(c.env, eventId, membershipNumber))) {
+      return c.json({ message: 'Jury not found' }, 404)
+    }
+    if (!Number.isFinite(teamId) || teamId <= 0) {
+      return c.json({ message: 'Invalid team id' }, 400)
+    }
+    const team = await getTeam(c.env, teamId)
+    if (!team || team.event_id !== eventId) {
+      return c.json({ message: 'Team not found in this kitchen' }, 404)
+    }
+
+    await assignJuryTeam(
+      c.env,
+      eventId,
+      membershipNumber,
+      teamId,
+      member?.membership_number ?? null,
+    )
+    const team_ids = await listJuryTeamIds(c.env, eventId, membershipNumber)
+    return c.json({ membership_number: membershipNumber, team_id: teamId, team_ids }, 201)
+  },
+)
+
+kitchensRouter.delete(
+  '/:eventId/juries/:membershipNumber/teams/:teamId',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const membershipNumber = decodeURIComponent(c.req.param('membershipNumber'))
+    const teamId = Number(c.req.param('teamId'))
+    const member = c.get('member')
+    if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can assign jury teams' }, 403)
+    }
+    if (!(await isEventJury(c.env, eventId, membershipNumber))) {
+      return c.json({ message: 'Jury not found' }, 404)
+    }
+    if (!Number.isFinite(teamId) || teamId <= 0) {
+      return c.json({ message: 'Invalid team id' }, 400)
+    }
+
+    const evaluationCount = await countJuryEvaluationsForTeam(
+      c.env,
+      eventId,
+      teamId,
+      membershipNumber,
+    )
+    const deletedEvaluations = await deleteJuryEvaluationsForTeam(
+      c.env,
+      eventId,
+      teamId,
+      membershipNumber,
+    )
+    const removed = await unassignJuryTeam(c.env, eventId, membershipNumber, teamId)
+    if (!removed && evaluationCount === 0) {
+      return c.json({ message: 'Assignment not found' }, 404)
+    }
+
+    const team_ids = await listJuryTeamIds(c.env, eventId, membershipNumber)
+    return c.json({
+      membership_number: membershipNumber,
+      team_id: teamId,
+      team_ids,
+      deleted_evaluations: deletedEvaluations,
+    })
   },
 )
 
