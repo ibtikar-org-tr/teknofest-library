@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Gavel, Search } from 'lucide-react'
 import type { EventTeamStageIndex } from '../services/api'
 
@@ -44,6 +45,8 @@ function StageChip({
   )
 }
 
+type MenuPos = { top: number; left: number; width: number; maxHeight: number }
+
 type TeamAddDropdownProps = {
   teams: EventTeamStageIndex[]
   disabled?: boolean
@@ -61,7 +64,10 @@ export default function TeamAddDropdown({
 }: TeamAddDropdownProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [pos, setPos] = useState<MenuPos | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const listId = useId()
 
@@ -71,14 +77,55 @@ export default function TeamAddDropdown({
     return teams.filter((t) => t.team_name.toLowerCase().includes(q))
   }, [teams, query])
 
+  const updatePosition = () => {
+    const trigger = triggerRef.current
+    if (!trigger) return
+    const rect = trigger.getBoundingClientRect()
+    const gap = 4
+    const viewportPad = 8
+    const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPad
+    const spaceAbove = rect.top - gap - viewportPad
+    const preferBelow = spaceBelow >= 180 || spaceBelow >= spaceAbove
+    const maxHeight = Math.max(160, Math.min(320, preferBelow ? spaceBelow : spaceAbove))
+    const top = preferBelow
+      ? rect.bottom + gap
+      : Math.max(viewportPad, rect.top - gap - maxHeight)
+
+    setPos({
+      top,
+      left: Math.min(
+        Math.max(viewportPad, rect.left),
+        window.innerWidth - Math.min(rect.width, window.innerWidth - viewportPad * 2) - viewportPad,
+      ),
+      width: rect.width,
+      maxHeight,
+    })
+  }
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null)
+      return
+    }
+    updatePosition()
+    const onReposition = () => updatePosition()
+    window.addEventListener('resize', onReposition)
+    // capture scroll from any scrollable ancestor
+    window.addEventListener('scroll', onReposition, true)
+    return () => {
+      window.removeEventListener('resize', onReposition)
+      window.removeEventListener('scroll', onReposition, true)
+    }
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     const t = window.setTimeout(() => searchRef.current?.focus(), 0)
     const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
+      const target = e.target as Node
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      setOpen(false)
+      setQuery('')
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -96,10 +143,97 @@ export default function TeamAddDropdown({
   }, [open])
 
   const isEmpty = teams.length === 0
+  const showMenu = open && !isEmpty && pos
+
+  const menu =
+    showMenu && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            ref={menuRef}
+            id={listId}
+            role="listbox"
+            style={{
+              position: 'fixed',
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              maxHeight: pos.maxHeight,
+              zIndex: 70,
+            }}
+            className="rounded-xl border border-teknofest-light-blue/30 bg-teknofest-dark-blue shadow-2xl overflow-hidden flex flex-col"
+          >
+            <div className="relative border-b border-teknofest-light-blue/15 p-2 shrink-0">
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+              <input
+                ref={searchRef}
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="بحث عن فريق…"
+                className="input-field w-full pr-9 py-2 text-sm"
+              />
+            </div>
+
+            <ul className="overflow-y-auto py-1 flex-1 min-h-0">
+              {filtered.length === 0 ? (
+                <li className="px-3 py-4 text-sm text-gray-500 text-center">لا نتائج</li>
+              ) : (
+                filtered.map((team) => {
+                  const juryCount = team.jury_count ?? 0
+                  return (
+                    <li key={team.team_id} role="option">
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2.5 text-start hover:bg-teknofest-cyan/10 transition-colors border-b border-teknofest-light-blue/10 last:border-b-0"
+                        onClick={() => {
+                          onPick(team)
+                          setOpen(false)
+                          setQuery('')
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-2 min-w-0">
+                          <span className="text-sm text-white font-medium truncate">
+                            {team.team_name}
+                          </span>
+                          <span
+                            className="inline-flex items-center gap-1 shrink-0 rounded-md bg-teknofest-orange/15 text-teknofest-orange px-1.5 py-0.5 text-[10px] font-semibold"
+                            title="عدد المحكمين المعيّنين"
+                          >
+                            <Gavel className="w-3 h-3" />
+                            <span className="tabular-nums" dir="ltr">
+                              {juryCount}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <StageChip
+                            label="١"
+                            submitted={team.primary_submitted}
+                            scored={team.primary_scored_count ?? 0}
+                            total={juryCount}
+                          />
+                          <StageChip
+                            label="ن"
+                            submitted={team.final_submitted}
+                            scored={team.final_scored_count ?? 0}
+                            total={juryCount}
+                          />
+                        </div>
+                      </button>
+                    </li>
+                  )
+                })
+              )}
+            </ul>
+          </div>,
+          document.body,
+        )
+      : null
 
   return (
     <div ref={rootRef} className="relative w-full min-w-0">
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled || isEmpty}
         aria-haspopup="listbox"
@@ -118,78 +252,7 @@ export default function TeamAddDropdown({
           className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
-
-      {open && !isEmpty ? (
-        <div
-          id={listId}
-          role="listbox"
-          className="absolute z-40 mt-1 w-full rounded-xl border border-teknofest-light-blue/30 bg-teknofest-dark-blue shadow-xl overflow-hidden"
-        >
-          <div className="relative border-b border-teknofest-light-blue/15 p-2">
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-            <input
-              ref={searchRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="بحث عن فريق…"
-              className="input-field w-full pr-9 py-2 text-sm"
-            />
-          </div>
-
-          <ul className="max-h-64 overflow-y-auto py-1">
-            {filtered.length === 0 ? (
-              <li className="px-3 py-4 text-sm text-gray-500 text-center">لا نتائج</li>
-            ) : (
-              filtered.map((team) => {
-                const juryCount = team.jury_count ?? 0
-                return (
-                  <li key={team.team_id} role="option">
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2.5 text-start hover:bg-teknofest-cyan/10 transition-colors border-b border-teknofest-light-blue/10 last:border-b-0"
-                      onClick={() => {
-                        onPick(team)
-                        setOpen(false)
-                        setQuery('')
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-2 min-w-0">
-                        <span className="text-sm text-white font-medium truncate">
-                          {team.team_name}
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1 shrink-0 rounded-md bg-teknofest-orange/15 text-teknofest-orange px-1.5 py-0.5 text-[10px] font-semibold"
-                          title="عدد المحكمين المعيّنين"
-                        >
-                          <Gavel className="w-3 h-3" />
-                          <span className="tabular-nums" dir="ltr">
-                            {juryCount}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <StageChip
-                          label="١"
-                          submitted={team.primary_submitted}
-                          scored={team.primary_scored_count ?? 0}
-                          total={juryCount}
-                        />
-                        <StageChip
-                          label="ن"
-                          submitted={team.final_submitted}
-                          scored={team.final_scored_count ?? 0}
-                          total={juryCount}
-                        />
-                      </div>
-                    </button>
-                  </li>
-                )
-              })
-            )}
-          </ul>
-        </div>
-      ) : null}
+      {menu}
     </div>
   )
 }
