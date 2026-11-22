@@ -23,6 +23,9 @@ import {
 } from '../../services/api'
 import AdminPageHeader from '../../components/AdminPageHeader'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import JuryEvaluationModal, {
+  type JuryEvaluationView,
+} from '../../components/JuryEvaluationModal'
 import TeamAddDropdown from '../../components/TeamAddDropdown'
 
 function buildJuryTelegramDmUrl(
@@ -52,29 +55,50 @@ function StageMark({
   submitted,
   scored,
   title,
+  onOpen,
 }: {
   label: string
   submitted: boolean
   scored: boolean
   title: string
+  onOpen?: () => void
 }) {
   const tip = (status: string) => (title ? `${title}: ${status}` : status)
+  const base =
+    'inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold'
   if (!submitted) {
     return (
       <span
         title={tip('لم يُسلَّم')}
-        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-gray-600/70 text-[10px] font-bold text-gray-500"
+        className={`${base} border-gray-600/70 text-gray-500`}
       >
         {label}
       </span>
     )
   }
   if (scored) {
+    const clickable = Boolean(onOpen)
+    const className = `${base} border-emerald-500/60 bg-emerald-500/20 text-emerald-300 ${
+      clickable ? 'cursor-pointer hover:bg-emerald-500/30 hover:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40' : ''
+    }`
+    if (clickable) {
+      return (
+        <button
+          type="button"
+          title={`${tip('سُلّم · حكّم')} — عرض التقييم`}
+          aria-label={`عرض تقييم ${title}`}
+          className={className}
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpen?.()
+          }}
+        >
+          <Check className="h-3.5 w-3.5" strokeWidth={3} />
+        </button>
+      )
+    }
     return (
-      <span
-        title={tip('سُلّم · حكّم')}
-        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-500/60 bg-emerald-500/20 text-emerald-300"
-      >
+      <span title={tip('سُلّم · حكّم')} className={className}>
         <Check className="h-3.5 w-3.5" strokeWidth={3} />
       </span>
     )
@@ -82,7 +106,7 @@ function StageMark({
   return (
     <span
       title={tip('سُلّم · بانتظار التحكيم')}
-      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-teknofest-cyan/70 bg-teknofest-cyan/15 text-[10px] font-bold text-teknofest-cyan"
+      className={`${base} border-teknofest-cyan/70 bg-teknofest-cyan/15 text-teknofest-cyan`}
     >
       {label}
     </span>
@@ -168,6 +192,10 @@ export default function AdminJuries() {
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingConfirm | null>(null)
   const [confirmBusy, setConfirmBusy] = useState(false)
+  const [evalOpen, setEvalOpen] = useState(false)
+  const [evalLoading, setEvalLoading] = useState(false)
+  const [evalError, setEvalError] = useState<string | null>(null)
+  const [evalView, setEvalView] = useState<JuryEvaluationView | null>(null)
 
   const load = useCallback(async () => {
     if (!eventId) return
@@ -343,6 +371,32 @@ export default function AdminJuries() {
     )
   }
 
+  const openJuryEvaluation = async (
+    jury: EventJury,
+    projectId: number | null | undefined,
+  ) => {
+    if (!eventId || !projectId) return
+    setEvalOpen(true)
+    setEvalLoading(true)
+    setEvalError(null)
+    setEvalView(null)
+    try {
+      const data = await kitchensService.getJuryProjectEvaluation(
+        eventId,
+        jury.membership_number,
+        projectId,
+      )
+      setEvalView(data)
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'تعذر تحميل التقييم'
+      setEvalError(msg)
+    } finally {
+      setEvalLoading(false)
+    }
+  }
+
   const sendBotMessage = async (jury: EventJury) => {
     if (!eventId) return
     if (!jury.telegram_id?.trim()) {
@@ -408,6 +462,18 @@ export default function AdminJuries() {
         onConfirm={() => void runConfirmedAction()}
       />
 
+      <JuryEvaluationModal
+        open={evalOpen}
+        loading={evalLoading}
+        error={evalError}
+        evaluation={evalView}
+        onClose={() => {
+          setEvalOpen(false)
+          setEvalError(null)
+          setEvalView(null)
+        }}
+      />
+
       <AdminPageHeader
         icon={Gavel}
         title="المحكمون"
@@ -444,7 +510,7 @@ export default function AdminJuries() {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <StageMark label="١" submitted scored title="" />
-          حكّمه هذا المحكم
+          حكّمه هذا المحكم — انقر للعرض
         </span>
       </div>
 
@@ -679,12 +745,30 @@ export default function AdminJuries() {
                                 submitted={primarySubmitted}
                                 scored={primaryScored}
                                 title="التقرير الأول"
+                                onOpen={
+                                  primaryScored
+                                    ? () =>
+                                        void openJuryEvaluation(
+                                          jury,
+                                          duty?.primary.project_id,
+                                        )
+                                    : undefined
+                                }
                               />
                               <StageMark
                                 label="ن"
                                 submitted={finalSubmitted}
                                 scored={finalScored}
                                 title="التقرير النهائي"
+                                onOpen={
+                                  finalScored
+                                    ? () =>
+                                        void openJuryEvaluation(
+                                          jury,
+                                          duty?.final.project_id,
+                                        )
+                                    : undefined
+                                }
                               />
                             </span>
                             <button

@@ -10,7 +10,7 @@ import {
   markIndividualsAssigned,
   syncIndividualAssignmentsForEvent,
 } from '../repositories/individuals'
-import { createProject, listProjects, listProjectsByTeam } from '../repositories/projects'
+import { createProject, getProject, listProjects, listProjectsByTeam } from '../repositories/projects'
 import { listProjectFiles } from '../repositories/project-files'
 import {
   getEventKitchen,
@@ -32,6 +32,7 @@ import {
 import {
   countJuryEvaluationsForTeam,
   deleteJuryEvaluationsForTeam,
+  findJuryEvaluation,
 } from '../repositories/evaluations'
 import { findTeamForMemberInEvent, isMemberOfTeam } from '../repositories/member-teams'
 import {
@@ -1453,6 +1454,70 @@ kitchensRouter.delete(
       team_id: teamId,
       team_ids,
       deleted_evaluations: deletedEvaluations,
+    })
+  },
+)
+
+/** Manager: view one jury's evaluation for a project (stage submission). */
+kitchensRouter.get(
+  '/:eventId/juries/:membershipNumber/projects/:projectId/evaluation',
+  ...withEventAccess,
+  async (c) => {
+    const eventId = c.req.param('eventId')
+    const membershipNumber = decodeURIComponent(c.req.param('membershipNumber'))
+    const projectId = Number(c.req.param('projectId'))
+    const member = c.get('member')
+    if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
+      return c.json({ message: 'Only VMS event managers can view jury evaluations' }, 403)
+    }
+    if (!(await isEventJury(c.env, eventId, membershipNumber))) {
+      return c.json({ message: 'Jury not found' }, 404)
+    }
+    if (!Number.isFinite(projectId) || projectId <= 0) {
+      return c.json({ message: 'Invalid project id' }, 400)
+    }
+
+    const project = await getProject(c.env, projectId)
+    if (!project) return c.json({ message: 'Project not found' }, 404)
+
+    const team = await getTeam(c.env, project.team_id)
+    if (!team || team.event_id !== eventId) {
+      return c.json({ message: 'Project not in this kitchen' }, 404)
+    }
+
+    const evaluation = await findJuryEvaluation(c.env, projectId, membershipNumber)
+    if (!evaluation) {
+      return c.json({ message: 'لا يوجد تقييم لهذا المحكم على هذه المرحلة' }, 404)
+    }
+
+    const juryRow = await c.env.D1_DB.prepare(
+      `SELECT full_name FROM event_juries WHERE event_id = ? AND membership_number = ?`,
+    )
+      .bind(eventId, membershipNumber.trim())
+      .first<{ full_name: string | null }>()
+
+    const contact = (await loadMemberContacts(c.env, [membershipNumber])).get(
+      membershipNumber.trim(),
+    )
+
+    return c.json({
+      id: evaluation.id,
+      project_id: project.id,
+      project_title: project.title,
+      stage: project.stage === 'final' ? 'final' : 'primary',
+      team_name: team.team_name,
+      team_id: team.id,
+      jury_membership_number: membershipNumber,
+      jury_full_name:
+        juryRow?.full_name?.trim() ||
+        contact?.ar_name?.trim() ||
+        contact?.en_name?.trim() ||
+        null,
+      score: evaluation.score,
+      notes: evaluation.notes ?? null,
+      detailed_scores: evaluation.detailed_scores ?? null,
+      created_at: evaluation.created_at ?? null,
+      updated_at: evaluation.updated_at ?? null,
     })
   },
 )

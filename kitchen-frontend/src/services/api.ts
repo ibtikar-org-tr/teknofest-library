@@ -553,6 +553,31 @@ export const kitchensService = {
     return response.data
   },
 
+  getJuryProjectEvaluation: async (
+    eventId: string,
+    membershipNumber: string,
+    projectId: number,
+  ): Promise<{
+    id: number
+    project_id: number
+    project_title: string
+    stage: 'primary' | 'final'
+    team_name: string
+    team_id: number
+    jury_membership_number: string
+    jury_full_name: string | null
+    score: number
+    notes: string | null
+    detailed_scores: Record<string, number> | null
+    created_at: string | null
+    updated_at: string | null
+  }> => {
+    const response = await api.get(
+      `/kitchens/${encodeURIComponent(eventId)}/juries/${encodeURIComponent(membershipNumber)}/projects/${projectId}/evaluation`,
+    )
+    return response.data
+  },
+
   getMyJuryAssignments: async (
     eventId: string,
   ): Promise<{ event_id: string; assignments: JuryAssignmentItem[] }> => {

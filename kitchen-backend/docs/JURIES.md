@@ -11,3 +11,4 @@
 - `GET /juries` includes per-jury `duty_done` / `duty_required` (submitted stages on assigned teams that this jury scored), `team_duties`, and event-wide `teams_index` (which teams submitted primary/final) for compact stage icons in the admin UI.
 - Managers can bot-DM a jury via `POST /juries/:membershipNumber/notify` → Kitchen → VMS `POST /telegram/notify` (manager Bearer) → telegram-ms. Requires the jury’s `telegram_id` (bot `/start`). Manual `t.me` open remains available when `@username` exists. No kitchen↔telegram shared secret.
 - Assign/unassign is immediate: `POST|DELETE /juries/:membershipNumber/teams/:teamId`. Unassign deletes that jury’s non-AI evaluations for the team’s submissions (admin UI double-confirms when scores exist).
+- Click a scored stage mark on the juries page → `GET /juries/:membershipNumber/projects/:projectId/evaluation` opens that jury’s score/notes for the stage.
