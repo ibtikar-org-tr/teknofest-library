@@ -87,6 +87,9 @@ export type EventTeamStageIndex = {
   team_name: string
   primary_submitted: boolean
   final_submitted: boolean
+  jury_count?: number
+  primary_scored_count?: number
+  final_scored_count?: number
 }
 
 export type EventJury = {

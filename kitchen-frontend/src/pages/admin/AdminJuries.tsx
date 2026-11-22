@@ -135,6 +135,20 @@ function teamHasJuryScore(duty: JuryTeamDuty | undefined): boolean {
   return Boolean(duty?.primary.scored || duty?.final.scored)
 }
 
+/** Compact option label for the add-team dropdown. */
+function formatTeamOptionLabel(team: EventTeamStageIndex): string {
+  const juryCount = team.jury_count ?? 0
+  const primaryMark = team.primary_submitted ? '١✓' : '١–'
+  const finalMark = team.final_submitted ? 'ن✓' : 'ن–'
+  const primaryEval = team.primary_submitted
+    ? `١ ${team.primary_scored_count ?? 0}/${juryCount}`
+    : '١ —'
+  const finalEval = team.final_submitted
+    ? `ن ${team.final_scored_count ?? 0}/${juryCount}`
+    : 'ن —'
+  return `${team.team_name} · ${primaryMark} ${finalMark} · محكمين:${juryCount} · ${primaryEval} · ${finalEval}`
+}
+
 type PendingConfirm =
   | {
       kind: 'add'
@@ -707,42 +721,47 @@ export default function AdminJuries() {
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                    <select
-                      value={addPick[jury.membership_number] ?? ''}
-                      onChange={(e) =>
-                        setAddPick((prev) => ({
-                          ...prev,
-                          [jury.membership_number]: e.target.value,
-                        }))
-                      }
-                      className="input-field flex-1 min-w-0"
-                      disabled={availableTeams.length === 0}
-                    >
-                      <option value="">
-                        {availableTeams.length === 0
-                          ? 'لا فرق متاحة للإضافة'
-                          : 'إضافة فريق…'}
-                      </option>
-                      {availableTeams.map((t) => (
-                        <option key={t.team_id} value={String(t.team_id)}>
-                          {t.team_name}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <select
+                        value={addPick[jury.membership_number] ?? ''}
+                        onChange={(e) =>
+                          setAddPick((prev) => ({
+                            ...prev,
+                            [jury.membership_number]: e.target.value,
+                          }))
+                        }
+                        className="input-field flex-1 min-w-0 font-mono text-xs sm:text-sm"
+                        disabled={availableTeams.length === 0}
+                      >
+                        <option value="">
+                          {availableTeams.length === 0
+                            ? 'لا فرق متاحة للإضافة'
+                            : 'إضافة فريق…'}
                         </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => requestAddTeam(jury)}
-                      disabled={
-                        !addPick[jury.membership_number] ||
-                        availableTeams.length === 0 ||
-                        confirmBusy
-                      }
-                      className="btn-secondary text-sm py-2 flex items-center justify-center gap-1 disabled:opacity-50"
-                    >
-                      <Plus className="w-4 h-4" />
-                      إضافة
-                    </button>
+                        {availableTeams.map((t) => (
+                          <option key={t.team_id} value={String(t.team_id)}>
+                            {formatTeamOptionLabel(t)}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => requestAddTeam(jury)}
+                        disabled={
+                          !addPick[jury.membership_number] ||
+                          availableTeams.length === 0 ||
+                          confirmBusy
+                        }
+                        className="btn-secondary text-sm py-2 flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        <Plus className="w-4 h-4" />
+                        إضافة
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-gray-500">
+                      في القائمة: مرحلة مُسلَّمة (١✓/ن✓) · عدد المحكمين · تقييم المرحلة (مُقيَّم/محكمين)
+                    </p>
                   </div>
                 </div>
               </div>

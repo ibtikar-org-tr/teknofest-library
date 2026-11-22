@@ -41,13 +41,15 @@ export type EventTeamStageIndex = {
   team_name: string
   primary_submitted: boolean
   final_submitted: boolean
+  /** Juries currently assigned to this team. */
+  jury_count: number
+  /** Assigned juries who scored the primary submission (0 if not submitted). */
+  primary_scored_count: number
+  /** Assigned juries who scored the final submission (0 if not submitted). */
+  final_scored_count: number
 }
 
 type StagePair = { primary: number | null; final: number | null }
-
-function emptyStage(): JuryStageStatus {
-  return { submitted: false, scored: false, project_id: null }
-}
 
 export const listEventJuries = async (
   env: Environment,
@@ -118,21 +120,6 @@ export const listEventJuries = async (
     }
   }
 
-  const teams_index: EventTeamStageIndex[] = (teamRows ?? []).map((t) => {
-    const teamId = Number(t.id)
-    const pair = projectsByTeam.get(teamId)
-    return {
-      team_id: teamId,
-      team_name: t.team_name,
-      primary_submitted: Boolean(pair?.primary),
-      final_submitted: Boolean(pair?.final),
-    }
-  })
-
-  if (juries.length === 0) {
-    return { juries: [], teams_index }
-  }
-
   const { results: assignments } = await env.D1_DB.prepare(
     `SELECT membership_number, team_id FROM jury_team_assignments WHERE event_id = ?`,
   )
@@ -140,10 +127,47 @@ export const listEventJuries = async (
     .all<{ membership_number: string; team_id: number }>()
 
   const byMember = new Map<string, number[]>()
+  const juriesByTeam = new Map<number, string[]>()
   for (const row of assignments ?? []) {
-    const list = byMember.get(row.membership_number) ?? []
-    list.push(Number(row.team_id))
-    byMember.set(row.membership_number, list)
+    const membership = row.membership_number
+    const teamId = Number(row.team_id)
+    const list = byMember.get(membership) ?? []
+    list.push(teamId)
+    byMember.set(membership, list)
+
+    const jurors = juriesByTeam.get(teamId) ?? []
+    jurors.push(membership.trim())
+    juriesByTeam.set(teamId, jurors)
+  }
+
+  const countAssignedScores = (teamId: number, projectId: number | null): number => {
+    if (projectId == null) return 0
+    const jurors = juriesByTeam.get(teamId) ?? []
+    let n = 0
+    for (const membership of jurors) {
+      if (scoredByJury.get(membership)?.has(projectId)) n += 1
+    }
+    return n
+  }
+
+  const teams_index: EventTeamStageIndex[] = (teamRows ?? []).map((t) => {
+    const teamId = Number(t.id)
+    const pair = projectsByTeam.get(teamId)
+    const primaryId = pair?.primary ?? null
+    const finalId = pair?.final ?? null
+    return {
+      team_id: teamId,
+      team_name: t.team_name,
+      primary_submitted: primaryId != null,
+      final_submitted: finalId != null,
+      jury_count: (juriesByTeam.get(teamId) ?? []).length,
+      primary_scored_count: countAssignedScores(teamId, primaryId),
+      final_scored_count: countAssignedScores(teamId, finalId),
+    }
+  })
+
+  if (juries.length === 0) {
+    return { juries: [], teams_index }
   }
 
   const contacts = await loadMemberContacts(
