@@ -62,7 +62,9 @@ import {
   getVmsEventsByIds,
   isMemberRegisteredForEvent,
   listEventRegistrants,
+  loadMemberContacts,
   lookupMemberContact,
+  normalizeTelegramUsername,
 } from '../repositories/vms-events'
 import type { AppBindings, Environment, KitchenMember } from '../types/env'
 import type { KitchenEventView } from '../types/models'
@@ -1222,7 +1224,22 @@ kitchensRouter.get('/:eventId/juries', ...withEventAccess, async (c) => {
   if (!(await requireEventManager(c.env, eventId, member?.membership_number))) {
     return c.json({ message: 'Only VMS event managers can list juries' }, 403)
   }
-  return c.json(await listEventJuries(c.env, eventId))
+  const juries = await listEventJuries(c.env, eventId)
+  let manager_telegram_username: string | null = null
+  const managerMembership = member?.membership_number?.trim()
+  if (managerMembership) {
+    const contacts = await loadMemberContacts(c.env, [managerMembership])
+    manager_telegram_username = normalizeTelegramUsername(
+      contacts.get(managerMembership)?.telegram_username,
+    )
+  }
+  return c.json({
+    juries,
+    manager: {
+      membership_number: managerMembership ?? null,
+      telegram_username: manager_telegram_username,
+    },
+  })
 })
 
 kitchensRouter.post('/:eventId/juries', ...withEventAccess, async (c) => {

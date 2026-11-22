@@ -93,12 +93,14 @@ export type MemberContact = {
   en_name: string | null
   phone_number: string | null
   sex: string | null
+  telegram_id: string | null
+  telegram_username: string | null
 }
 
 const MEMBERSHIP_BATCH = 80
 
 /** Enrich membership numbers from MEMBERS_DB (users live there, not on VMS_DB). */
-async function loadMemberContacts(
+export async function loadMemberContacts(
   env: Environment,
   membershipNumbers: string[],
 ): Promise<Map<string, MemberContact>> {
@@ -118,7 +120,9 @@ async function loadMemberContacts(
              ui.ar_name AS ar_name,
              ui.en_name AS en_name,
              ui.phone_number AS phone_number,
-             ui.sex AS sex
+             ui.sex AS sex,
+             ui.telegram_id AS telegram_id,
+             ui.telegram_username AS telegram_username
            FROM users u
            LEFT JOIN user_info ui ON ui.membership_number = u.membership_number
            WHERE u.membership_number IN (${placeholders})`,
@@ -134,6 +138,11 @@ async function loadMemberContacts(
     }
   }
   return map
+}
+
+export function normalizeTelegramUsername(raw: string | null | undefined): string | null {
+  const cleaned = raw?.trim().replace(/^@+/, '') || ''
+  return cleaned || null
 }
 
 /** Resolve one VMS/membership identity for team create / membership verify. */

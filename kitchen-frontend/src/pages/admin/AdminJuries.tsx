@@ -1,14 +1,46 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Gavel, Loader2, Search, Trash2, UserPlus, Save } from 'lucide-react'
+import {
+  Copy,
+  Gavel,
+  Loader2,
+  MessageCircle,
+  Save,
+  Search,
+  Trash2,
+  UserPlus,
+} from 'lucide-react'
 import { kitchensService, type EventJury, type EventRegistrant } from '../../services/api'
 import type { Team } from '../../types'
 import AdminPageHeader from '../../components/AdminPageHeader'
 
+function buildJuryTelegramDmUrl(
+  juryUsername: string,
+  managerUsername: string | null,
+  managerMembership: string | null,
+): string {
+  const lines = [
+    'مرحباً، أتواصل معك بخصوص تحكيم مسابقة المطبخ.',
+  ]
+  if (managerUsername) {
+    lines.push(`حسابي على تلغرام: @${managerUsername}`)
+  }
+  if (managerMembership) {
+    lines.push(`رقم عضويتي: ${managerMembership}`)
+  }
+  if (juryUsername) {
+    lines.push(`حسابك على تلغرام (إن وجد): @${juryUsername}`)
+  }
+  lines.push('يرجى الرد عند التمكّن.')
+  return `https://t.me/${encodeURIComponent(juryUsername)}?text=${encodeURIComponent(lines.join('\n'))}`
+}
+
 export default function AdminJuries() {
   const { eventId = '' } = useParams()
   const [juries, setJuries] = useState<EventJury[]>([])
+  const [managerTelegram, setManagerTelegram] = useState<string | null>(null)
+  const [managerMembership, setManagerMembership] = useState<string | null>(null)
   const [registrants, setRegistrants] = useState<EventRegistrant[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,16 +54,18 @@ export default function AdminJuries() {
     if (!eventId) return
     setLoading(true)
     try {
-      const [juryList, registrantList, teamList] = await Promise.all([
+      const [juryPayload, registrantList, teamList] = await Promise.all([
         kitchensService.listJuries(eventId),
         kitchensService.getRegistrants(eventId),
         kitchensService.getTeams(eventId),
       ])
-      setJuries(juryList)
+      setJuries(juryPayload.juries)
+      setManagerTelegram(juryPayload.manager.telegram_username)
+      setManagerMembership(juryPayload.manager.membership_number)
       setRegistrants(registrantList)
       setTeams(teamList)
       const drafts: Record<string, number[]> = {}
-      for (const j of juryList) {
+      for (const j of juryPayload.juries) {
         drafts[j.membership_number] = [...j.team_ids]
       }
       setDraftTeams(drafts)
@@ -64,6 +98,15 @@ export default function AdminJuries() {
         )
       })
   }, [registrants, appointed, search])
+
+  const copyText = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success(`تم نسخ ${label}`)
+    } catch {
+      toast.error('تعذر النسخ')
+    }
+  }
 
   const handleAdd = async () => {
     if (!selectedMember) {
@@ -123,6 +166,20 @@ export default function AdminJuries() {
     }
   }
 
+  const openTelegram = (jury: EventJury) => {
+    const username = jury.telegram_username?.trim().replace(/^@+/, '') || ''
+    if (!username) {
+      toast.error(
+        jury.has_telegram
+          ? 'المحكم مربوط بتلغرام بدون اسم مستخدم عام — اطلب منه إضافة @username'
+          : 'لا يوجد حساب تلغرام معروف لهذا المحكم',
+      )
+      return
+    }
+    const url = buildJuryTelegramDmUrl(username, managerTelegram, managerMembership)
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-24">
@@ -136,9 +193,22 @@ export default function AdminJuries() {
       <AdminPageHeader
         icon={Gavel}
         title="المحكمون"
-        description="عيّن محكمين من مسجلي الفعالية، ثم اربط كل محكم بالفرق التي يقيّمها. التقييم النهائي = متوسط درجات المحكمين فقط."
+        description="عيّن محكمين من مسجلي الفعالية، ثم اربط كل محكم بالفرق التي يقيّمها. رقم العضوية ظاهر دائماً، ويمكن مراسلة المحكم على تلغرام إن وُجد اسم مستخدم."
         tone="cyan"
       />
+
+      {managerTelegram ? (
+        <p className="text-sm text-gray-400">
+          حسابك على تلغرام للمراسلة:{' '}
+          <span className="text-teknofest-cyan" dir="ltr">
+            @{managerTelegram}
+          </span>
+        </p>
+      ) : (
+        <p className="text-sm text-teknofest-orange">
+          لم يُعثر على @username لتلغرام لحسابك في VMS — أضفه في الملف الشخصي ليُدرج تلقائياً في رسالة المحكم.
+        </p>
+      )}
 
       <div className="card space-y-4">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -149,7 +219,7 @@ export default function AdminJuries() {
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             className="input-field pr-10"
-            placeholder="بحث في المسجلين..."
+            placeholder="بحث بالاسم أو رقم العضوية أو البريد..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -192,24 +262,89 @@ export default function AdminJuries() {
         <div className="space-y-4">
           {juries.map((jury) => {
             const selected = new Set(draftTeams[jury.membership_number] ?? [])
+            const username = jury.telegram_username?.trim().replace(/^@+/, '') || null
             return (
               <div key={jury.membership_number} className="card space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <span className="w-10 h-10 rounded-xl bg-teknofest-cyan/15 text-teknofest-cyan flex items-center justify-center shrink-0">
                       <Gavel className="w-5 h-5" />
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 space-y-2">
                       <h3 className="text-white font-bold truncate">
                         {jury.full_name || jury.membership_number}
                       </h3>
-                      <p className="text-sm text-gray-400 truncate">
-                        {jury.membership_number}
-                        {jury.email ? ` · ${jury.email}` : ''}
-                      </p>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-gray-500">رقم العضوية</span>
+                        <code
+                          className="text-sm text-teknofest-cyan bg-teknofest-dark-blue/60 px-2 py-1 rounded"
+                          dir="ltr"
+                        >
+                          {jury.membership_number}
+                        </code>
+                        <button
+                          type="button"
+                          className="btn-secondary text-xs py-1 px-2 flex items-center gap-1"
+                          onClick={() =>
+                            void copyText(jury.membership_number, 'رقم العضوية')
+                          }
+                          title="نسخ رقم العضوية"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          نسخ
+                        </button>
+                      </div>
+
+                      {jury.email ? (
+                        <p className="text-sm text-gray-400 truncate" dir="ltr">
+                          {jury.email}
+                        </p>
+                      ) : null}
+
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        {username ? (
+                          <>
+                            <span className="text-gray-500">تلغرام</span>
+                            <a
+                              href={`https://t.me/${encodeURIComponent(username)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-teknofest-cyan hover:underline"
+                              dir="ltr"
+                            >
+                              @{username}
+                            </a>
+                            <button
+                              type="button"
+                              className="btn-secondary text-xs py-1 px-2 flex items-center gap-1"
+                              onClick={() => void copyText(`@${username}`, 'اسم التلغرام')}
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              نسخ @
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-500">
+                            {jury.has_telegram
+                              ? 'تلغرام مربوط بدون @username عام'
+                              : 'لا يوجد تلغرام معروف في VMS'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openTelegram(jury)}
+                      className="btn-secondary text-sm py-2 flex items-center gap-1"
+                      title="فتح محادثة تلغرام مع رسالة تتضمن حسابك"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      تلغرام
+                    </button>
                     <button
                       type="button"
                       onClick={() => void handleSaveTeams(jury.membership_number)}

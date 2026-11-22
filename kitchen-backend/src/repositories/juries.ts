@@ -1,4 +1,8 @@
 import type { Environment } from '../types/env'
+import {
+  loadMemberContacts,
+  normalizeTelegramUsername,
+} from './vms-events'
 
 export type EventJury = {
   event_id: string
@@ -8,6 +12,9 @@ export type EventJury = {
   created_by: string | null
   created_at: string
   team_ids: number[]
+  telegram_username: string | null
+  telegram_id: string | null
+  has_telegram: boolean
 }
 
 export const listEventJuries = async (
@@ -44,10 +51,23 @@ export const listEventJuries = async (
     byMember.set(row.membership_number, list)
   }
 
-  return juries.map((j) => ({
-    ...j,
-    team_ids: byMember.get(j.membership_number) ?? [],
-  }))
+  const contacts = await loadMemberContacts(
+    env,
+    juries.map((j) => j.membership_number),
+  )
+
+  return juries.map((j) => {
+    const contact = contacts.get(j.membership_number.trim())
+    const telegram_username = normalizeTelegramUsername(contact?.telegram_username)
+    const telegram_id = contact?.telegram_id?.trim() || null
+    return {
+      ...j,
+      team_ids: byMember.get(j.membership_number) ?? [],
+      telegram_username,
+      telegram_id,
+      has_telegram: Boolean(telegram_username || telegram_id),
+    }
+  })
 }
 
 export const addEventJury = async (

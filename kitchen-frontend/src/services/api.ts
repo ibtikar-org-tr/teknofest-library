@@ -77,6 +77,17 @@ export type EventJury = {
   created_by: string | null
   created_at: string
   team_ids: number[]
+  telegram_username?: string | null
+  telegram_id?: string | null
+  has_telegram?: boolean
+}
+
+export type JuriesListResponse = {
+  juries: EventJury[]
+  manager: {
+    membership_number: string | null
+    telegram_username: string | null
+  }
 }
 
 export type JuryAssignmentItem = {
@@ -433,9 +444,17 @@ export const kitchensService = {
     return response.data
   },
 
-  listJuries: async (eventId: string): Promise<EventJury[]> => {
+  listJuries: async (eventId: string): Promise<JuriesListResponse> => {
     const response = await api.get(`/kitchens/${encodeURIComponent(eventId)}/juries`)
-    return response.data
+    const data = response.data
+    // Backward compatible if an older worker still returns a bare array.
+    if (Array.isArray(data)) {
+      return {
+        juries: data,
+        manager: { membership_number: null, telegram_username: null },
+      }
+    }
+    return data
   },
 
   addJury: async (
